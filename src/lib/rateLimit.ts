@@ -59,7 +59,7 @@ export function extractClientIp(headers: HeaderBag): string {
 export function rateLimit(key: string, limit: number, windowMs: number): boolean {
   // WARNING: DISABLE_RATE_LIMITS 환경변수는 개발/테스트 환경에서만 사용해야 합니다.
   // 프로덕션 환경에서는 절대 사용 금지 — DDoS 및 남용 공격에 노출될 수 있습니다.
-  if (process.env.DISABLE_RATE_LIMITS === "1") {
+  if (process.env.DISABLE_RATE_LIMITS === "1" && process.env.NODE_ENV !== "production") {
     return true;
   }
 
@@ -83,7 +83,7 @@ export function rateLimit(key: string, limit: number, windowMs: number): boolean
 export async function rateLimitRedis(key: string, limit: number, windowMs: number): Promise<boolean> {
   // WARNING: DISABLE_RATE_LIMITS 환경변수는 개발/테스트 환경에서만 사용해야 합니다.
   // 프로덕션 환경에서는 절대 사용 금지 — DDoS 및 남용 공격에 노출될 수 있습니다.
-  if (process.env.DISABLE_RATE_LIMITS === "1") {
+  if (process.env.DISABLE_RATE_LIMITS === "1" && process.env.NODE_ENV !== "production") {
     return true;
   }
 

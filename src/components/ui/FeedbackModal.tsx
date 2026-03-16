@@ -36,6 +36,7 @@ export function FeedbackModal() {
   const [type, setType] = useState<FeedbackType>("bug");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -60,6 +61,7 @@ export function FeedbackModal() {
     setTitle("");
     setDescription("");
     setType("bug");
+    setSuccessMessage(null);
   }
 
   function handleSubmitGitHub() {
@@ -76,8 +78,9 @@ export function FeedbackModal() {
   function handleSubmitLocal() {
     const envInfo = collectEnvironmentInfo();
     console.log("[jpad feedback]", { type, title, description, env: envInfo });
-    alert("피드백이 기록되었습니다. 감사합니다!");
-    handleClose();
+    setSuccessMessage("피드백이 기록되었습니다. 감사합니다!");
+    setTitle("");
+    setDescription("");
   }
 
   if (!isOpen) return null;
@@ -107,6 +110,20 @@ export function FeedbackModal() {
         </div>
 
         <div className="px-5 py-4 space-y-4">
+          {/* 성공 메시지 */}
+          {successMessage && (
+            <div
+              className="flex items-center gap-2 px-3 py-2 rounded-md text-sm"
+              style={{
+                background: "rgba(34,197,94,0.08)",
+                border: "1px solid rgba(34,197,94,0.2)",
+                color: "#22c55e",
+              }}
+            >
+              {successMessage}
+            </div>
+          )}
+
           {/* 유형 선택 */}
           <div>
             <label className="text-sm font-medium block mb-2">유형</label>

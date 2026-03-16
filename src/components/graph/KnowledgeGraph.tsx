@@ -605,6 +605,28 @@ export function KnowledgeGraph({ workspaceId, currentPageId }: KnowledgeGraphPro
           </div>
         </div>
       )}
+
+      {/* Empty state */}
+      {!loading && nodeCount === 0 && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div
+            className="px-6 py-4 rounded-lg text-sm text-center"
+            style={{
+              background: "var(--background)",
+              border: "1px solid var(--border)",
+              color: "var(--muted)",
+              maxWidth: 320,
+            }}
+          >
+            <p style={{ fontWeight: 500, marginBottom: 4, color: "var(--foreground)" }}>
+              그래프가 비어 있습니다
+            </p>
+            <p>
+              페이지를 만들고 [[백링크]]로 연결하면 그래프가 형성됩니다.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

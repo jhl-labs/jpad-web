@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth/helpers";
+import { createAuditActor, getAuditRequestContext, recordAuditLog } from "@/lib/audit";
 import { readPage, savePage } from "@/lib/git/repository";
 import { parseBacklinks } from "@/lib/markdown/serializer";
 import { getPageAccessContext } from "@/lib/pageAccess";
+import { rateLimitRedis } from "@/lib/rateLimit";
 import {
   enqueuePageReindexJob,
   triggerBestEffortSearchIndexProcessing,
@@ -46,6 +48,7 @@ export async function PUT(
   try {
     const user = await requireAuth();
     const { pageId } = await params;
+    const requestContext = getAuditRequestContext(req);
     const { content } = await req.json();
 
     const access = await getPageAccessContext(user.id, pageId);
@@ -54,6 +57,13 @@ export async function PUT(
     }
     if (!access.canEdit) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    if (!(await rateLimitRedis(`content-save:${user.id}`, 60, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
     }
 
     if (typeof content !== "string") {
@@ -137,6 +147,19 @@ export async function PUT(
     await prisma.page.update({
       where: { id: pageId },
       data: { updatedAt: new Date() },
+    });
+
+    await recordAuditLog({
+      action: "page.content.updated",
+      actor: createAuditActor(user, access.member?.role ?? null),
+      workspaceId: access.page.workspaceId,
+      pageId,
+      targetId: pageId,
+      targetType: "page",
+      metadata: {
+        slug: access.page.slug,
+      },
+      context: requestContext,
     });
 
     await enqueuePageReindexJob({

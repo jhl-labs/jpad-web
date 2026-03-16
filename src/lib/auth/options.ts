@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { extractClientIp, rateLimitRedis } from "@/lib/rateLimit";
+import { logError } from "@/lib/logger";
 import {
   getSamlConfig,
   isCredentialsLoginEnabled,
@@ -27,7 +28,13 @@ if (isCredentialsLoginEnabled()) {
 
         const ip = extractClientIp(req?.headers);
         const allowed = await rateLimitRedis(`login:${ip}`, 10, 60_000);
-        if (!allowed) return null;
+        if (!allowed) {
+          logError("auth.login.rate_limit_exceeded", new Error("Login rate limit exceeded"), {
+            ip,
+            email: credentials.email,
+          });
+          return null;
+        }
 
         const email = normalizeEmailAddress(credentials.email);
         const matchedUsers = await prisma.user.findMany({

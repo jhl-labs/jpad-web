@@ -163,6 +163,7 @@ export function TodoList({ workspaceId }: TodoListProps) {
   };
 
   const deleteTodo = async (todoId: string) => {
+    if (!confirm("이 할 일을 삭제하시겠습니까?")) return;
     setTodos((prev) => prev.filter((t) => t.id !== todoId));
 
     try {

@@ -470,6 +470,8 @@ export function AiPanel({
         {(["write", "chat"] as const).map((tab) => (
           <button
             key={tab}
+            role="tab"
+            aria-selected={activeTab === tab}
             onClick={() => setActiveTab(tab)}
             className="flex-1 py-1.5 text-xs font-medium rounded-md transition-all"
             style={{
@@ -758,6 +760,8 @@ export function AiPanel({
           <div className="px-4 pb-2 flex items-center justify-between">
             <label className="flex items-center gap-2 cursor-pointer">
               <div
+                role="switch"
+                aria-checked={usePageContext}
                 className="relative w-8 h-[18px] rounded-full transition-colors cursor-pointer"
                 style={{
                   background: usePageContext ? "var(--primary)" : "var(--border)",

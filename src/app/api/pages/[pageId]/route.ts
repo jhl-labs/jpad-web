@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth/helpers";
+import { logError } from "@/lib/logger";
 import { createAuditActor, getAuditRequestContext, recordAuditLog } from "@/lib/audit";
 import { collectPageSubtree, getWorkspacePages } from "@/lib/pages";
 import { getPageAccessContext, listAccessiblePageIds } from "@/lib/pageAccess";
+import { rateLimitRedis } from "@/lib/rateLimit";
 import { removePageEmbeddings } from "@/lib/semanticSearch";
 import {
   enqueuePageReindexJob,
@@ -83,6 +85,7 @@ export async function PATCH(
   try {
     const user = await requireAuth();
     const { pageId } = await params;
+    const requestContext = getAuditRequestContext(req);
     const data = await req.json();
 
     const access = await getPageAccessContext(user.id, pageId);
@@ -91,6 +94,13 @@ export async function PATCH(
     }
     if (!access.canEdit || !access.member) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    if (!(await rateLimitRedis(`page-update:${user.id}`, 30, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
     }
 
     const updateData: Record<string, unknown> = {};
@@ -157,6 +167,19 @@ export async function PATCH(
       data: updateData,
     });
 
+    await recordAuditLog({
+      action: "page.metadata.updated",
+      actor: createAuditActor(user, access.member.role),
+      workspaceId: access.page.workspaceId,
+      pageId,
+      targetId: pageId,
+      targetType: "page",
+      metadata: {
+        updatedFields: Object.keys(updateData),
+      },
+      context: requestContext,
+    });
+
     if (typeof data.title === "string" && data.title.trim()) {
       await enqueuePageReindexJob({
         workspaceId: updated.workspaceId,
@@ -168,7 +191,11 @@ export async function PATCH(
     }
 
     return NextResponse.json(updated);
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    logError("pages.patch.unhandled_error", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
@@ -195,6 +222,13 @@ export async function DELETE(
       !["owner", "admin", "maintainer"].includes(access.member.role)
     ) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    if (!(await rateLimitRedis(`page-delete:${user.id}`, 10, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
     }
 
     const workspacePages = await getWorkspacePages(access.page.workspaceId);

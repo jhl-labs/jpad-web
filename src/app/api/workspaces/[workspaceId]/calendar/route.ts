@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, checkWorkspaceAccess } from "@/lib/auth/helpers";
+import { createAuditActor, getAuditRequestContext, recordAuditLog } from "@/lib/audit";
 import { rateLimitRedis } from "@/lib/rateLimit";
+import { logError } from "@/lib/logger";
 
 export async function GET(
   req: NextRequest,
@@ -56,8 +58,12 @@ export async function GET(
     });
 
     return NextResponse.json(events);
-  } catch {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    logError("calendar.get.unhandled_error", error);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
 
@@ -68,6 +74,7 @@ export async function POST(
   try {
     const user = await requireAuth();
     const { workspaceId } = await params;
+    const requestContext = getAuditRequestContext(req);
 
     const member = await checkWorkspaceAccess(user.id, workspaceId, [
       "owner",
@@ -89,7 +96,7 @@ export async function POST(
 
     if (!title || !startAt) {
       return NextResponse.json(
-        { error: "제목과 시작 시간은 필수입니다." },
+        { error: "Title and start time are required" },
         { status: 400 }
       );
     }
@@ -97,19 +104,19 @@ export async function POST(
     // 입력 길이 검증
     if (typeof title === "string" && title.length > 500) {
       return NextResponse.json(
-        { error: "제목은 500자 이하여야 합니다." },
+        { error: "Title must be 500 characters or less" },
         { status: 400 }
       );
     }
     if (typeof description === "string" && description.length > 5000) {
       return NextResponse.json(
-        { error: "설명은 5000자 이하여야 합니다." },
+        { error: "Description must be 5000 characters or less" },
         { status: 400 }
       );
     }
     if (typeof location === "string" && location.length > 500) {
       return NextResponse.json(
-        { error: "위치는 500자 이하여야 합니다." },
+        { error: "Location must be 500 characters or less" },
         { status: 400 }
       );
     }
@@ -134,8 +141,25 @@ export async function POST(
       },
     });
 
+    await recordAuditLog({
+      action: "calendar.event.created",
+      actor: createAuditActor(user, member.role),
+      workspaceId,
+      targetId: event.id,
+      targetType: "calendar_event",
+      metadata: {
+        title: event.title,
+        allDay: event.allDay,
+      },
+      context: requestContext,
+    });
+
     return NextResponse.json(event, { status: 201 });
-  } catch {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    logError("calendar.post.unhandled_error", error);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

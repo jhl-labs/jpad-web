@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, checkWorkspaceAccess } from "@/lib/auth/helpers";
 import { createAuditActor, getAuditRequestContext, recordAuditLog } from "@/lib/audit";
+import { rateLimitRedis } from "@/lib/rateLimit";
 import { getEffectiveWorkspaceSettings } from "@/lib/workspaceSettings";
 import { normalizeEmailAddress } from "@/lib/auth/config";
 
@@ -21,6 +22,13 @@ export async function POST(
     ]);
     if (!member) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    if (!(await rateLimitRedis(`member-invite:${user.id}`, 20, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
     }
 
     const settings = await getEffectiveWorkspaceSettings(workspaceId);

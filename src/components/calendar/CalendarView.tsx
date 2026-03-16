@@ -113,6 +113,7 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
   const [formColor, setFormColor] = useState("#3b82f6");
   const [formLocation, setFormLocation] = useState("");
   const [formRecurrence, setFormRecurrence] = useState("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Google Calendar 연동 상태
   const [googleConnected, setGoogleConnected] = useState(false);
@@ -122,6 +123,7 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
 
   const fetchEvents = useCallback(async () => {
     setLoading(true);
+    setErrorMessage(null);
     try {
       const start = new Date(currentYear, currentMonth, 1);
       const end = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59);
@@ -130,9 +132,11 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
       );
       if (res.ok) {
         setEvents(await res.json());
+      } else {
+        setErrorMessage("일정을 불러오는 데 실패했습니다.");
       }
     } catch {
-      // ignore
+      setErrorMessage("네트워크 오류로 일정을 불러올 수 없습니다.");
     } finally {
       setLoading(false);
     }
@@ -347,7 +351,7 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
       resetForm();
       fetchEvents();
     } catch {
-      // ignore
+      setErrorMessage("일정 저장에 실패했습니다. 다시 시도해주세요.");
     }
   }
 
@@ -364,7 +368,7 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
       resetForm();
       fetchEvents();
     } catch {
-      // ignore
+      setErrorMessage("일정 삭제에 실패했습니다. 다시 시도해주세요.");
     }
   }
 
@@ -645,6 +649,41 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
         </div>
       )}
 
+      {/* Error message */}
+      {errorMessage && (
+        <div
+          style={{
+            marginBottom: 16,
+            padding: "10px 16px",
+            borderRadius: 8,
+            background: "rgba(239,68,68,0.08)",
+            border: "1px solid rgba(239,68,68,0.2)",
+            fontSize: 13,
+            color: "#ef4444",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 8,
+          }}
+        >
+          <span>{errorMessage}</span>
+          <button
+            onClick={() => setErrorMessage(null)}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "#ef4444",
+              fontSize: 16,
+              lineHeight: 1,
+              padding: 2,
+            }}
+          >
+            &times;
+          </button>
+        </div>
+      )}
+
       {/* Loading */}
       {loading && (
         <div
@@ -656,6 +695,24 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
           }}
         >
           불러오는 중...
+        </div>
+      )}
+
+      {/* Empty state hint */}
+      {!loading && events.length === 0 && !errorMessage && (
+        <div
+          style={{
+            textAlign: "center",
+            padding: "12px 16px",
+            marginBottom: 16,
+            borderRadius: 8,
+            background: "var(--sidebar-bg)",
+            border: "1px solid var(--border)",
+            fontSize: 13,
+            color: "var(--muted)",
+          }}
+        >
+          일정이 없습니다. 날짜를 클릭하여 새 일정을 추가하세요.
         </div>
       )}
 
@@ -713,7 +770,15 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
             return (
               <div
                 key={idx}
+                role="gridcell"
+                tabIndex={dayInfo.currentMonth ? 0 : -1}
                 onClick={() => dayInfo.currentMonth && openCreateModal(dayInfo.date)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && dayInfo.currentMonth) {
+                    e.preventDefault();
+                    openCreateModal(dayInfo.date);
+                  }
+                }}
                 style={{
                   minHeight: isMobile ? 60 : 100,
                   borderRight:
@@ -820,6 +885,8 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
           }}
         >
           <div
+            role="dialog"
+            aria-modal="true"
             onClick={(e) => e.stopPropagation()}
             style={{
               background: "var(--background)",

@@ -4,6 +4,7 @@ import { createAuditActor, getAuditRequestContext, recordAuditLog } from "@/lib/
 import { logError } from "@/lib/logger";
 import { getPageAccessContext } from "@/lib/pageAccess";
 import { prisma } from "@/lib/prisma";
+import { rateLimitRedis } from "@/lib/rateLimit";
 
 function normalizeAccessMode(value: unknown): "workspace" | "restricted" | null {
   return value === "workspace" || value === "restricted" ? value : null;
@@ -62,6 +63,13 @@ export async function PUT(
     }
     if (!access.canManage || !access.member) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    if (!(await rateLimitRedis(`perms-update:${user.id}`, 20, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
     }
 
     const body = await req.json();

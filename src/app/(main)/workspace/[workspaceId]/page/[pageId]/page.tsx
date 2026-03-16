@@ -207,13 +207,25 @@ export default function PageEditorPage() {
     }
   }
 
+  const [coverError, setCoverError] = useState<string | null>(null);
+
   async function handleCoverChange(newCover: string | null) {
     setCoverImage(newCover);
-    await fetch(`/api/pages/${pageId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ coverImage: newCover }),
-    });
+    setCoverError(null);
+    try {
+      const res = await fetch(`/api/pages/${pageId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ coverImage: newCover }),
+      });
+      if (!res.ok) {
+        setCoverError("커버 이미지 변경에 실패했습니다.");
+        setCoverImage(page?.coverImage || null);
+      }
+    } catch {
+      setCoverError("네트워크 오류로 커버를 변경할 수 없습니다.");
+      setCoverImage(page?.coverImage || null);
+    }
   }
 
   async function handleSave(markdown: string) {
@@ -650,6 +662,26 @@ export default function PageEditorPage() {
               />
             </div>
           )}
+        </div>
+      )}
+
+      {/* Cover error */}
+      {coverError && (
+        <div
+          className="mx-4 md:mx-8 lg:mx-16 mt-2 px-3 py-2 rounded text-sm flex items-center justify-between"
+          style={{
+            background: "rgba(239,68,68,0.08)",
+            color: "#ef4444",
+            border: "1px solid rgba(239,68,68,0.18)",
+          }}
+        >
+          <span>{coverError}</span>
+          <button
+            onClick={() => setCoverError(null)}
+            style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", fontSize: 16 }}
+          >
+            &times;
+          </button>
         </div>
       )}
 

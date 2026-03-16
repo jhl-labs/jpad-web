@@ -221,6 +221,7 @@ function InnerEditor({
   const [connected, setConnected] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [fontSize, setFontSize] = useState<string>("16px");
   const initialLoaded = useRef(false);
   const synced = useRef(false);
   const lastInsertedKey = useRef<number | null>(null);
@@ -252,10 +253,31 @@ function InnerEditor({
     },
     domAttributes: {
       editor: {
-        style: "padding: 0; font-size: 16px; line-height: 1.6;",
+        style: `padding: 0; font-size: ${fontSize}; line-height: 1.6;`,
       },
     },
   });
+
+  // Read editor font size from localStorage and listen for changes
+  useEffect(() => {
+    const readFontSize = () => {
+      try {
+        const stored = localStorage.getItem("editor-font-size");
+        if (stored) {
+          setFontSize(stored.endsWith("px") ? stored : `${stored}px`);
+        }
+      } catch {
+        // ignore
+      }
+    };
+    readFontSize();
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "editor-font-size") readFontSize();
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
 
   // Track connection status
   useEffect(() => {
@@ -460,16 +482,38 @@ function InnerEditor({
     };
   }, [editor, handleChange, pendingInsertMarkdown, readOnly]);
 
-  // Dark mode detection
+  // Dark mode detection: data-theme attribute + system preference fallback
   useEffect(() => {
     const mql = window.matchMedia("(prefers-color-scheme: dark)");
-    setTheme(mql.matches ? "dark" : "light");
 
-    const handler = (e: MediaQueryListEvent) => {
-      setTheme(e.matches ? "dark" : "light");
+    const resolveTheme = () => {
+      const dataTheme = document.documentElement.getAttribute("data-theme");
+      if (dataTheme === "dark") return "dark" as const;
+      if (dataTheme === "light") return "light" as const;
+      return mql.matches ? ("dark" as const) : ("light" as const);
     };
-    mql.addEventListener("change", handler);
-    return () => mql.removeEventListener("change", handler);
+
+    setTheme(resolveTheme());
+
+    // Watch for data-theme attribute changes via MutationObserver
+    const observer = new MutationObserver(() => {
+      setTheme(resolveTheme());
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
+
+    // Also listen for system preference changes as fallback
+    const mediaHandler = () => {
+      setTheme(resolveTheme());
+    };
+    mql.addEventListener("change", mediaHandler);
+
+    return () => {
+      observer.disconnect();
+      mql.removeEventListener("change", mediaHandler);
+    };
   }, []);
 
   // Floating AI toolbar on text selection
@@ -668,6 +712,8 @@ function InnerEditor({
       {/* Floating AI toolbar on text selection */}
       {selectedText && selectionRect && (
         <div
+          role="toolbar"
+          aria-label="AI 도구"
           className="fixed z-[60] flex items-center gap-0.5 px-1 py-0.5 rounded-full shadow-lg"
           style={{
             left: selectionRect.left + selectionRect.width / 2,

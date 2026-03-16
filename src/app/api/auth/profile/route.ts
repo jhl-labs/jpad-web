@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth/helpers";
+import { rateLimitRedis } from "@/lib/rateLimit";
 import { z } from "zod";
 
 export async function GET() {
@@ -30,6 +31,14 @@ const updateSchema = z.object({
 export async function PATCH(req: NextRequest) {
   try {
     const user = await requireAuth();
+
+    if (!(await rateLimitRedis(`profile-update:${user.id}`, 10, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
 
     const parsed = updateSchema.safeParse(body);

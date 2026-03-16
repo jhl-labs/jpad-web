@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, checkWorkspaceAccess } from "@/lib/auth/helpers";
 import { createAuditActor, getAuditRequestContext, recordAuditLog } from "@/lib/audit";
 import { listAccessiblePages } from "@/lib/pageAccess";
+import { rateLimitRedis } from "@/lib/rateLimit";
 
 export async function GET(
   _req: NextRequest,
@@ -101,6 +102,13 @@ export async function PATCH(
     ]);
     if (!member) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    if (!(await rateLimitRedis(`ws-update:${user.id}`, 20, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
     }
 
     const { name, description, visibility, publicWikiEnabled } = await req.json();

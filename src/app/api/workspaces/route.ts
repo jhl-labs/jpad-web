@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth/helpers";
+import { createAuditActor, getAuditRequestContext, recordAuditLog } from "@/lib/audit";
 import { initRepo } from "@/lib/git/repository";
 import { logError } from "@/lib/logger";
+import { rateLimitRedis } from "@/lib/rateLimit";
 import { slugify } from "@/lib/utils";
 import { z } from "zod";
 import {
@@ -13,8 +15,8 @@ import {
 const createWorkspaceSchema = z.object({
   name: z
     .string()
-    .min(1, "워크스페이스 이름은 필수입니다")
-    .max(100, "워크스페이스 이름은 100자 이하여야 합니다"),
+    .min(1, "Workspace name is required")
+    .max(100, "Workspace name must be 100 characters or less"),
   description: z.string().max(500).optional(),
   visibility: z.enum(["public", "private"]).optional(),
   organizationId: z.string().uuid().optional(),
@@ -81,7 +83,7 @@ export async function GET(req: NextRequest) {
 
     logError("workspaces.list_failed", error, {}, req);
     return NextResponse.json(
-      { error: "워크스페이스 목록을 불러오지 못했습니다." },
+      { error: "Failed to list workspaces" },
       { status: 500 }
     );
   }
@@ -90,6 +92,15 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const user = await requireAuth();
+    const requestContext = getAuditRequestContext(req);
+
+    if (!(await rateLimitRedis(`ws-create:${user.id}`, 5, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
 
     const parsed = createWorkspaceSchema.safeParse(body);
@@ -145,6 +156,19 @@ export async function POST(req: NextRequest) {
     // Initialize git repo
     await initRepo(workspace.id);
 
+    await recordAuditLog({
+      action: "workspace.created",
+      actor: createAuditActor(user, "owner"),
+      workspaceId: workspace.id,
+      targetId: workspace.id,
+      targetType: "workspace",
+      metadata: {
+        name: workspace.name,
+        visibility: workspace.visibility,
+      },
+      context: requestContext,
+    });
+
     return NextResponse.json(workspace, { status: 201 });
   } catch (error) {
     if (error instanceof Error && error.message === "Unauthorized") {
@@ -153,7 +177,7 @@ export async function POST(req: NextRequest) {
 
     logError("workspaces.create_failed", error, {}, req);
     return NextResponse.json(
-      { error: "워크스페이스를 생성하지 못했습니다." },
+      { error: "Failed to create workspace" },
       { status: 500 }
     );
   }

@@ -171,6 +171,8 @@ export function ImportModal({ workspaceId, onClose, onImported }: ImportModalPro
       }}
     >
       <div
+        role="dialog"
+        aria-modal="true"
         className="rounded-xl shadow-2xl w-full max-w-lg mx-4"
         style={{
           background: "var(--background)",

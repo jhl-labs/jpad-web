@@ -117,11 +117,14 @@ function PageContextMenu({
       onClose();
       return;
     }
-    await fetch(`/api/pages/${menu.pageId}`, {
+    const res = await fetch(`/api/pages/${menu.pageId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: newTitle }),
     });
+    if (!res.ok) {
+      console.error("페이지 이름 변경 실패:", res.status);
+    }
     window.dispatchEvent(new Event("sidebar:refresh"));
     onClose();
   }
@@ -141,31 +144,37 @@ function PageContextMenu({
       const contentRes = await fetch(`/api/pages/${menu.pageId}/content`);
       if (contentRes.ok) {
         const { content } = await contentRes.json();
-        await fetch(`/api/pages/${newPage.id}/content`, {
+        const putRes = await fetch(`/api/pages/${newPage.id}/content`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ content }),
         });
+        if (!putRes.ok) {
+          console.error("페이지 콘텐츠 복사 실패:", putRes.status);
+        }
       }
       onRefresh();
       router.push(`/workspace/${workspaceId}/page/${newPage.id}`);
+    } else {
+      console.error("페이지 복제 실패:", res.status);
     }
     onClose();
   }
 
   async function handleToggleFavorite() {
-    if (menu.isFavorited) {
-      await fetch("/api/favorites", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pageId: menu.pageId }),
-      });
-    } else {
-      await fetch("/api/favorites", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pageId: menu.pageId }),
-      });
+    const res = menu.isFavorited
+      ? await fetch("/api/favorites", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pageId: menu.pageId }),
+        })
+      : await fetch("/api/favorites", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pageId: menu.pageId }),
+        });
+    if (!res.ok) {
+      console.error("즐겨찾기 변경 실패:", res.status);
     }
     onRefresh();
     onClose();
@@ -539,45 +548,23 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
           )}
         </div>
 
-        <button
-          onClick={() => router.push(`/workspace/${workspace.id}/daily`)}
-          className="flex items-center gap-2 w-full px-2 py-1 rounded text-sm hover:opacity-70 mb-1"
-          style={{ color: "var(--muted)" }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = "var(--sidebar-hover)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-        >
-          <BookOpen size={14} /> 오늘의 노트
-        </button>
-
-        <button
-          onClick={() => router.push(`/workspace/${workspace.id}/graph`)}
-          className="flex items-center gap-2 w-full px-2 py-1 rounded text-sm hover:opacity-70 mb-1"
-          style={{ color: "var(--muted)" }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = "var(--sidebar-hover)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-        >
-          <Network size={14} /> 지식 그래프
-        </button>
-
-        <button
-          onClick={() => router.push(`/workspace/${workspace.id}/calendar`)}
-          className="flex items-center gap-2 w-full px-2 py-1 rounded text-sm hover:opacity-70 mb-1"
-          style={{ color: "var(--muted)" }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = "var(--sidebar-hover)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-        >
-          <Calendar size={14} /> 캘린더
-        </button>
-
-        <button
-          onClick={() => router.push(`/workspace/${workspace.id}/todos`)}
-          className="flex items-center gap-2 w-full px-2 py-1 rounded text-sm hover:opacity-70 mb-1"
-          style={{ color: "var(--muted)" }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = "var(--sidebar-hover)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-        >
-          <CheckSquare size={14} /> 할 일
-        </button>
+        {[
+          { href: "daily", icon: <BookOpen size={14} />, label: "오늘의 노트" },
+          { href: "graph", icon: <Network size={14} />, label: "지식 그래프" },
+          { href: "calendar", icon: <Calendar size={14} />, label: "캘린더" },
+          { href: "todos", icon: <CheckSquare size={14} />, label: "할 일" },
+        ].map((nav) => (
+          <button
+            key={nav.href}
+            onClick={() => router.push(`/workspace/${workspace.id}/${nav.href}`)}
+            className="flex items-center gap-2 w-full px-2 py-1 rounded text-sm hover:opacity-70 mb-1"
+            style={{ color: "var(--muted)" }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "var(--sidebar-hover)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+          >
+            {nav.icon} {nav.label}
+          </button>
+        ))}
 
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={rootPages.map((p) => p.id)} strategy={verticalListSortingStrategy}>
@@ -789,7 +776,7 @@ function SortablePageItem({
     <div ref={setNodeRef} style={style}>
       <div
         role="treeitem"
-        aria-selected={false}
+        aria-selected={isSelected}
         aria-expanded={children.length > 0 ? expanded : undefined}
         tabIndex={0}
         className="flex items-center group rounded px-1 py-0.5 cursor-pointer text-sm"

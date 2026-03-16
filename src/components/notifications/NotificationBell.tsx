@@ -89,10 +89,24 @@ export function NotificationBell({ workspaceId }: NotificationBellProps) {
     }
   }, [workspaceId]);
 
-  // Initial fetch and polling every 30s
+  // Initial fetch and polling with configurable interval from localStorage
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
+
+    let pollInterval: string | null = null;
+    try {
+      pollInterval = localStorage.getItem("notification-poll-interval");
+    } catch {
+      // ignore
+    }
+
+    // "off" disables polling entirely
+    if (pollInterval === "off") return;
+
+    const ms = pollInterval ? parseInt(pollInterval, 10) : 30000;
+    const intervalMs = isNaN(ms) || ms < 5000 ? 30000 : ms;
+
+    const interval = setInterval(fetchNotifications, intervalMs);
     return () => clearInterval(interval);
   }, [fetchNotifications]);
 
@@ -168,10 +182,12 @@ export function NotificationBell({ workspaceId }: NotificationBellProps) {
       {/* Dropdown panel */}
       {open && (
         <div
+          role="menu"
           className="absolute left-0 top-full mt-1 z-[90] rounded-lg shadow-xl overflow-hidden"
           style={{
             background: "var(--background)",
             border: "1px solid var(--border)",
+            maxWidth: "min(320px, calc(100vw - 2rem))",
             width: 320,
             maxHeight: 420,
           }}
@@ -203,11 +219,16 @@ export function NotificationBell({ workspaceId }: NotificationBellProps) {
               >
                 <Bell size={24} className="mb-2 opacity-40" />
                 알림이 없습니다
+                <p className="text-xs mt-1 text-center" style={{ color: "var(--muted)", opacity: 0.7 }}>
+                  멘션, 마감일 알림 등이 여기에 표시됩니다.
+                </p>
               </div>
             ) : (
               notifications.map((notification) => (
                 <div
                   key={notification.id}
+                  role="menuitem"
+                  tabIndex={0}
                   className="flex items-start gap-2.5 px-3 py-2.5 cursor-pointer transition-colors"
                   style={{
                     background: notification.read ? "transparent" : "var(--sidebar-hover)",
@@ -222,6 +243,12 @@ export function NotificationBell({ workspaceId }: NotificationBellProps) {
                       : "var(--sidebar-hover)";
                   }}
                   onClick={() => handleNotificationClick(notification)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleNotificationClick(notification);
+                    }
+                  }}
                 >
                   <span className="mt-0.5 shrink-0">
                     {getTypeIcon(notification.type)}

@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, checkWorkspaceAccess } from "@/lib/auth/helpers";
+import { createAuditActor, getAuditRequestContext, recordAuditLog } from "@/lib/audit";
 import { rateLimitRedis } from "@/lib/rateLimit";
+import { logError } from "@/lib/logger";
 import { z } from "zod";
 
 const createTodoSchema = z.object({
-  title: z.string().min(1, "제목은 필수입니다").max(500, "제목은 500자 이하여야 합니다"),
+  title: z.string().min(1, "Title is required").max(500, "Title must be 500 characters or less"),
   description: z.string().max(5000).optional().nullable(),
   priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
   dueDate: z.string().datetime().optional().nullable(),
@@ -61,8 +63,12 @@ export async function GET(
     const completedCount = todos.filter((t) => t.completed).length;
 
     return NextResponse.json({ todos, total, completedCount });
-  } catch {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    logError("todos.get.unhandled_error", error);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
 
@@ -73,6 +79,7 @@ export async function POST(
   try {
     const user = await requireAuth();
     const { workspaceId } = await params;
+    const requestContext = getAuditRequestContext(req);
 
     const member = await checkWorkspaceAccess(user.id, workspaceId, [
       "owner",
@@ -105,7 +112,7 @@ export async function POST(
       });
       if (!assigneeMember) {
         return NextResponse.json(
-          { error: "담당자가 워크스페이스 멤버가 아닙니다." },
+          { error: "Assignee is not a workspace member" },
           { status: 400 }
         );
       }
@@ -134,6 +141,19 @@ export async function POST(
         createdBy: { select: { id: true, name: true, email: true } },
         page: { select: { id: true, title: true, slug: true } },
       },
+    });
+
+    await recordAuditLog({
+      action: "todo.created",
+      actor: createAuditActor(user, member.role),
+      workspaceId,
+      targetId: todo.id,
+      targetType: "todo",
+      metadata: {
+        title: todo.title,
+        priority: todo.priority,
+      },
+      context: requestContext,
     });
 
     return NextResponse.json(todo, { status: 201 });

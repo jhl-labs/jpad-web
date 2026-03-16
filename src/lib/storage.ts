@@ -65,7 +65,7 @@ export async function uploadFile(
   }
 
   // Local storage
-  const fullPath = path.join(LOCAL_UPLOAD_DIR, key);
+  const fullPath = resolveLocalPath(key);
   await fs.promises.mkdir(path.dirname(fullPath), { recursive: true });
   await fs.promises.writeFile(fullPath, data);
   return { path: key, storage: "local" };

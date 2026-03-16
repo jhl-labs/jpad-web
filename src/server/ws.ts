@@ -433,17 +433,23 @@ wss.on("connection", async (ws: WebSocket, req) => {
 
       const snapshot = Y.encodeStateAsUpdate(shared.ydoc);
 
-      docs.delete(docName);
-      shared.ydoc.off("update", shared.updateHandler);
-      shared.awareness.destroy();
-      shared.ydoc.destroy();
+      // snapshot 저장을 먼저 완료한 후 정리
+      void (async () => {
+        try {
+          await saveDocSnapshot(docName, snapshot);
+        } catch (err) {
+          console.error("Yjs snapshot flush error:", err);
+        } finally {
+          docs.delete(docName);
+          shared.ydoc.off("update", shared.updateHandler);
+          shared.awareness.destroy();
+          shared.ydoc.destroy();
 
-      void sub.unsubscribe(`yjs:${docName}`).catch((err) => {
-        console.error("Redis unsubscribe error:", err);
-      });
-      void saveDocSnapshot(docName, snapshot).catch((err) => {
-        console.error("Yjs snapshot flush error:", err);
-      });
+          void sub.unsubscribe(`yjs:${docName}`).catch((err) => {
+            console.error("Redis unsubscribe error:", err);
+          });
+        }
+      })();
     }
   });
 });
