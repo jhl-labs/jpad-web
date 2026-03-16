@@ -4,6 +4,7 @@ import { exchangeCodeForTokens } from "@/lib/googleCalendar";
 import { encryptSecret } from "@/lib/secrets";
 import { prisma } from "@/lib/prisma";
 import { getWorkspaceGoogleCredentials } from "@/lib/googleCalendarSync";
+import { logError } from "@/lib/logger";
 
 /**
  * GET /api/google-calendar/callback
@@ -37,7 +38,8 @@ export async function GET(req: NextRequest) {
     let state: { workspaceId: string; userId: string };
     try {
       state = JSON.parse(Buffer.from(stateRaw, "base64url").toString("utf-8"));
-    } catch {
+    } catch (error) {
+      logError("google-calendar.callback.invalid_state", error);
       return NextResponse.json({ error: "Invalid state" }, { status: 400 });
     }
 

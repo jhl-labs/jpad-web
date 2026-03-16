@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { reconcileSamlUser, sanitizeAuthCallbackUrl, validateSamlResponse } from "@/lib/auth/saml";
 import { createSsoLoginToken } from "@/lib/auth/ssoLoginToken";
+import { logError } from "@/lib/logger";
 
 export const runtime = "nodejs";
 
@@ -41,7 +42,8 @@ export async function POST(request: NextRequest) {
       sanitizeAuthCallbackUrl(typeof relayState === "string" ? relayState : null)
     );
     return NextResponse.redirect(completionUrl);
-  } catch {
+  } catch (error) {
+    logError("auth.saml.acs_failed", error);
     loginUrl.searchParams.set("error", "SAMLResponseInvalid");
     return NextResponse.redirect(loginUrl);
   }

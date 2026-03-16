@@ -278,7 +278,8 @@ export async function PATCH(
     let body: unknown;
     try {
       body = await req.json();
-    } catch {
+    } catch (error) {
+      logError("scim.user.patch_json_parse_failed", error);
       return scimError("Invalid SCIM JSON payload", 400, "invalidSyntax");
     }
 

@@ -4,6 +4,7 @@ import { requireAuth, checkWorkspaceAccess } from "@/lib/auth/helpers";
 import { createAuditActor, getAuditRequestContext, recordAuditLog } from "@/lib/audit";
 import { readPage } from "@/lib/git/repository";
 import { logError } from "@/lib/logger";
+import { rateLimitRedis } from "@/lib/rateLimit";
 import { permanentlyDeletePageSubtree } from "@/lib/pageLifecycle";
 import {
   collectPageAncestors,
@@ -21,6 +22,14 @@ export async function PATCH(
 ) {
   try {
     const user = await requireAuth();
+
+    if (!(await rateLimitRedis(`trash-manage:${user.id}`, 30, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
+    }
+
     const { pageId } = await params;
     const requestContext = getAuditRequestContext(_req);
 
@@ -99,6 +108,14 @@ export async function DELETE(
 ) {
   try {
     const user = await requireAuth();
+
+    if (!(await rateLimitRedis(`trash-manage:${user.id}`, 30, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
+    }
+
     const { pageId } = await params;
     const requestContext = getAuditRequestContext(_req);
 

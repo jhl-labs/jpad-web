@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth/helpers";
 import { checkOrganizationAccess } from "@/lib/organizations";
+import { logError } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(
@@ -62,7 +63,11 @@ export async function GET(
       data: groups,
       workspaces,
     });
-  } catch {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    logError("organization.scim_groups.list_failed", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

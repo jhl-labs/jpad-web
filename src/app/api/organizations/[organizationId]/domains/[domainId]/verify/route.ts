@@ -7,6 +7,8 @@ import {
   checkOrganizationAccess,
 } from "@/lib/organizations";
 import { createAuditActor, getAuditRequestContext, recordAuditLog } from "@/lib/audit";
+import { logError } from "@/lib/logger";
+import { rateLimitRedis } from "@/lib/rateLimit";
 
 export async function POST(
   req: NextRequest,
@@ -14,6 +16,14 @@ export async function POST(
 ) {
   try {
     const user = await requireAuth();
+
+    if (!(await rateLimitRedis(`org-domain-verify:${user.id}`, 20, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
+    }
+
     const { organizationId, domainId } = await params;
     const requestContext = getAuditRequestContext(req);
     const member = await checkOrganizationAccess(user.id, organizationId, [
@@ -43,7 +53,8 @@ export async function POST(
     try {
       const txtRecords = await resolveTxt(instructions.name);
       resolvedRecords = txtRecords.flat().map((value) => value.trim());
-    } catch {
+    } catch (error) {
+      logError("organization.domain.dns_resolve_failed", error, { domainId });
       return NextResponse.json(
         {
           error: "DNS TXT 레코드를 확인할 수 없습니다.",
@@ -90,7 +101,11 @@ export async function POST(
     });
 
     return NextResponse.json({ success: true, domain: verifiedDomain });
-  } catch {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    logError("organization.domain.verify_failed", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

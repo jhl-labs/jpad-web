@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateSamlServiceProviderMetadata } from "@/lib/auth/saml";
+import { logError } from "@/lib/logger";
 
 export const runtime = "nodejs";
 
@@ -12,7 +13,8 @@ export async function GET() {
         "cache-control": "public, max-age=300",
       },
     });
-  } catch {
+  } catch (error) {
+    logError("auth.saml.metadata_failed", error);
     return NextResponse.json(
       { error: "SAML provider is not configured" },
       { status: 404 }

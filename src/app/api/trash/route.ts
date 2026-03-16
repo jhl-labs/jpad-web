@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, checkWorkspaceAccess } from "@/lib/auth/helpers";
 import { logError } from "@/lib/logger";
+import { rateLimitRedis } from "@/lib/rateLimit";
 
 export async function GET(req: NextRequest) {
   try {
@@ -71,6 +72,14 @@ export async function GET(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const user = await requireAuth();
+
+    if (!(await rateLimitRedis(`trash-purge:${user.id}`, 5, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
+    }
+
     const workspaceId = req.nextUrl.searchParams.get("workspaceId");
 
     if (!workspaceId) {

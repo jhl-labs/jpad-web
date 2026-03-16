@@ -4,6 +4,7 @@ import path from "node:path";
 import { requireAuth } from "@/lib/auth/helpers";
 import { rateLimitRedis } from "@/lib/rateLimit";
 import { listAccessiblePages } from "@/lib/pageAccess";
+import { logError } from "@/lib/logger";
 import {
   extractPlainTextFromMarkdown,
   getSemanticSearchResults,
@@ -83,8 +84,8 @@ async function searchContent(
 
       if (results.length >= MAX_RESULTS) break;
     }
-  } catch {
-    // repo directory might not exist yet
+  } catch (error) {
+    logError("pages.search.content_read_failed", error, { workspaceId });
   }
 
   return results;

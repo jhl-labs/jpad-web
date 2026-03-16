@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAuditActor, getAuditRequestContext, recordAuditLog } from "@/lib/audit";
 import { requireAuth } from "@/lib/auth/helpers";
 import { checkOrganizationAccess } from "@/lib/organizations";
+import { logError } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
+import { rateLimitRedis } from "@/lib/rateLimit";
 
 export async function DELETE(
   req: NextRequest,
@@ -12,6 +14,14 @@ export async function DELETE(
 ) {
   try {
     const user = await requireAuth();
+
+    if (!(await rateLimitRedis(`scim-token-revoke:${user.id}`, 10, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
+    }
+
     const { organizationId, tokenId } = await params;
     const requestContext = getAuditRequestContext(req);
     const member = await checkOrganizationAccess(user.id, organizationId, [
@@ -59,7 +69,11 @@ export async function DELETE(
     });
 
     return NextResponse.json({ success: true });
-  } catch {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    logError("organization.scim_token.revoke_failed", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

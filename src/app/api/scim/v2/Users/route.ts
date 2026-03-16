@@ -83,7 +83,8 @@ export async function POST(req: NextRequest) {
     let body: unknown;
     try {
       body = await req.json();
-    } catch {
+    } catch (error) {
+      logError("scim.users.create_json_parse_failed", error);
       return scimError("Invalid SCIM JSON payload", 400, "invalidSyntax");
     }
 

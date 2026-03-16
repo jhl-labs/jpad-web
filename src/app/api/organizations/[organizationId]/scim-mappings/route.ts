@@ -3,7 +3,9 @@ import { z } from "zod";
 import { createAuditActor, getAuditRequestContext, recordAuditLog } from "@/lib/audit";
 import { requireAuth } from "@/lib/auth/helpers";
 import { checkOrganizationAccess } from "@/lib/organizations";
+import { logError } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
+import { rateLimitRedis } from "@/lib/rateLimit";
 import {
   syncWorkspaceScimAccessForWorkspaces,
   validateWorkspaceScimMappingInput,
@@ -21,6 +23,14 @@ export async function POST(
 ) {
   try {
     const user = await requireAuth();
+
+    if (!(await rateLimitRedis(`scim-mapping-create:${user.id}`, 10, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
+    }
+
     const { organizationId } = await params;
     const requestContext = getAuditRequestContext(req);
     const member = await checkOrganizationAccess(user.id, organizationId, [
@@ -109,7 +119,11 @@ export async function POST(
     });
 
     return NextResponse.json(mapping, { status: 201 });
-  } catch {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    logError("organization.scim_mapping.create_failed", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
