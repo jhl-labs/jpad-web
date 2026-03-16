@@ -23,6 +23,6 @@ export function rewriteWikiLinksForMarkdown(
   });
 }
 
-function escapeMarkdownLabel(value: string): string {
+export function escapeMarkdownLabel(value: string): string {
   return value.replaceAll("[", "\\[").replaceAll("]", "\\]");
 }

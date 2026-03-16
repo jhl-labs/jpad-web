@@ -79,7 +79,7 @@ export async function GET(
       );
     }
 
-    // 자동 생성
+    // 자동 생성: DB 먼저 생성 후 git 저장 (DB 실패 시 git 파일이 남지 않도록)
     const title = formatDailyTitle(dateStr);
     const content = getDefaultContent();
 
@@ -100,15 +100,21 @@ export async function GET(
       },
     });
 
-    // git에 초기 내용 저장
-    await initRepo(workspaceId);
-    await savePage(
-      workspaceId,
-      slug,
-      `# ${title}\n\n${content}`,
-      user.name,
-      `Create daily note: ${title}`
-    );
+    try {
+      // git에 초기 내용 저장
+      await initRepo(workspaceId);
+      await savePage(
+        workspaceId,
+        slug,
+        `# ${title}\n\n${content}`,
+        user.name,
+        `Create daily note: ${title}`
+      );
+    } catch (gitError) {
+      // git 저장 실패 시 DB 레코드 롤백
+      await prisma.page.delete({ where: { id: page.id } });
+      throw gitError;
+    }
 
     return NextResponse.json(page, { status: 201 });
   } catch (e) {

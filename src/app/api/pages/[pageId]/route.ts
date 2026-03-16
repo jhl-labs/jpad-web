@@ -126,6 +126,9 @@ export async function PATCH(
       if (data.coverImage !== null && typeof data.coverImage !== "string") {
         return NextResponse.json({ error: "coverImage must be a string or null" }, { status: 400 });
       }
+      if (typeof data.coverImage === "string" && data.coverImage.length > 2000) {
+        return NextResponse.json({ error: "coverImage must be 2000 characters or less" }, { status: 400 });
+      }
       updateData.coverImage = data.coverImage;
     }
     if (data.parentId !== undefined) {
@@ -160,7 +163,12 @@ export async function PATCH(
 
       updateData.parentId = data.parentId;
     }
-    if (data.position !== undefined) updateData.position = data.position;
+    if (data.position !== undefined) {
+      if (typeof data.position !== "number" || !Number.isInteger(data.position) || data.position < 0) {
+        return NextResponse.json({ error: "position must be a non-negative integer" }, { status: 400 });
+      }
+      updateData.position = data.position;
+    }
 
     const updated = await prisma.page.update({
       where: { id: pageId },
@@ -235,11 +243,14 @@ export async function DELETE(
     const subtree = collectPageSubtree(workspacePages, pageId);
     const deletedAt = new Date();
 
-    await prisma.page.updateMany({
-      where: { id: { in: subtree.map((entry) => entry.id) } },
-      data: { isDeleted: true, deletedAt },
+    const subtreeIds = subtree.map((entry) => entry.id);
+    await prisma.$transaction(async (tx) => {
+      await tx.page.updateMany({
+        where: { id: { in: subtreeIds } },
+        data: { isDeleted: true, deletedAt },
+      });
+      await removePageEmbeddings(subtreeIds);
     });
-    await removePageEmbeddings(subtree.map((entry) => entry.id));
 
     await recordAuditLog({
       action: "page.deleted",

@@ -373,7 +373,7 @@ export function QuickSwitcher({ workspaceId, isOpen, onClose }: QuickSwitcherPro
                               : "var(--sidebar-bg)",
                           color:
                             result.matchType === "semantic"
-                              ? "#2563eb"
+                              ? "var(--primary)"
                               : "var(--muted)",
                         }}
                       >

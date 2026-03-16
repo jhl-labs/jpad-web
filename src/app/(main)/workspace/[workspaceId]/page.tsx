@@ -107,6 +107,36 @@ export default function WorkspaceHomePage() {
     },
   ];
 
+  const quickLinksGrid = (
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+      {quickLinks.map((link) => (
+        <button
+          key={link.label}
+          onClick={() => router.push(link.href)}
+          className="flex items-center gap-3 p-3 rounded-lg text-left transition-colors"
+          style={{
+            border: "1px solid var(--border)",
+            background: "var(--background)",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "var(--sidebar-hover)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "var(--background)";
+          }}
+        >
+          {link.icon}
+          <div>
+            <div className="text-sm font-medium">{link.label}</div>
+            <div className="text-xs" style={{ color: "var(--muted)" }}>
+              {link.description}
+            </div>
+          </div>
+        </button>
+      ))}
+    </div>
+  );
+
   return (
     <div className="h-full overflow-auto">
       <div className="max-w-4xl mx-auto px-6 py-12">
@@ -169,39 +199,7 @@ export default function WorkspaceHomePage() {
               </div>
             </div>
 
-            {/* 바로가기 카드 3개 */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6">
-              {quickLinks.map((link) => (
-                <button
-                  key={link.label}
-                  onClick={() => router.push(link.href)}
-                  className="flex items-start gap-3 p-4 rounded-lg text-left transition-colors"
-                  style={{
-                    border: "1px solid var(--border)",
-                    background: "var(--background)",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "var(--sidebar-hover)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "var(--background)";
-                  }}
-                >
-                  <div
-                    className="p-2 rounded-lg shrink-0"
-                    style={{ background: "var(--sidebar-bg)" }}
-                  >
-                    {link.icon}
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium">{link.label}</div>
-                    <div className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
-                      {link.description}
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
+            {quickLinksGrid}
           </section>
         ) : (
           /* 빈 상태가 아닐 때 빠른 시작 */
@@ -241,34 +239,7 @@ export default function WorkspaceHomePage() {
               </button>
             </div>
 
-            {/* 바로가기 카드 */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
-              {quickLinks.map((link) => (
-                <button
-                  key={link.label}
-                  onClick={() => router.push(link.href)}
-                  className="flex items-center gap-3 p-3 rounded-lg text-left transition-colors"
-                  style={{
-                    border: "1px solid var(--border)",
-                    background: "var(--background)",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "var(--sidebar-hover)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "var(--background)";
-                  }}
-                >
-                  {link.icon}
-                  <div>
-                    <div className="text-sm font-medium">{link.label}</div>
-                    <div className="text-xs" style={{ color: "var(--muted)" }}>
-                      {link.description}
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
+            {quickLinksGrid}
           </section>
         )}
 

@@ -292,7 +292,7 @@ sub.on("message", (channel: string, message: string) => {
   }
 });
 
-function getAllowedOrigins(): Set<string> {
+function computeAllowedOrigins(): Set<string> {
   const origins = new Set<string>();
   const nextauthUrl = process.env.NEXTAUTH_URL;
   if (nextauthUrl) {
@@ -305,11 +305,13 @@ function getAllowedOrigins(): Set<string> {
   return origins;
 }
 
+// Cache allowed origins at module level (env vars don't change at runtime)
+const cachedAllowedOrigins = computeAllowedOrigins();
+
 function isOriginAllowed(origin: string | undefined): boolean {
   if (!origin) return true; // non-browser clients (curl, etc.)
   if (process.env.NODE_ENV !== "production") return true; // dev: allow all
-  const allowed = getAllowedOrigins();
-  return allowed.has(origin);
+  return cachedAllowedOrigins.has(origin);
 }
 
 const wss = new WebSocketServer({ port: PORT });

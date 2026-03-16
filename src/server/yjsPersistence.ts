@@ -1,7 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 
-const SNAPSHOT_DIR = path.join(process.cwd(), "data", "yjs");
+const SNAPSHOT_DIR = process.env.YJS_SNAPSHOT_DIR
+  ? path.resolve(process.env.YJS_SNAPSHOT_DIR)
+  : path.join(process.cwd(), "data", "yjs");
 
 function sanitizeSegment(value: string) {
   return value.replace(/[^a-zA-Z0-9._-]/g, "_");

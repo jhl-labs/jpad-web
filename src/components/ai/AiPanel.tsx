@@ -22,6 +22,7 @@ import {
   RotateCcw,
   Trash2,
 } from "lucide-react";
+import { parseSSEStream } from "@/lib/sseUtils";
 
 interface AiPanelProps {
   workspaceId: string;
@@ -276,30 +277,10 @@ export function AiPanel({
         }
 
         if (res.headers.get("content-type")?.includes("text/event-stream")) {
-          const reader = res.body?.getReader();
-          const decoder = new TextDecoder();
           let accumulated = "";
-
-          if (reader) {
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-              const chunk = decoder.decode(value, { stream: true });
-              for (const line of chunk.split("\n")) {
-                if (line.startsWith("data: ")) {
-                  try {
-                    const parsed = JSON.parse(line.slice(6));
-                    if (parsed.text) {
-                      accumulated += parsed.text;
-                      setResult(accumulated);
-                    }
-                    if (parsed.error) setError(parsed.error);
-                  } catch {
-                    /* incomplete chunk */
-                  }
-                }
-              }
-            }
+          for await (const text of parseSSEStream(res)) {
+            accumulated += text;
+            setResult(accumulated);
           }
         } else {
           const data = await res.json();
@@ -370,29 +351,10 @@ export function AiPanel({
       }
 
       if (res.headers.get("content-type")?.includes("text/event-stream")) {
-        const reader = res.body?.getReader();
-        const decoder = new TextDecoder();
         let accumulated = "";
-
-        if (reader) {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            const chunk = decoder.decode(value, { stream: true });
-            for (const line of chunk.split("\n")) {
-              if (line.startsWith("data: ")) {
-                try {
-                  const parsed = JSON.parse(line.slice(6));
-                  if (parsed.text) {
-                    accumulated += parsed.text;
-                    setStreamingContent(accumulated);
-                  }
-                } catch {
-                  /* ignore */
-                }
-              }
-            }
-          }
+        for await (const text of parseSSEStream(res)) {
+          accumulated += text;
+          setStreamingContent(accumulated);
         }
 
         setMessages((prev) => [...prev, { role: "assistant", content: accumulated }]);

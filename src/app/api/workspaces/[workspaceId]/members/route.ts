@@ -143,7 +143,12 @@ export async function DELETE(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { userId } = await req.json();
+    const { userId: rawUserId } = await req.json();
+
+    if (typeof rawUserId !== "string" || !rawUserId.trim()) {
+      return NextResponse.json({ error: "userId must be a non-empty string" }, { status: 400 });
+    }
+    const userId = rawUserId.trim();
 
     if (userId === user.id) {
       return NextResponse.json(

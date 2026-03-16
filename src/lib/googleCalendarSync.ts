@@ -153,6 +153,9 @@ export async function pullFromGoogle(
 
   const seenGoogleIds = new Set<string>();
 
+  // Collect all DB operations to batch in a single transaction
+  const dbOps: Array<ReturnType<typeof prisma.calendarEvent.update | typeof prisma.calendarEvent.create | typeof prisma.calendarEvent.delete>> = [];
+
   for (const gEvent of googleEvents) {
     if (gEvent.status === "cancelled") continue;
     seenGoogleIds.add(gEvent.id);
@@ -169,8 +172,24 @@ export async function pullFromGoogle(
         ? new Date(gEvent.updated)
         : new Date();
       if (googleUpdated > existing.updatedAt) {
-        await prisma.calendarEvent.update({
-          where: { id: existing.id },
+        dbOps.push(
+          prisma.calendarEvent.update({
+            where: { id: existing.id },
+            data: {
+              title: gEvent.summary || "Untitled",
+              description: gEvent.description || null,
+              location: gEvent.location || null,
+              startAt: startInfo.date,
+              endAt: endInfo?.date || null,
+              allDay: startInfo.allDay,
+            },
+          })
+        );
+        updated++;
+      }
+    } else {
+      dbOps.push(
+        prisma.calendarEvent.create({
           data: {
             title: gEvent.summary || "Untitled",
             description: gEvent.description || null,
@@ -178,24 +197,12 @@ export async function pullFromGoogle(
             startAt: startInfo.date,
             endAt: endInfo?.date || null,
             allDay: startInfo.allDay,
+            googleEventId: gEvent.id,
+            workspaceId,
+            createdById: userId,
           },
-        });
-        updated++;
-      }
-    } else {
-      await prisma.calendarEvent.create({
-        data: {
-          title: gEvent.summary || "Untitled",
-          description: gEvent.description || null,
-          location: gEvent.location || null,
-          startAt: startInfo.date,
-          endAt: endInfo?.date || null,
-          allDay: startInfo.allDay,
-          googleEventId: gEvent.id,
-          workspaceId,
-          createdById: userId,
-        },
-      });
+        })
+      );
       created++;
     }
   }
@@ -203,16 +210,19 @@ export async function pullFromGoogle(
   // Delete jpad events whose Google counterpart no longer exists
   for (const [googleId, ev] of existingByGoogleId) {
     if (!seenGoogleIds.has(googleId)) {
-      await prisma.calendarEvent.delete({ where: { id: ev.id } });
+      dbOps.push(prisma.calendarEvent.delete({ where: { id: ev.id } }));
       deleted++;
     }
   }
 
-  // Update lastSyncAt
-  await prisma.googleCalendarConnection.update({
-    where: { id: connection.id },
-    data: { lastSyncAt: new Date() },
-  });
+  // Execute all DB operations + lastSyncAt update in a single transaction
+  await prisma.$transaction([
+    ...dbOps,
+    prisma.googleCalendarConnection.update({
+      where: { id: connection.id },
+      data: { lastSyncAt: new Date() },
+    }),
+  ]);
 
   return { created, updated, deleted };
 }
@@ -245,24 +255,36 @@ export async function pushToGoogle(
   let created = 0;
   let updated = 0;
 
-  for (const ev of localOnly) {
-    const gEvent = await createGoogleEvent(
-      accessToken,
-      connection.calendarId,
-      {
-        summary: ev.title,
-        description: ev.description || undefined,
-        location: ev.location || undefined,
-        start: toGoogleDateTime(ev.startAt, ev.allDay),
-        end: toGoogleDateTime(ev.endAt || ev.startAt, ev.allDay),
-      }
-    );
+  // Create new Google events in parallel (respecting API rate limits with allSettled)
+  const createResults = await Promise.allSettled(
+    localOnly.map(async (ev) => {
+      const gEvent = await createGoogleEvent(
+        accessToken,
+        connection.calendarId,
+        {
+          summary: ev.title,
+          description: ev.description || undefined,
+          location: ev.location || undefined,
+          start: toGoogleDateTime(ev.startAt, ev.allDay),
+          end: toGoogleDateTime(ev.endAt || ev.startAt, ev.allDay),
+        }
+      );
+      return { localId: ev.id, googleEventId: gEvent.id };
+    })
+  );
 
-    await prisma.calendarEvent.update({
-      where: { id: ev.id },
-      data: { googleEventId: gEvent.id },
-    });
-    created++;
+  // Batch all prisma updates for newly created events in a single transaction
+  const createDbOps: Array<ReturnType<typeof prisma.calendarEvent.update>> = [];
+  for (const result of createResults) {
+    if (result.status === "fulfilled") {
+      createDbOps.push(
+        prisma.calendarEvent.update({
+          where: { id: result.value.localId },
+          data: { googleEventId: result.value.googleEventId },
+        })
+      );
+      created++;
+    }
   }
 
   // Push updates for events that already have a googleEventId and were
@@ -276,28 +298,36 @@ export async function pushToGoogle(
       },
     });
 
-    for (const ev of modifiedSinceSync) {
-      if (!ev.googleEventId) continue;
-      await updateGoogleEvent(
-        accessToken,
-        connection.calendarId,
-        ev.googleEventId,
-        {
-          summary: ev.title,
-          description: ev.description || undefined,
-          location: ev.location || undefined,
-          start: toGoogleDateTime(ev.startAt, ev.allDay),
-          end: toGoogleDateTime(ev.endAt || ev.startAt, ev.allDay),
-        }
-      );
-      updated++;
-    }
+    const updateResults = await Promise.allSettled(
+      modifiedSinceSync
+        .filter((ev) => ev.googleEventId)
+        .map(async (ev) => {
+          await updateGoogleEvent(
+            accessToken,
+            connection.calendarId,
+            ev.googleEventId!,
+            {
+              summary: ev.title,
+              description: ev.description || undefined,
+              location: ev.location || undefined,
+              start: toGoogleDateTime(ev.startAt, ev.allDay),
+              end: toGoogleDateTime(ev.endAt || ev.startAt, ev.allDay),
+            }
+          );
+        })
+    );
+
+    updated += updateResults.filter((r) => r.status === "fulfilled").length;
   }
 
-  await prisma.googleCalendarConnection.update({
-    where: { id: connection.id },
-    data: { lastSyncAt: new Date() },
-  });
+  // Batch all DB updates in a single transaction
+  await prisma.$transaction([
+    ...createDbOps,
+    prisma.googleCalendarConnection.update({
+      where: { id: connection.id },
+      data: { lastSyncAt: new Date() },
+    }),
+  ]);
 
   return { created, updated };
 }

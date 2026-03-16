@@ -57,6 +57,12 @@ export async function POST(req: NextRequest) {
             { status: 400 }
           );
         }
+        if (typeof entry.content === "string" && entry.content.length > 10000) {
+          return NextResponse.json(
+            { error: "Each history entry content must be 10000 characters or less" },
+            { status: 400 }
+          );
+        }
       }
     }
 
@@ -101,15 +107,16 @@ export async function POST(req: NextRequest) {
       if (semanticMatches.length > 0) {
         context = buildSemanticContext(semanticMatches);
       } else {
-        const pageContents: string[] = [];
-        for (const page of [...accessiblePages]
+        const topPages = [...accessiblePages]
           .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
-          .slice(0, 10)) {
-          const content = await readPage(contextInfo.workspaceId, page.slug);
-          if (content) {
-            pageContents.push(`## ${page.title}\n${content}`);
-          }
-        }
+          .slice(0, 10);
+        const pageResults = await Promise.all(
+          topPages.map(async (page) => {
+            const content = await readPage(contextInfo.workspaceId, page.slug);
+            return content ? `## ${page.title}\n${content}` : null;
+          })
+        );
+        const pageContents = pageResults.filter((c): c is string => c !== null);
 
         context =
           pageContents.length > 0

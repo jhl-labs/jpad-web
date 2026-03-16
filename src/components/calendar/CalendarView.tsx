@@ -743,9 +743,9 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
                 fontWeight: 600,
                 color:
                   i === 0
-                    ? "#ef4444"
+                    ? "rgba(239,68,68,0.8)"
                     : i === 6
-                      ? "#3b82f6"
+                      ? "rgba(59,130,246,0.8)"
                       : "var(--foreground)",
                 background: "var(--muted)",
               }}
@@ -799,9 +799,9 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
                     color: isToday
                       ? "var(--primary)"
                       : dayOfWeek === 0
-                        ? "#ef4444"
+                        ? "rgba(239,68,68,0.8)"
                         : dayOfWeek === 6
-                          ? "#3b82f6"
+                          ? "rgba(59,130,246,0.8)"
                           : "var(--foreground)",
                     padding: "2px 4px",
                     borderRadius: isToday ? "50%" : 0,
@@ -830,7 +830,7 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
                         padding: "1px 4px",
                         marginBottom: 1,
                         borderRadius: 3,
-                        background: ev.color || "#3b82f6",
+                        background: ev.color || "var(--primary)",
                         color: "#fff",
                         whiteSpace: "nowrap",
                         overflow: "hidden",
@@ -1255,8 +1255,8 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
                       onClick={handleDelete}
                       style={{
                         background: "none",
-                        border: "1px solid #ef4444",
-                        color: "#ef4444",
+                        border: "1px solid rgba(239,68,68,0.6)",
+                        color: "rgba(239,68,68,0.6)",
                         borderRadius: 6,
                         padding: "7px 14px",
                         cursor: "pointer",

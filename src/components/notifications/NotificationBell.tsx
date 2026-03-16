@@ -49,13 +49,13 @@ function getRelativeTime(dateStr: string): string {
 function getTypeIcon(type: string) {
   switch (type) {
     case "todo_due":
-      return <CheckCircle2 size={14} style={{ color: "#f59e0b" }} />;
+      return <CheckCircle2 size={14} style={{ color: "rgba(245,158,11,0.8)" }} />;
     case "event_reminder":
-      return <Clock size={14} style={{ color: "#3b82f6" }} />;
+      return <Clock size={14} style={{ color: "var(--primary)" }} />;
     case "mention":
-      return <AtSign size={14} style={{ color: "#8b5cf6" }} />;
+      return <AtSign size={14} style={{ color: "rgba(139,92,246,0.8)" }} />;
     case "assignment":
-      return <UserPlus size={14} style={{ color: "#10b981" }} />;
+      return <UserPlus size={14} style={{ color: "rgba(16,185,129,0.8)" }} />;
     case "system":
     default:
       return <Info size={14} style={{ color: "var(--muted)" }} />;

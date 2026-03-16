@@ -54,6 +54,12 @@ export async function POST(req: NextRequest) {
     });
 
     let text = typeof body.text === "string" ? body.text.trim() : "";
+    if (text.length > 50000) {
+      return NextResponse.json(
+        { error: "text must be 50000 characters or less" },
+        { status: 400 }
+      );
+    }
     if (!text && context.page) {
       text = (await readPage(context.workspaceId, context.page.slug))?.trim() || "";
     }

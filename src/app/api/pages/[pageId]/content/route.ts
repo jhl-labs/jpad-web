@@ -132,7 +132,7 @@ export async function PUT(
       }));
     }
 
-    // Remove old backlinks and create new ones in a single transaction
+    // Remove old backlinks, create new ones, and update page timestamp in a single transaction
     await prisma.$transaction(async (tx) => {
       await tx.backlink.deleteMany({ where: { fromPageId: pageId } });
       if (backlinkData.length > 0) {
@@ -141,12 +141,10 @@ export async function PUT(
           skipDuplicates: true,
         });
       }
-    });
-
-    // Update page timestamp
-    await prisma.page.update({
-      where: { id: pageId },
-      data: { updatedAt: new Date() },
+      await tx.page.update({
+        where: { id: pageId },
+        data: { updatedAt: new Date() },
+      });
     });
 
     await recordAuditLog({

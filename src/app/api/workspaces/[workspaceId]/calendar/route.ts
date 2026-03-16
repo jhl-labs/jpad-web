@@ -94,7 +94,7 @@ export async function POST(
     const body = await req.json();
     const { title, description, startAt, endAt, allDay, color, location, recurrence, pageId } = body;
 
-    if (!title || !startAt) {
+    if (!title || typeof title !== "string" || !startAt) {
       return NextResponse.json(
         { error: "Title and start time are required" },
         { status: 400 }
@@ -102,7 +102,7 @@ export async function POST(
     }
 
     // 입력 길이 검증
-    if (typeof title === "string" && title.length > 500) {
+    if (title.length > 500) {
       return NextResponse.json(
         { error: "Title must be 500 characters or less" },
         { status: 400 }
@@ -119,6 +119,15 @@ export async function POST(
         { error: "Location must be 500 characters or less" },
         { status: 400 }
       );
+    }
+
+    if (color !== undefined && color !== null) {
+      if (typeof color !== "string" || !/^#[0-9a-fA-F]{6}$/.test(color)) {
+        return NextResponse.json(
+          { error: "color must be a valid hex color (e.g. #3b82f6)" },
+          { status: 400 }
+        );
+      }
     }
 
     const event = await prisma.calendarEvent.create({

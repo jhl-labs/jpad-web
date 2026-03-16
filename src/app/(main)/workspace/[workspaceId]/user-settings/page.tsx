@@ -145,9 +145,9 @@ function LicenseBadge({ license }: { license: string }) {
         borderRadius: "9999px",
         fontSize: "11px",
         fontWeight: 600,
-        background: isMPL ? "#fef3c7" : "var(--sidebar-bg)",
-        color: isMPL ? "#92400e" : "var(--muted)",
-        border: isMPL ? "1px solid #f59e0b" : "1px solid var(--border)",
+        background: isMPL ? "rgba(245,158,11,0.1)" : "var(--sidebar-bg)",
+        color: isMPL ? "rgba(245,158,11,0.8)" : "var(--muted)",
+        border: isMPL ? "1px solid rgba(245,158,11,0.4)" : "1px solid var(--border)",
       }}
     >
       {license}

@@ -115,9 +115,15 @@ export async function PATCH(
     const updateData: Record<string, unknown> = {};
 
     if (typeof name === "string") {
+      if (name.length > 100) {
+        return NextResponse.json({ error: "name must be 100 characters or less" }, { status: 400 });
+      }
       updateData.name = name;
     }
     if (typeof description === "string" || description === null) {
+      if (typeof description === "string" && description.length > 5000) {
+        return NextResponse.json({ error: "description must be 5000 characters or less" }, { status: 400 });
+      }
       updateData.description = description;
     }
     if (visibility === "public" || visibility === "private") {

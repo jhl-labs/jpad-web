@@ -402,8 +402,10 @@ export function KnowledgeGraph({ workspaceId, currentPageId }: KnowledgeGraphPro
       ctx.restore();
     }
 
+    // Read colors once at mount; MutationObserver handles theme changes
+    readColors();
+
     function loop() {
-      readColors();
       simulate();
       draw();
       animId = requestAnimationFrame(loop);
