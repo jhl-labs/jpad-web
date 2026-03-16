@@ -1,0 +1,16 @@
+[Unit]
+Description=JPAD scheduled job (%i)
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=/srv/jpad/deploy/scripts/run-scheduled-job.sh
+ConditionPathExists=/srv/jpad/.env
+
+[Service]
+Type=oneshot
+User=jpad
+Group=jpad
+WorkingDirectory=/srv/jpad
+Environment=JPAD_ROOT=/srv/jpad
+Environment=JPAD_ENV_FILE=/srv/jpad/.env
+Environment=JPAD_LOCK_DIR=/var/lock/jpad
+ExecStart=/srv/jpad/deploy/scripts/run-scheduled-job.sh %i

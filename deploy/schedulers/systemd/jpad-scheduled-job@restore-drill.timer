@@ -1,0 +1,11 @@
+[Unit]
+Description=Run JPAD restore drill weekly
+
+[Timer]
+OnCalendar=Sun *-*-* 04:30:00
+Persistent=true
+RandomizedDelaySec=600
+Unit=jpad-scheduled-job@restore-drill.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,23 @@
+{
+  "name": "JPAD - 협업 문서 편집",
+  "short_name": "JPAD",
+  "description": "Notion 스타일 협업 문서 편집 서비스",
+  "start_url": "/workspace",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["productivity", "business"]
+}

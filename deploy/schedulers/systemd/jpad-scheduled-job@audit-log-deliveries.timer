@@ -1,0 +1,11 @@
+[Unit]
+Description=Run JPAD audit log delivery worker every 2 minutes
+
+[Timer]
+OnCalendar=*:0/2
+Persistent=true
+RandomizedDelaySec=30
+Unit=jpad-scheduled-job@audit-log-deliveries.service
+
+[Install]
+WantedBy=timers.target

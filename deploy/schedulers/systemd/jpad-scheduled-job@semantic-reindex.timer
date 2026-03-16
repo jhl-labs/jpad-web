@@ -1,0 +1,11 @@
+[Unit]
+Description=Run JPAD full semantic reindex weekly
+
+[Timer]
+OnCalendar=Sun *-*-* 01:00:00
+Persistent=true
+RandomizedDelaySec=600
+Unit=jpad-scheduled-job@semantic-reindex.service
+
+[Install]
+WantedBy=timers.target

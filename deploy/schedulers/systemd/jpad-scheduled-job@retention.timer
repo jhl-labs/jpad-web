@@ -1,0 +1,11 @@
+[Unit]
+Description=Run JPAD retention job daily
+
+[Timer]
+OnCalendar=*-*-* 03:15:00
+Persistent=true
+RandomizedDelaySec=300
+Unit=jpad-scheduled-job@retention.service
+
+[Install]
+WantedBy=timers.target

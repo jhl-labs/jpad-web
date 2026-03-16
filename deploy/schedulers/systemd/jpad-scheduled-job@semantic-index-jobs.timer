@@ -1,0 +1,11 @@
+[Unit]
+Description=Run JPAD semantic index queue worker every 5 minutes
+
+[Timer]
+OnCalendar=*:0/5
+Persistent=true
+RandomizedDelaySec=60
+Unit=jpad-scheduled-job@semantic-index-jobs.service
+
+[Install]
+WantedBy=timers.target

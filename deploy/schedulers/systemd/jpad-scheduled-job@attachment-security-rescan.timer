@@ -1,0 +1,11 @@
+[Unit]
+Description=Run JPAD attachment security rescan every hour
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+RandomizedDelaySec=180
+Unit=jpad-scheduled-job@attachment-security-rescan.service
+
+[Install]
+WantedBy=timers.target

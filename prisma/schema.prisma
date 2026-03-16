@@ -1,0 +1,812 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String    @id @default(uuid())
+  email          String    @unique
+  name           String
+  hashedPassword String?
+  oidcIssuer     String?
+  oidcSubject    String?
+  samlIssuer     String?
+  samlSubject    String?
+  lastLoginAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  memberships WorkspaceMember[]
+  organizations OrganizationMember[]
+  organizationScimIdentities OrganizationScimIdentity[]
+  workspaceScimProvisionedMembers WorkspaceScimProvisionedMember[]
+  ssoLoginTokens SsoLoginToken[]
+  comments    Comment[]
+  attachments Attachment[]
+  favorites   Favorite[]
+  pagePermissions PagePermission[]
+  calendarEvents CalendarEvent[]
+  googleCalendarConnections GoogleCalendarConnection[]
+  assignedTodos Todo[] @relation("TodoAssignee")
+  createdTodos  Todo[] @relation("TodoCreator")
+  notifications Notification[]
+  pageTemplates PageTemplate[]
+
+  @@unique([oidcIssuer, oidcSubject])
+  @@unique([samlIssuer, samlSubject])
+  @@index([email])
+}
+
+model SsoLoginToken {
+  id        String   @id @default(uuid())
+  provider  String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  userId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([provider, expiresAt])
+  @@index([userId, createdAt])
+}
+
+model Organization {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members   OrganizationMember[]
+  domains   OrganizationDomain[]
+  scimTokens OrganizationScimToken[]
+  scimIdentities OrganizationScimIdentity[]
+  scimGroups OrganizationScimGroup[]
+  workspaces Workspace[]
+
+  @@index([slug])
+}
+
+model OrganizationMember {
+  id             String   @id @default(uuid())
+  role           String   @default("member") // owner, admin, member
+  createdAt      DateTime @default(now())
+
+  organizationId String
+  userId         String
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+  @@index([userId])
+}
+
+model OrganizationDomain {
+  id                String   @id @default(uuid())
+  domain            String   @unique
+  autoJoin          Boolean  @default(false)
+  verificationToken String
+  verifiedAt        DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  organizationId String
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, createdAt])
+  @@index([domain, verifiedAt])
+}
+
+model OrganizationScimToken {
+  id             String   @id @default(uuid())
+  label          String
+  tokenHash      String   @unique
+  lastUsedAt     DateTime?
+  revokedAt      DateTime?
+  createdByUserId String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organizationId String
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, createdAt])
+  @@index([organizationId, revokedAt])
+}
+
+model OrganizationScimIdentity {
+  id                String   @id @default(uuid())
+  externalId        String?
+  userName          String
+  displayName       String?
+  givenName         String?
+  familyName        String?
+  active            Boolean  @default(true)
+  lastProvisionedAt DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  organizationId String
+  userId         String
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  groupMemberships OrganizationScimGroupMember[]
+
+  @@unique([organizationId, userId])
+  @@unique([organizationId, externalId])
+  @@unique([organizationId, userName])
+  @@index([organizationId, active])
+  @@index([organizationId, lastProvisionedAt])
+  @@index([userId])
+}
+
+model OrganizationScimGroup {
+  id                String   @id @default(uuid())
+  externalId        String?
+  displayName       String
+  lastProvisionedAt DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  organizationId String
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  members      OrganizationScimGroupMember[]
+  workspaceMappings WorkspaceScimGroupMapping[]
+  provisionedMembers WorkspaceScimProvisionedMember[]
+
+  @@unique([organizationId, externalId])
+  @@unique([organizationId, displayName])
+  @@index([organizationId, lastProvisionedAt])
+  @@index([organizationId, createdAt])
+}
+
+model OrganizationScimGroupMember {
+  id             String   @id @default(uuid())
+  createdAt      DateTime @default(now())
+
+  scimGroupId    String
+  scimIdentityId String
+
+  scimGroup    OrganizationScimGroup    @relation(fields: [scimGroupId], references: [id], onDelete: Cascade)
+  scimIdentity OrganizationScimIdentity @relation(fields: [scimIdentityId], references: [id], onDelete: Cascade)
+
+  @@unique([scimGroupId, scimIdentityId])
+  @@index([scimIdentityId])
+}
+
+model Workspace {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  description String?
+  visibility  String   @default("private") // "public" | "private"
+  publicWikiEnabled Boolean @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  organizationId String?
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  members  WorkspaceMember[]
+  scimGroupMappings WorkspaceScimGroupMapping[]
+  scimProvisionedMembers WorkspaceScimProvisionedMember[]
+  pages    Page[]
+  todos    Todo[]
+  embeddingChunks PageEmbeddingChunk[]
+  searchIndexJobs SearchIndexJob[]
+  settings WorkspaceSettings?
+  retentionRuns RetentionRunWorkspace[]
+  searchIndexWorkerRuns SearchIndexWorkerRunWorkspace[]
+  calendarEvents CalendarEvent[]
+  googleCalendarConnections GoogleCalendarConnection[]
+  notifications Notification[]
+  pageTemplates PageTemplate[]
+
+  @@index([slug])
+  @@index([organizationId])
+}
+
+model WorkspaceMember {
+  id          String   @id @default(uuid())
+  role        String   @default("editor") // owner, admin, maintainer, editor, viewer
+  managedByScim Boolean @default(false)
+  createdAt   DateTime @default(now())
+
+  userId      String
+  workspaceId String
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+  @@index([userId])
+  @@index([workspaceId])
+  @@index([workspaceId, managedByScim])
+}
+
+model WorkspaceScimGroupMapping {
+  id             String   @id @default(uuid())
+  role           String
+  createdByUserId String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  workspaceId String
+  scimGroupId String
+
+  workspace Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  scimGroup OrganizationScimGroup @relation(fields: [scimGroupId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, scimGroupId])
+  @@index([scimGroupId, createdAt])
+  @@index([workspaceId, createdAt])
+}
+
+model WorkspaceScimProvisionedMember {
+  id         String   @id @default(uuid())
+  role       String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  workspaceId String
+  userId      String
+  scimGroupId String
+
+  workspace Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scimGroup OrganizationScimGroup @relation(fields: [scimGroupId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId, scimGroupId])
+  @@index([workspaceId, userId])
+  @@index([scimGroupId, createdAt])
+}
+
+model Page {
+  id          String   @id @default(uuid())
+  title       String   @default("Untitled")
+  slug        String
+  icon        String?
+  coverImage  String?
+  accessMode  String   @default("workspace") // "workspace" | "restricted"
+  position    Int      @default(0)
+  summary     String?  // AI-generated summary
+  isDeleted   Boolean  @default(false)
+  deletedAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  parentId    String?
+  workspaceId String
+
+  parent      Page?      @relation("PageTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children    Page[]     @relation("PageTree")
+  workspace   Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  backlinksFrom Backlink[] @relation("BacklinkFrom")
+  backlinksTo   Backlink[] @relation("BacklinkTo")
+  comments      Comment[]
+  attachments   Attachment[]
+  favorites     Favorite[]
+  permissions   PagePermission[]
+  shareLink     PageShareLink?
+  embeddingChunks PageEmbeddingChunk[]
+  searchIndexJobs SearchIndexJob[]
+  calendarEvents CalendarEvent[]
+  todos         Todo[]
+
+  @@unique([workspaceId, slug])
+  @@index([workspaceId])
+  @@index([parentId])
+  @@index([workspaceId, updatedAt])
+  @@index([workspaceId, isDeleted])
+}
+
+model PageEmbeddingChunk {
+  id          String   @id @default(uuid())
+  chunkIndex  Int
+  title       String
+  content     String
+  contentHash String
+  embedding   Json
+  dimension   Int
+  provider    String
+  model       String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  pageId      String
+  workspaceId String
+
+  page      Page      @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([pageId, chunkIndex])
+  @@index([workspaceId, pageId])
+  @@index([workspaceId, updatedAt])
+  @@index([workspaceId, model])
+}
+
+model SearchIndexJob {
+  id          String   @id @default(uuid())
+  jobType     String   // "page_reindex" | "workspace_reindex"
+  status      String   @default("pending") // "pending" | "running" | "success" | "error"
+  attempts    Int      @default(0)
+  lastError   String?
+  payload     Json?
+  summary     Json?
+  startedAt   DateTime?
+  processedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspaceId String
+  pageId      String?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  page      Page?     @relation(fields: [pageId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+  @@index([workspaceId, status, createdAt])
+  @@index([pageId, createdAt])
+  @@index([jobType, status, createdAt])
+}
+
+model PagePermission {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  pageId String
+  userId String
+
+  page Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([pageId, userId])
+  @@index([userId])
+}
+
+model PageShareLink {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  expiresAt DateTime?
+  revokedAt DateTime?
+
+  pageId String @unique
+
+  page Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@index([pageId, revokedAt])
+}
+
+model Backlink {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  fromPageId String
+  toPageId   String
+
+  fromPage Page @relation("BacklinkFrom", fields: [fromPageId], references: [id], onDelete: Cascade)
+  toPage   Page @relation("BacklinkTo", fields: [toPageId], references: [id], onDelete: Cascade)
+
+  @@unique([fromPageId, toPageId])
+  @@index([toPageId])
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  resolved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  pageId   String
+  userId   String
+  parentId String?
+
+  page   Page      @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  user   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent Comment?  @relation("CommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Comment[] @relation("CommentThread")
+
+  @@index([pageId])
+  @@index([userId])
+}
+
+model Attachment {
+  id        String   @id @default(uuid())
+  filename  String
+  mimeType  String
+  size      Int
+  path      String   // S3 key or local path
+  storage   String   @default("local") // "local" | "s3"
+  securityStatus    String   @default("not_scanned") // "clean" | "blocked" | "bypassed" | "error" | "not_scanned"
+  securityDisposition String? // "released" | "blocked" | null
+  securityScanner   String?
+  securityFindings  Json?
+  securityCheckedAt DateTime?
+  securityReviewedAt DateTime?
+  securityReviewedByUserId String?
+  securityReviewNote String?
+  createdAt DateTime @default(now())
+
+  pageId String
+  userId String
+
+  page Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([pageId])
+  @@index([securityStatus, securityDisposition, createdAt])
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  userId String
+  pageId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  page Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, pageId])
+  @@index([userId])
+}
+
+model AiChat {
+  id        String   @id @default(uuid())
+  role      String   // "user" | "assistant"
+  content   String
+  pageId    String?
+  workspaceId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@index([workspaceId, userId, createdAt])
+  @@index([pageId])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  action     String
+  status     String   @default("success") // "success" | "denied" | "error"
+  requestId  String?
+  actorId    String?
+  actorEmail String?
+  actorName  String?
+  actorRole  String?
+  workspaceId String?
+  pageId     String?
+  targetId   String?
+  targetType String?
+  ipAddress  String?
+  userAgent  String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  webhookDeliveries AuditLogWebhookDelivery[]
+
+  @@index([workspaceId, createdAt])
+  @@index([actorId, createdAt])
+  @@index([pageId, createdAt])
+  @@index([action, createdAt])
+  @@index([requestId, createdAt])
+}
+
+model AuditLogWebhookDelivery {
+  id               String   @id @default(uuid())
+  auditLogId       String
+  destinationType  String   @default("webhook")
+  destinationLabel String   @default("primary")
+  status           String   @default("pending") // "pending" | "delivered" | "error"
+  attempts         Int      @default(0)
+  nextAttemptAt    DateTime @default(now())
+  lastAttemptAt    DateTime?
+  deliveredAt      DateTime?
+  responseStatus   Int?
+  lastError        String?
+  payload          Json
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  auditLog AuditLog @relation(fields: [auditLogId], references: [id], onDelete: Cascade)
+
+  @@unique([auditLogId, destinationType, destinationLabel])
+  @@index([status, nextAttemptAt, createdAt])
+  @@index([auditLogId, createdAt])
+}
+
+model RetentionRun {
+  id                String   @id @default(uuid())
+  mode              String   // "dry_run" | "execute"
+  trigger           String   @default("manual") // "manual" | "scheduled"
+  status            String   @default("running") // "running" | "success" | "error"
+  config            Json
+  summary           Json?
+  workspaceSummary  Json?
+  errorMessage      String?
+  startedAt         DateTime @default(now())
+  finishedAt        DateTime?
+
+  workspaceRuns     RetentionRunWorkspace[]
+
+  @@index([startedAt])
+  @@index([status, startedAt])
+}
+
+model RetentionRunWorkspace {
+  id                   String   @id @default(uuid())
+  retentionRunId       String
+  workspaceId          String
+  purgedPageCount      Int      @default(0)
+  purgedAttachmentCount Int     @default(0)
+  purgedShareLinkCount Int      @default(0)
+  purgedAiChatCount    Int      @default(0)
+  purgedAuditLogCount  Int      @default(0)
+  createdAt            DateTime @default(now())
+
+  retentionRun RetentionRun @relation(fields: [retentionRunId], references: [id], onDelete: Cascade)
+  workspace    Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([retentionRunId, workspaceId])
+  @@index([workspaceId, createdAt])
+  @@index([retentionRunId, createdAt])
+}
+
+model BackupRun {
+  id              String   @id @default(uuid())
+  mode            String   // "dry_run" | "execute"
+  trigger         String   @default("manual") // "manual" | "scheduled"
+  status          String   @default("running") // "running" | "success" | "error"
+  backupRootDir   String
+  destinationPath String?
+  config          Json
+  summary         Json?
+  manifest        Json?
+  errorMessage    String?
+  startedAt       DateTime @default(now())
+  finishedAt      DateTime?
+
+  artifacts    BackupArtifact[]
+  restoreDrills RestoreDrillRun[]
+
+  @@index([startedAt])
+  @@index([status, startedAt])
+}
+
+model BackupArtifact {
+  id             String   @id @default(uuid())
+  backupRunId    String
+  kind           String
+  status         String   @default("created") // "created" | "skipped" | "planned"
+  filePath       String?
+  sizeBytes      String?
+  checksumSha256 String?
+  metadata       Json?
+  createdAt      DateTime @default(now())
+
+  backupRun BackupRun @relation(fields: [backupRunId], references: [id], onDelete: Cascade)
+
+  @@index([backupRunId, createdAt])
+  @@index([kind, createdAt])
+}
+
+model RestoreDrillRun {
+  id           String   @id @default(uuid())
+  backupRunId  String
+  trigger      String   @default("manual") // "manual" | "scheduled"
+  status       String   @default("running") // "running" | "success" | "error"
+  summary      Json?
+  errorMessage String?
+  startedAt    DateTime @default(now())
+  finishedAt   DateTime?
+
+  backupRun BackupRun @relation(fields: [backupRunId], references: [id], onDelete: Cascade)
+
+  @@index([startedAt])
+  @@index([backupRunId, startedAt])
+  @@index([status, startedAt])
+}
+
+model SearchIndexWorkerRun {
+  id              String   @id @default(uuid())
+  trigger         String   @default("manual") // "manual" | "scheduled" | "api"
+  status          String   @default("running") // "running" | "success" | "error"
+  workspaceScopeId String?
+  limit           Int?
+  summary         Json?
+  errorMessage    String?
+  startedAt       DateTime @default(now())
+  finishedAt      DateTime?
+
+  workspaceRuns SearchIndexWorkerRunWorkspace[]
+
+  @@index([startedAt])
+  @@index([status, startedAt])
+  @@index([workspaceScopeId, startedAt])
+}
+
+model SearchIndexWorkerRunWorkspace {
+  id                         String   @id @default(uuid())
+  searchIndexWorkerRunId     String
+  workspaceId                String
+  processedJobCount          Int      @default(0)
+  successJobCount            Int      @default(0)
+  errorJobCount              Int      @default(0)
+  pageReindexJobCount        Int      @default(0)
+  workspaceReindexJobCount   Int      @default(0)
+  createdAt                  DateTime @default(now())
+
+  searchIndexWorkerRun SearchIndexWorkerRun @relation(fields: [searchIndexWorkerRunId], references: [id], onDelete: Cascade)
+  workspace            Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([searchIndexWorkerRunId, workspaceId])
+  @@index([workspaceId, createdAt])
+  @@index([searchIndexWorkerRunId, createdAt])
+}
+
+model WorkspaceSettings {
+  id          String @id @default(uuid())
+  workspaceId String @unique
+
+  // AI/LLM settings
+  aiEnabled     Boolean @default(true)
+  aiModel       String  @default("claude-sonnet-4-20250514")
+  aiApiKey      String? // workspace-specific API key (encrypted)
+  aiMaxTokens   Int     @default(2048)
+  aiProfiles    Json?
+  aiTaskRouting Json?
+
+  // General settings
+  allowPublicPages  Boolean @default(true)
+  allowMemberInvite Boolean @default(true) // maintainer+ can invite
+  defaultPageAccess String  @default("workspace") // "workspace" | "restricted"
+  maxFileUploadMb   Int     @default(10)
+  uploadDlpScanMode String?
+  uploadDlpDetectors Json?
+  uploadDlpMaxExtractedCharacters Int?
+
+  // Google Calendar OAuth2 credentials (per-workspace)
+  googleCalendarClientId     String?
+  googleCalendarClientSecret String? // encrypted
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model CalendarEvent {
+  id            String   @id @default(uuid())
+  title         String
+  description   String?
+  startAt       DateTime
+  endAt         DateTime?
+  allDay        Boolean  @default(false)
+  color         String?  @default("#3b82f6")
+  location      String?
+  recurrence    String?
+  googleEventId String?
+
+  workspaceId String
+  createdById String
+  pageId      String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy   User      @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  page        Page?     @relation(fields: [pageId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, startAt])
+  @@index([createdById])
+  @@index([workspaceId, googleEventId])
+}
+
+model Todo {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  completed   Boolean   @default(false)
+  priority    String    @default("medium")
+  dueDate     DateTime?
+  completedAt DateTime?
+  sortOrder   Int       @default(0)
+
+  workspaceId String
+  assigneeId  String?
+  createdById String
+  pageId      String?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  assignee    User?     @relation("TodoAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  createdBy   User      @relation("TodoCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  page        Page?     @relation(fields: [pageId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, completed, dueDate])
+  @@index([assigneeId])
+  @@index([createdById])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  type      String
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  readAt    DateTime?
+  link      String?
+
+  userId    String
+  workspaceId String?
+
+  createdAt DateTime @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read, createdAt])
+  @@index([workspaceId])
+}
+
+model GoogleCalendarConnection {
+  id            String   @id @default(uuid())
+  userId        String
+  workspaceId   String
+  accessToken   String   // encrypted
+  refreshToken  String   // encrypted
+  tokenExpiry   DateTime
+  calendarId    String   @default("primary")
+  syncEnabled   Boolean  @default(true)
+  lastSyncAt    DateTime?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+  @@index([workspaceId])
+}
+
+model PageTemplate {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  icon        String?
+  content     String   @db.Text
+  category    String   @default("custom")
+  isBuiltIn   Boolean  @default(false)
+
+  workspaceId String
+  createdById String
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy   User      @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, category])
+}
+

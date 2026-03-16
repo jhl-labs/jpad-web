@@ -1,0 +1,11 @@
+[Unit]
+Description=Run JPAD backup job daily
+
+[Timer]
+OnCalendar=*-*-* 02:00:00
+Persistent=true
+RandomizedDelaySec=300
+Unit=jpad-scheduled-job@backup.service
+
+[Install]
+WantedBy=timers.target

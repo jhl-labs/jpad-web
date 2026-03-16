@@ -1,0 +1,300 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: jpad-audit-log-deliveries
+  namespace: jpad
+spec:
+  schedule: "*/2 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: audit-log-deliveries
+              image: ghcr.io/example/jpad:latest
+              imagePullPolicy: IfNotPresent
+              workingDir: /app
+              command:
+                - /bin/bash
+                - -lc
+                - ./deploy/scripts/run-scheduled-job.sh audit-log-deliveries
+              env:
+                - name: JPAD_ROOT
+                  value: /app
+                - name: JPAD_ENV_FILE
+                  value: /app/.env
+                - name: JPAD_ALLOW_MISSING_ENV_FILE
+                  value: "1"
+                - name: AUDIT_LOG_DELIVERY_LIMIT
+                  value: "50"
+              envFrom:
+                - secretRef:
+                    name: jpad-app-env
+              volumeMounts:
+                - name: jpad-data
+                  mountPath: /app/data
+          volumes:
+            - name: jpad-data
+              persistentVolumeClaim:
+                claimName: jpad-data
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: jpad-attachment-security-rescan
+  namespace: jpad
+spec:
+  schedule: "20 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: attachment-security-rescan
+              image: ghcr.io/example/jpad:latest
+              imagePullPolicy: IfNotPresent
+              workingDir: /app
+              command:
+                - /bin/bash
+                - -lc
+                - ./deploy/scripts/run-scheduled-job.sh attachment-security-rescan
+              env:
+                - name: JPAD_ROOT
+                  value: /app
+                - name: JPAD_ENV_FILE
+                  value: /app/.env
+                - name: JPAD_ALLOW_MISSING_ENV_FILE
+                  value: "1"
+                - name: ATTACHMENT_SECURITY_RESCAN_LIMIT
+                  value: "50"
+              envFrom:
+                - secretRef:
+                    name: jpad-app-env
+              volumeMounts:
+                - name: jpad-data
+                  mountPath: /app/data
+          volumes:
+            - name: jpad-data
+              persistentVolumeClaim:
+                claimName: jpad-data
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: jpad-semantic-index-jobs
+  namespace: jpad
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: semantic-index-jobs
+              image: ghcr.io/example/jpad:latest
+              imagePullPolicy: IfNotPresent
+              workingDir: /app
+              command:
+                - /bin/bash
+                - -lc
+                - ./deploy/scripts/run-scheduled-job.sh semantic-index-jobs
+              env:
+                - name: JPAD_ROOT
+                  value: /app
+                - name: JPAD_ENV_FILE
+                  value: /app/.env
+                - name: JPAD_ALLOW_MISSING_ENV_FILE
+                  value: "1"
+                - name: SEARCH_INDEX_JOB_LIMIT
+                  value: "50"
+              envFrom:
+                - secretRef:
+                    name: jpad-app-env
+              volumeMounts:
+                - name: jpad-data
+                  mountPath: /app/data
+          volumes:
+            - name: jpad-data
+              persistentVolumeClaim:
+                claimName: jpad-data
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: jpad-retention
+  namespace: jpad
+spec:
+  schedule: "15 3 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: retention
+              image: ghcr.io/example/jpad:latest
+              imagePullPolicy: IfNotPresent
+              workingDir: /app
+              command:
+                - /bin/bash
+                - -lc
+                - ./deploy/scripts/run-scheduled-job.sh retention
+              env:
+                - name: JPAD_ROOT
+                  value: /app
+                - name: JPAD_ENV_FILE
+                  value: /app/.env
+                - name: JPAD_ALLOW_MISSING_ENV_FILE
+                  value: "1"
+              envFrom:
+                - secretRef:
+                    name: jpad-app-env
+              volumeMounts:
+                - name: jpad-data
+                  mountPath: /app/data
+          volumes:
+            - name: jpad-data
+              persistentVolumeClaim:
+                claimName: jpad-data
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: jpad-backup
+  namespace: jpad
+spec:
+  schedule: "0 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: backup
+              image: ghcr.io/example/jpad:latest
+              imagePullPolicy: IfNotPresent
+              workingDir: /app
+              command:
+                - /bin/bash
+                - -lc
+                - ./deploy/scripts/run-scheduled-job.sh backup
+              env:
+                - name: JPAD_ROOT
+                  value: /app
+                - name: JPAD_ENV_FILE
+                  value: /app/.env
+                - name: JPAD_ALLOW_MISSING_ENV_FILE
+                  value: "1"
+              envFrom:
+                - secretRef:
+                    name: jpad-app-env
+              volumeMounts:
+                - name: jpad-data
+                  mountPath: /app/data
+          volumes:
+            - name: jpad-data
+              persistentVolumeClaim:
+                claimName: jpad-data
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: jpad-restore-drill
+  namespace: jpad
+spec:
+  schedule: "30 4 * * 0"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: restore-drill
+              image: ghcr.io/example/jpad:latest
+              imagePullPolicy: IfNotPresent
+              workingDir: /app
+              command:
+                - /bin/bash
+                - -lc
+                - ./deploy/scripts/run-scheduled-job.sh restore-drill
+              env:
+                - name: JPAD_ROOT
+                  value: /app
+                - name: JPAD_ENV_FILE
+                  value: /app/.env
+                - name: JPAD_ALLOW_MISSING_ENV_FILE
+                  value: "1"
+              envFrom:
+                - secretRef:
+                    name: jpad-app-env
+              volumeMounts:
+                - name: jpad-data
+                  mountPath: /app/data
+          volumes:
+            - name: jpad-data
+              persistentVolumeClaim:
+                claimName: jpad-data
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: jpad-semantic-reindex
+  namespace: jpad
+spec:
+  schedule: "0 1 * * 0"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  suspend: true
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: semantic-reindex
+              image: ghcr.io/example/jpad:latest
+              imagePullPolicy: IfNotPresent
+              workingDir: /app
+              command:
+                - /bin/bash
+                - -lc
+                - ./deploy/scripts/run-scheduled-job.sh semantic-reindex
+              env:
+                - name: JPAD_ROOT
+                  value: /app
+                - name: JPAD_ENV_FILE
+                  value: /app/.env
+                - name: JPAD_ALLOW_MISSING_ENV_FILE
+                  value: "1"
+              envFrom:
+                - secretRef:
+                    name: jpad-app-env
+              volumeMounts:
+                - name: jpad-data
+                  mountPath: /app/data
+          volumes:
+            - name: jpad-data
+              persistentVolumeClaim:
+                claimName: jpad-data
