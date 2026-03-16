@@ -171,6 +171,7 @@ export function AiPanel({
   const [usePageContext, setUsePageContext] = useState(true);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const dbHistoryLoaded = useRef(false);
 
   // Persist chat messages to sessionStorage
   useEffect(() => {
@@ -181,19 +182,56 @@ export function AiPanel({
     }
   }, [messages, chatStorageKey]);
 
-  // Load chat history when pageId changes
+  // Load chat history: DB 우선, sessionStorage fallback
   useEffect(() => {
-    try {
-      const stored = sessionStorage.getItem(chatStorageKey);
-      if (stored) {
-        setMessages(JSON.parse(stored));
-      } else {
-        setMessages([]);
+    // 페이지가 바뀔 때 DB에서 히스토리를 가져와서 로드
+    dbHistoryLoaded.current = false;
+    let cancelled = false;
+
+    async function loadFromDb() {
+      try {
+        const res = await fetch(
+          `/api/ai/chat/history?workspaceId=${workspaceId}&pageId=${pageId}`
+        );
+        if (res.ok && !cancelled) {
+          const data = await res.json();
+          const dbMessages: ChatMessage[] = (data.messages || []).map(
+            (m: { role: string; content: string }) => ({
+              role: m.role as "user" | "assistant",
+              content: m.content,
+            })
+          );
+          if (dbMessages.length > 0) {
+            setMessages(dbMessages);
+            dbHistoryLoaded.current = true;
+            return;
+          }
+        }
+      } catch {
+        // DB 실패 시 sessionStorage fallback
       }
-    } catch {
-      setMessages([]);
+
+      // DB에 히스토리가 없으면 sessionStorage에서 로드
+      if (!cancelled) {
+        try {
+          const stored = sessionStorage.getItem(chatStorageKey);
+          if (stored) {
+            setMessages(JSON.parse(stored));
+          } else {
+            setMessages([]);
+          }
+        } catch {
+          setMessages([]);
+        }
+      }
     }
-  }, [chatStorageKey]);
+
+    loadFromDb();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [chatStorageKey, pageId, workspaceId]);
 
   const handleClearChat = useCallback(() => {
     setMessages([]);

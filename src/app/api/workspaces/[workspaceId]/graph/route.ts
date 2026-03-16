@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, checkWorkspaceAccess } from "@/lib/auth/helpers";
 import { listAccessiblePages } from "@/lib/pageAccess";
 import { prisma } from "@/lib/prisma";
+import { logError } from "@/lib/logger";
 
 export async function GET(
   _req: NextRequest,
@@ -64,7 +65,11 @@ export async function GET(
     }
 
     return NextResponse.json({ nodes, edges });
-  } catch {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    logError("graph.get.unhandled_error", error);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

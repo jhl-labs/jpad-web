@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Clock, X } from "lucide-react";
 
 interface HistoryEntry {
@@ -22,6 +22,12 @@ export function HistoryPanel({
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [preview, setPreview] = useState<string | null>(null);
   const [selectedOid, setSelectedOid] = useState<string | null>(null);
+  const [isVisible, setIsVisible] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    requestAnimationFrame(() => setIsVisible(true));
+  }, []);
 
   useEffect(() => {
     fetch(`/api/pages/${pageId}/history`)
@@ -41,11 +47,17 @@ export function HistoryPanel({
 
   return (
     <div
+      ref={panelRef}
       role="dialog"
       aria-label="히스토리"
       aria-modal="true"
       className="fixed right-0 top-0 h-full w-full md:w-80 shadow-lg z-50 flex flex-col"
-      style={{ background: "var(--background)", borderLeft: "1px solid var(--border)" }}
+      style={{
+        background: "var(--background)",
+        borderLeft: "1px solid var(--border)",
+        transform: isVisible ? "translateX(0)" : "translateX(100%)",
+        transition: "transform 0.2s ease-out",
+      }}
       onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
       <div className="flex items-center justify-between p-3" style={{ borderBottom: "1px solid var(--border)" }}>

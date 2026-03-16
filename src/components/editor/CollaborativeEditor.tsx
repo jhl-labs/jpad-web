@@ -150,6 +150,9 @@ function getCustomSlashMenuItems(editor: BlockNoteEditor) {
       onItemClick: () => {
         const cursor = editor.getTextCursorPosition();
         if (cursor?.block) {
+          // BlockNote의 기본 스키마에는 horizontalRule 블록 타입이 없으므로
+          // paragraph에 "---"를 삽입하여 마크다운 변환 시 수평선으로 처리됨.
+          // TODO: BlockNote에 horizontalRule 커스텀 블록이 추가되면 해당 타입으로 교체
           editor.insertBlocks(
             [{ type: "paragraph", content: [{ type: "text", text: "---", styles: {} }] }],
             cursor.block,

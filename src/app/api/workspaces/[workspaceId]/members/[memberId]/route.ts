@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, checkWorkspaceAccess } from "@/lib/auth/helpers";
 import { recordAuditLog, createAuditActor, getAuditRequestContext } from "@/lib/audit";
+import { logError } from "@/lib/logger";
+import { rateLimitRedis } from "@/lib/rateLimit";
 
 const ROLE_HIERARCHY = ["owner", "admin", "maintainer", "editor", "viewer"];
 
@@ -19,6 +21,13 @@ export async function PATCH(
     ]);
     if (!member) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    if (!(await rateLimitRedis(`member-role:${user.id}`, 20, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
     }
 
     const { role } = await req.json();
@@ -108,6 +117,7 @@ export async function PATCH(
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    logError("members.patch.unhandled_error", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

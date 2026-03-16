@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth/helpers";
+import { logError } from "@/lib/logger";
+import { rateLimitRedis } from "@/lib/rateLimit";
 import { getPageAccessContext } from "@/lib/pageAccess";
 
 export async function PATCH(
@@ -10,6 +12,13 @@ export async function PATCH(
   try {
     const user = await requireAuth();
     const { pageId, commentId } = await params;
+
+    if (!(await rateLimitRedis(`comment:${user.id}`, 30, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
+    }
 
     const comment = await prisma.comment.findUnique({
       where: { id: commentId },
@@ -66,7 +75,11 @@ export async function PATCH(
     });
 
     return NextResponse.json(updated);
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    logError("comments.patch.unhandled_error", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
@@ -78,6 +91,13 @@ export async function DELETE(
   try {
     const user = await requireAuth();
     const { pageId, commentId } = await params;
+
+    if (!(await rateLimitRedis(`comment:${user.id}`, 30, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
+    }
 
     const comment = await prisma.comment.findUnique({
       where: { id: commentId },
@@ -104,7 +124,11 @@ export async function DELETE(
     await prisma.comment.delete({ where: { id: commentId } });
 
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    logError("comments.delete.unhandled_error", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

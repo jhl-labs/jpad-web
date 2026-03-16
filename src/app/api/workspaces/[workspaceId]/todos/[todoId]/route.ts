@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, checkWorkspaceAccess } from "@/lib/auth/helpers";
 import { recordAuditLog, createAuditActor, getAuditRequestContext } from "@/lib/audit";
 import { logError } from "@/lib/logger";
+import { rateLimitRedis } from "@/lib/rateLimit";
 import { z } from "zod";
 
 const updateTodoSchema = z.object({
@@ -32,6 +33,13 @@ export async function PATCH(
     ]);
     if (!member) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    if (!(await rateLimitRedis(`todo:${user.id}`, 30, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
     }
 
     const existing = await prisma.todo.findFirst({
@@ -119,6 +127,13 @@ export async function DELETE(
     ]);
     if (!member) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    if (!(await rateLimitRedis(`todo:${user.id}`, 30, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
     }
 
     const existing = await prisma.todo.findFirst({

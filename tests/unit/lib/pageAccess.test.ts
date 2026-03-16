@@ -1,30 +1,12 @@
 import { describe, it, expect } from "bun:test";
+import {
+  isWorkspaceRole,
+  hasWorkspaceAccess,
+  normalizePageAccessMode,
+} from "@/lib/pageAccess";
 
-// pageAccess.ts의 순수 함수(내부) 로직을 테스트합니다.
+// pageAccess.ts에서 export된 순수 함수를 직접 import하여 테스트합니다.
 // DB 의존 함수(getPageAccessContext 등)는 통합테스트에서 다룹니다.
-// 여기서는 role/accessMode 기반 권한 판단 로직을 검증합니다.
-
-type WorkspaceRole = "owner" | "admin" | "maintainer" | "editor" | "viewer";
-type PageAccessMode = "workspace" | "restricted";
-
-// pageAccess.ts의 내부 함수를 재현하여 로직 테스트
-function isWorkspaceRole(value: string): value is WorkspaceRole {
-  return ["owner", "admin", "maintainer", "editor", "viewer"].includes(value);
-}
-
-function hasWorkspaceAccess(
-  memberRole: WorkspaceRole,
-  accessMode: PageAccessMode,
-  hasExplicitPermission: boolean
-): boolean {
-  if (memberRole === "owner" || memberRole === "admin" || memberRole === "maintainer") return true;
-  if (accessMode === "workspace") return true;
-  return hasExplicitPermission;
-}
-
-function normalizePageAccessMode(value: string): PageAccessMode {
-  return value === "restricted" ? "restricted" : "workspace";
-}
 
 describe("pageAccess - isWorkspaceRole", () => {
   it("유효한 역할을 인식한다", () => {
@@ -44,7 +26,7 @@ describe("pageAccess - isWorkspaceRole", () => {
 
 describe("pageAccess - hasWorkspaceAccess", () => {
   it("owner/admin/maintainer는 항상 접근 가능하다", () => {
-    const roles: WorkspaceRole[] = ["owner", "admin", "maintainer"];
+    const roles = ["owner", "admin", "maintainer"] as const;
     for (const role of roles) {
       expect(hasWorkspaceAccess(role, "restricted", false)).toBe(true);
       expect(hasWorkspaceAccess(role, "workspace", false)).toBe(true);

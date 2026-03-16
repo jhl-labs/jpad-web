@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth/helpers";
 import { markAsRead } from "@/lib/notifications";
+import { logError } from "@/lib/logger";
 
 export async function PATCH(
   _req: NextRequest,
@@ -17,7 +18,11 @@ export async function PATCH(
     }
 
     return NextResponse.json({ success: true });
-  } catch {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    logError("notifications.patch.unhandled_error", error);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth/helpers";
 import { createHmac } from "crypto";
 import { getPageAccessContext } from "@/lib/pageAccess";
+import { logError } from "@/lib/logger";
 
 function signToken(payload: object, secret: string): string {
   const data = Buffer.from(JSON.stringify(payload)).toString("base64url");
@@ -45,7 +46,11 @@ export async function POST(req: NextRequest) {
     const token = signToken(tokenPayload, secret);
 
     return NextResponse.json({ token });
-  } catch {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    logError("ws-token.post.unhandled_error", error);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

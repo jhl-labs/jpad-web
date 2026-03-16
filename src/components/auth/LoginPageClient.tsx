@@ -1,5 +1,6 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ClientSafeProvider, getProviders, signIn } from "next-auth/react";
@@ -130,6 +131,8 @@ export function LoginPageClient({
         {error && (
           <p
             className="text-sm p-3 rounded mb-4"
+            role="alert"
+            aria-live="polite"
             style={{ color: "var(--danger)", background: "rgba(239,68,68,0.08)" }}
           >
             {error}
@@ -175,7 +178,7 @@ export function LoginPageClient({
         )}
 
         {credentialsEnabled ? (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" role="form">
             <div>
               <label htmlFor="email" className="block text-sm font-medium mb-1">
                 이메일
@@ -210,7 +213,7 @@ export function LoginPageClient({
               className="w-full py-2 rounded-md text-white text-sm font-medium"
               style={{ background: "var(--primary)" }}
             >
-              {loading ? "로그인 중..." : "로그인"}
+              {loading ? <><Loader2 size={16} className="inline animate-spin mr-1" />로그인 중...</> : "로그인"}
             </button>
           </form>
         ) : providersLoaded ? (

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, checkWorkspaceAccess } from "@/lib/auth/helpers";
+import { logError } from "@/lib/logger";
 
 export async function GET(
   req: NextRequest,
@@ -45,7 +46,11 @@ export async function GET(
     const dates = pages.map((p) => p.slug.replace("daily/", ""));
 
     return NextResponse.json({ dates });
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    logError("daily.list.get.unhandled_error", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

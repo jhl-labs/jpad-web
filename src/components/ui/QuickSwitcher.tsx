@@ -89,6 +89,17 @@ function getMatchTypeLabel(matchType: SearchResult["matchType"]) {
   }
 }
 
+// ── Highlight matching text ──────────────────────────────────
+
+function highlightText(text: string, query: string): React.ReactNode {
+  if (!query.trim()) return text;
+  const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  const parts = text.split(regex);
+  return parts.map((part, i) =>
+    regex.test(part) ? <mark key={i} style={{ background: "rgba(59,130,246,0.2)", padding: "0 2px", borderRadius: 2 }}>{part}</mark> : part
+  );
+}
+
 // ── Component ────────────────────────────────────────────────
 
 export function QuickSwitcher({ workspaceId, isOpen, onClose }: QuickSwitcherProps) {
@@ -361,7 +372,7 @@ export function QuickSwitcher({ workspaceId, isOpen, onClose }: QuickSwitcherPro
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="truncate font-medium">
-                      {result.title || "제목 없음"}
+                      {query ? highlightText(result.title || "제목 없음", query) : (result.title || "제목 없음")}
                     </span>
                     {getMatchTypeLabel(result.matchType) && (
                       <span
@@ -394,7 +405,7 @@ export function QuickSwitcher({ workspaceId, isOpen, onClose }: QuickSwitcherPro
                       className="text-xs mt-0.5 line-clamp-1"
                       style={{ color: "var(--muted)" }}
                     >
-                      {result.snippet}
+                      {query ? highlightText(result.snippet, query) : result.snippet}
                     </p>
                   )}
                 </div>

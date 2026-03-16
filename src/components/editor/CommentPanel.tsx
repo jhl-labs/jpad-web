@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useSession } from "next-auth/react";
-import { X, MessageCircle, Send, Reply, Trash2, CheckCircle } from "lucide-react";
+import { X, MessageCircle, Send, Reply, Trash2, CheckCircle, Loader2 } from "lucide-react";
 
 interface CommentUser {
   id: string;
@@ -235,6 +235,12 @@ export function CommentPanel({
   const [comments, setComments] = useState<Comment[]>([]);
   const [newContent, setNewContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    requestAnimationFrame(() => setIsVisible(true));
+  }, []);
 
   const currentUserId = (session?.user as { id?: string } | undefined)?.id;
 
@@ -275,11 +281,17 @@ export function CommentPanel({
 
   return (
     <div
+      ref={panelRef}
       role="dialog"
       aria-label="댓글"
       aria-modal="true"
       className="fixed right-0 top-0 h-full w-full md:w-80 max-w-full shadow-lg z-50 flex flex-col"
-      style={{ background: "var(--background)", borderLeft: "1px solid var(--border)" }}
+      style={{
+        background: "var(--background)",
+        borderLeft: "1px solid var(--border)",
+        transform: isVisible ? "translateX(0)" : "translateX(100%)",
+        transition: "transform 0.2s ease-out",
+      }}
       onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
       {/* Header */}
@@ -325,10 +337,11 @@ export function CommentPanel({
           <button
             onClick={handleSubmit}
             disabled={!newContent.trim() || submitting}
-            className="mt-2 w-full py-1.5 rounded text-white text-sm disabled:opacity-50"
+            className="mt-2 w-full py-1.5 rounded text-white text-sm disabled:opacity-50 flex items-center justify-center gap-2"
             style={{ background: "var(--primary)" }}
           >
-            댓글 작성
+            {submitting && <Loader2 size={14} className="animate-spin" />}
+            {submitting ? "작성 중..." : "댓글 작성"}
           </button>
         </div>
       )}

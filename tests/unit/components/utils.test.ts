@@ -1,20 +1,7 @@
 import { describe, it, expect } from "bun:test";
+import { relativeTime } from "@/lib/utils/dateFormat";
 
-// TrashPanel.tsx의 relativeTime 함수 로직을 재현하여 테스트합니다.
-// 컴포넌트 내부 함수이므로 직접 import이 어렵습니다.
-
-function relativeTime(date: Date): string {
-  const now = Date.now();
-  const diff = now - date.getTime();
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return "방금 전";
-  if (minutes < 60) return `${minutes}분 전`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}시간 전`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}일 전`;
-  return date.toLocaleDateString("ko");
-}
+// relativeTime은 src/lib/utils/dateFormat.ts에서 export된 함수를 직접 import하여 테스트합니다.
 
 describe("relativeTime", () => {
   it("1분 미만이면 '방금 전'을 반환한다", () => {

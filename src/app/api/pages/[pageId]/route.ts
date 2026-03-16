@@ -267,7 +267,11 @@ export async function DELETE(
     });
 
     return NextResponse.json({ success: true, deletedCount: subtree.length });
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    logError("pages.delete.unhandled_error", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

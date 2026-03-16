@@ -8,6 +8,7 @@ import {
   Globe,
   Lock,
   Save,
+  Loader2,
   Settings,
   Sparkles,
   Trash2,
@@ -525,7 +526,7 @@ export default function WorkspaceSettingsPage() {
               className="flex items-center gap-2 px-4 py-2 rounded text-sm text-white"
               style={{ background: "var(--primary)" }}
             >
-              <Save size={14} /> {saving ? "저장 중..." : "저장"}
+              {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} {saving ? "저장 중..." : "저장"}
             </button>
             {isOwner && (
               <button

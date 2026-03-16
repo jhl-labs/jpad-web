@@ -578,7 +578,7 @@ export function OrganizationsPageClient() {
       {error && (
         <div
           className="mb-6 rounded-lg px-4 py-3 text-sm"
-          style={{ background: "#fee2e2", color: "#991b1b" }}
+          style={{ background: "rgba(239,68,68,0.1)", color: "rgba(153,27,27,0.9)" }}
         >
           {error}
         </div>
@@ -662,7 +662,7 @@ export function OrganizationsPageClient() {
                       {organization.currentRole && (
                         <span
                           className="text-xs px-2 py-1 rounded-full"
-                          style={{ background: "#dbeafe", color: "#1d4ed8" }}
+                          style={{ background: "rgba(59,130,246,0.1)", color: "var(--primary)" }}
                         >
                           {organization.currentRole}
                         </span>
@@ -729,7 +729,7 @@ export function OrganizationsPageClient() {
                                   {domain.verifiedAt ? (
                                     <span
                                       className="text-xs px-2 py-1 rounded-full flex items-center gap-1"
-                                      style={{ background: "#dcfce7", color: "#166534" }}
+                                      style={{ background: "rgba(34,197,94,0.1)", color: "rgba(22,101,52,0.9)" }}
                                     >
                                       <BadgeCheck size={12} />
                                       verified
@@ -737,7 +737,7 @@ export function OrganizationsPageClient() {
                                   ) : (
                                     <span
                                       className="text-xs px-2 py-1 rounded-full flex items-center gap-1"
-                                      style={{ background: "#fef3c7", color: "#92400e" }}
+                                      style={{ background: "rgba(245,158,11,0.1)", color: "rgba(146,64,14,0.9)" }}
                                     >
                                       <Shield size={12} />
                                       pending
@@ -746,7 +746,7 @@ export function OrganizationsPageClient() {
                                   {domain.autoJoin && (
                                     <span
                                       className="text-xs px-2 py-1 rounded-full"
-                                      style={{ background: "#dbeafe", color: "#1d4ed8" }}
+                                      style={{ background: "rgba(59,130,246,0.1)", color: "var(--primary)" }}
                                     >
                                       auto-join
                                     </span>
@@ -770,7 +770,7 @@ export function OrganizationsPageClient() {
                                       onClick={() => void handleDeleteDomain(organization.id, domain.id)}
                                       disabled={deleteBusy}
                                       className="text-xs px-2 py-1 rounded"
-                                      style={{ border: "1px solid var(--border)", color: "#991b1b" }}
+                                      style={{ border: "1px solid var(--border)", color: "rgba(153,27,27,0.9)" }}
                                     >
                                       삭제
                                     </button>
@@ -838,7 +838,7 @@ export function OrganizationsPageClient() {
                         {verification && (
                           <div
                             className="rounded-lg p-3 text-xs"
-                            style={{ background: "#eff6ff", color: "#1d4ed8" }}
+                            style={{ background: "rgba(59,130,246,0.1)", color: "var(--primary)" }}
                           >
                             <div>TXT 이름: {verification.txtRecordName}</div>
                             <div className="break-all mt-1">TXT 값: {verification.txtRecordValue}</div>
@@ -913,7 +913,7 @@ export function OrganizationsPageClient() {
                                     className="text-xs px-2 py-1 rounded"
                                     style={{
                                       border: "1px solid var(--border)",
-                                      color: "#991b1b",
+                                      color: "rgba(153,27,27,0.9)",
                                     }}
                                   >
                                     {deleteBusy ? "폐기 중..." : "폐기"}
@@ -974,7 +974,7 @@ export function OrganizationsPageClient() {
                         {createdScimToken && (
                           <div
                             className="rounded-lg p-3 text-xs space-y-2"
-                            style={{ background: "#eff6ff", color: "#1d4ed8" }}
+                            style={{ background: "rgba(59,130,246,0.1)", color: "var(--primary)" }}
                           >
                             <div className="font-medium">
                               새 토큰: {createdScimToken.label}
@@ -1058,8 +1058,8 @@ export function OrganizationsPageClient() {
                                           <span
                                             className="ml-2 text-xs px-2 py-1 rounded-full"
                                             style={{
-                                              background: "#dbeafe",
-                                              color: "#1d4ed8",
+                                              background: "rgba(59,130,246,0.1)",
+                                              color: "var(--primary)",
                                             }}
                                           >
                                             {mapping.role}
@@ -1077,7 +1077,7 @@ export function OrganizationsPageClient() {
                                           className="text-xs px-2 py-1 rounded"
                                           style={{
                                             border: "1px solid var(--border)",
-                                            color: "#991b1b",
+                                            color: "rgba(153,27,27,0.9)",
                                           }}
                                         >
                                           {deleteBusy ? "삭제 중..." : "매핑 해제"}

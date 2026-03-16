@@ -404,7 +404,7 @@ export function TodoList({ workspaceId }: TodoListProps) {
       </div>
 
       {/* Todo List */}
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1" role="list">
         {sortedTodos.length === 0 && (
           <div
             className="text-center py-12 text-sm"
@@ -495,6 +495,7 @@ function TodoItem({
 
   return (
     <div
+      role="listitem"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       className="flex items-start gap-3 px-3 py-2.5 rounded-lg transition-colors"
@@ -510,6 +511,8 @@ function TodoItem({
     >
       {/* Checkbox */}
       <button
+        role="checkbox"
+        aria-checked={todo.completed}
         onClick={onToggle}
         className="border-none bg-transparent cursor-pointer p-0 mt-0.5 shrink-0 transition-colors"
         style={{

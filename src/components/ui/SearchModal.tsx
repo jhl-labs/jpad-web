@@ -19,6 +19,31 @@ interface SearchModalProps {
   onClose: () => void;
 }
 
+function highlightKeyword(text: string, keyword: string): React.ReactNode {
+  if (!keyword.trim()) return text;
+  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const regex = new RegExp(`(${escaped})`, "gi");
+  const parts = text.split(regex);
+  if (parts.length === 1) return text;
+  return parts.map((part, i) =>
+    regex.test(part) ? (
+      <mark
+        key={i}
+        style={{
+          background: "rgba(59,130,246,0.2)",
+          color: "inherit",
+          borderRadius: 2,
+          padding: "0 1px",
+        }}
+      >
+        {part}
+      </mark>
+    ) : (
+      part
+    )
+  );
+}
+
 export function SearchModal({ workspaceId, isOpen, onClose }: SearchModalProps) {
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -163,7 +188,7 @@ export function SearchModal({ workspaceId, isOpen, onClose }: SearchModalProps) 
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="truncate font-medium">
                     {result.icon ? `${result.icon} ` : ""}
-                    {result.title || "제목 없음"}
+                    {highlightKeyword(result.title || "제목 없음", query)}
                   </span>
                   {getMatchTypeLabel(result.matchType) && (
                     <span

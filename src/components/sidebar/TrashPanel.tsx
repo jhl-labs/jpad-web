@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { X, Trash2, RotateCcw, AlertTriangle } from "lucide-react";
 
 interface DeletedPage {
@@ -35,6 +35,14 @@ export function TrashPanel({
   const [pages, setPages] = useState<DeletedPage[]>([]);
   const [loading, setLoading] = useState(true);
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
+  const [confirmingEmptyAll, setConfirmingEmptyAll] = useState(false);
+  const [emptyingAll, setEmptyingAll] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    requestAnimationFrame(() => setIsVisible(true));
+  }, []);
 
   const fetchTrash = useCallback(async () => {
     setLoading(true);
@@ -77,13 +85,40 @@ export function TrashPanel({
     }
   }
 
+  function requestEmptyAll() {
+    setConfirmingEmptyAll(true);
+    setTimeout(() => {
+      setConfirmingEmptyAll((prev) => (prev ? false : prev));
+    }, 5000);
+  }
+
+  async function handleEmptyAll() {
+    setConfirmingEmptyAll(false);
+    setEmptyingAll(true);
+    try {
+      const res = await fetch(`/api/trash?workspaceId=${workspaceId}`, { method: "DELETE" });
+      if (res.ok) {
+        setPages([]);
+        onRestore();
+      }
+    } finally {
+      setEmptyingAll(false);
+    }
+  }
+
   return (
     <div
+      ref={panelRef}
       role="dialog"
       aria-label="휴지통"
       aria-modal="true"
       className="fixed right-0 top-0 h-full w-80 shadow-lg z-50 flex flex-col"
-      style={{ background: "var(--background)", borderLeft: "1px solid var(--border)" }}
+      style={{
+        background: "var(--background)",
+        borderLeft: "1px solid var(--border)",
+        transform: isVisible ? "translateX(0)" : "translateX(100%)",
+        transition: "transform 0.2s ease-out",
+      }}
       onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
       {/* Header */}
@@ -103,9 +138,41 @@ export function TrashPanel({
             </span>
           )}
         </div>
-        <button onClick={onClose} className="p-1 rounded hover:opacity-70">
-          <X size={16} />
-        </button>
+        <div className="flex items-center gap-1">
+          {pages.length > 0 && !confirmingEmptyAll && (
+            <button
+              onClick={requestEmptyAll}
+              disabled={emptyingAll}
+              className="flex items-center gap-1 text-xs px-2 py-1 rounded hover:opacity-70"
+              style={{ color: "#ef4444" }}
+              title="전체 비우기"
+            >
+              <Trash2 size={12} /> 전체 비우기
+            </button>
+          )}
+          {confirmingEmptyAll && (
+            <span className="flex items-center gap-1.5 text-xs">
+              <span style={{ color: "rgba(239,68,68,0.9)" }}>전체 삭제?</span>
+              <button
+                onClick={handleEmptyAll}
+                className="px-2 py-1 rounded text-white text-xs"
+                style={{ background: "rgba(239,68,68,0.9)" }}
+              >
+                확인
+              </button>
+              <button
+                onClick={() => setConfirmingEmptyAll(false)}
+                className="px-2 py-1 rounded text-xs"
+                style={{ border: "1px solid var(--border)" }}
+              >
+                취소
+              </button>
+            </span>
+          )}
+          <button onClick={onClose} className="p-1 rounded hover:opacity-70">
+            <X size={16} />
+          </button>
+        </div>
       </div>
 
       {/* List */}

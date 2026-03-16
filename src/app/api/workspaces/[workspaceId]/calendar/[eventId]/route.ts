@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, checkWorkspaceAccess } from "@/lib/auth/helpers";
 import { recordAuditLog, createAuditActor, getAuditRequestContext } from "@/lib/audit";
+import { logError } from "@/lib/logger";
+import { rateLimitRedis } from "@/lib/rateLimit";
 
 export async function GET(
   _req: NextRequest,
@@ -33,6 +35,7 @@ export async function GET(
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    logError("calendar-event.get.unhandled_error", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
@@ -53,6 +56,13 @@ export async function PATCH(
     ]);
     if (!member) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    if (!(await rateLimitRedis(`calendar-event:${user.id}`, 30, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
     }
 
     const existing = await prisma.calendarEvent.findFirst({
@@ -89,7 +99,15 @@ export async function PATCH(
     if (body.endAt !== undefined)
       updateData.endAt = body.endAt ? new Date(body.endAt) : null;
     if (typeof body.allDay === "boolean") updateData.allDay = body.allDay;
-    if (typeof body.color === "string") updateData.color = body.color;
+    if (typeof body.color === "string") {
+      if (!/^#[0-9a-fA-F]{6}$/.test(body.color)) {
+        return NextResponse.json(
+          { error: "color must be a valid hex color (e.g. #3b82f6)" },
+          { status: 400 }
+        );
+      }
+      updateData.color = body.color;
+    }
     if (typeof body.location === "string") {
       if (body.location.length > 500) {
         return NextResponse.json(
@@ -127,6 +145,14 @@ export async function PATCH(
       );
     }
 
+    // endAt 유효성 검증
+    if (updateData.endAt !== undefined && updateData.endAt !== null && isNaN((updateData.endAt as Date).getTime())) {
+      return NextResponse.json(
+        { error: "Invalid end date" },
+        { status: 400 }
+      );
+    }
+
     const event = await prisma.calendarEvent.update({
       where: { id: eventId },
       data: updateData,
@@ -136,11 +162,22 @@ export async function PATCH(
       },
     });
 
+    await recordAuditLog({
+      action: "calendar_event.update",
+      actor: createAuditActor(user, member.role),
+      workspaceId,
+      targetId: eventId,
+      targetType: "calendarEvent",
+      metadata: { updatedFields: Object.keys(updateData) },
+      context: getAuditRequestContext(req),
+    });
+
     return NextResponse.json(event);
   } catch (error) {
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    logError("calendar-event.patch.unhandled_error", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
@@ -161,6 +198,13 @@ export async function DELETE(
     ]);
     if (!member) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    if (!(await rateLimitRedis(`calendar-event:${user.id}`, 30, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
     }
 
     const existing = await prisma.calendarEvent.findFirst({
@@ -187,6 +231,7 @@ export async function DELETE(
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    logError("calendar-event.delete.unhandled_error", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

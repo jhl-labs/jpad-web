@@ -16,7 +16,7 @@ interface PageAccessRecord {
   permissions: { userId: string }[];
 }
 
-function normalizePageAccessMode(value: string): PageAccessMode {
+export function normalizePageAccessMode(value: string): PageAccessMode {
   return value === "restricted" ? "restricted" : "workspace";
 }
 
@@ -29,11 +29,11 @@ export interface PageAccessContext {
   hasExplicitPermission: boolean;
 }
 
-function isWorkspaceRole(value: string): value is WorkspaceRole {
+export function isWorkspaceRole(value: string): value is WorkspaceRole {
   return ["owner", "admin", "maintainer", "editor", "viewer"].includes(value);
 }
 
-function hasWorkspaceAccess(
+export function hasWorkspaceAccess(
   memberRole: WorkspaceRole,
   accessMode: PageAccessMode,
   hasExplicitPermission: boolean

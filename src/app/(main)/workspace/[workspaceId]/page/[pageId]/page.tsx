@@ -14,6 +14,7 @@ import { RelatedPagesPanel } from "@/components/editor/RelatedPagesPanel";
 import { ShareDialog } from "@/components/workspace/ShareDialog";
 import { CommentPanel } from "@/components/editor/CommentPanel";
 import { AiPanel } from "@/components/ai/AiPanel";
+import { WordCount } from "@/components/editor/WordCount";
 import { AiSummaryBadge } from "@/components/ai/AiSummaryBadge";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
 import { EmojiPicker } from "@/components/editor/EmojiPicker";
@@ -25,6 +26,7 @@ import {
   FileText,
   ImageIcon,
   ListTree,
+  Loader2,
   MessageCircle,
   MoreHorizontal,
   Network,
@@ -469,7 +471,7 @@ export default function PageEditorPage() {
               style={{ color: "var(--primary)" }}
               title="문서 끝에서 이어쓰기"
             >
-              <WandSparkles size={14} />
+              {autocompleteLoading ? <Loader2 size={14} className="animate-spin" /> : <WandSparkles size={14} />}
               <span className="hidden sm:inline">{autocompleteLoading ? "이어쓰기..." : "AI 이어쓰기"}</span>
             </button>
           )}
@@ -876,6 +878,9 @@ export default function PageEditorPage() {
           </div>
         )}
       </div>
+
+      {/* Word count */}
+      <WordCount content={content} />
 
       {/* Backlinks */}
       <BacklinkPanel pageId={pageId} workspaceId={workspaceId} />

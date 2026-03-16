@@ -5,6 +5,7 @@ import { markdownToHtml } from "@/lib/markdown/serializer";
 import { listAccessiblePages } from "@/lib/pageAccess";
 import { getWorkspaceViewAccess } from "@/lib/publicAccess";
 import { rewriteWikiLinksForMarkdown } from "@/lib/wikiLinks";
+import { logError } from "@/lib/logger";
 
 export async function GET(
   req: NextRequest,
@@ -83,8 +84,12 @@ export async function GET(
     return new NextResponse(indexHtml, {
       headers: { "Content-Type": "text/html; charset=utf-8" },
     });
-  } catch {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    logError("wiki.get.unhandled_error", error);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
 

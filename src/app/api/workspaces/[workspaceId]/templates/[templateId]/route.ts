@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, checkWorkspaceAccess } from "@/lib/auth/helpers";
+import { logError } from "@/lib/logger";
+import { rateLimitRedis } from "@/lib/rateLimit";
 import { z } from "zod";
 
 const updateTemplateSchema = z.object({
@@ -29,6 +31,13 @@ export async function PATCH(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    if (!(await rateLimitRedis(`templates:${user.id}`, 30, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
+    }
+
     const template = await prisma.pageTemplate.findFirst({
       where: { id: templateId, workspaceId },
     });
@@ -55,7 +64,11 @@ export async function PATCH(
     });
 
     return NextResponse.json(updated);
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    logError("templates.patch.unhandled_error", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
@@ -77,6 +90,13 @@ export async function DELETE(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    if (!(await rateLimitRedis(`templates:${user.id}`, 30, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
+    }
+
     const template = await prisma.pageTemplate.findFirst({
       where: { id: templateId, workspaceId },
     });
@@ -93,7 +113,11 @@ export async function DELETE(
     await prisma.pageTemplate.delete({ where: { id: templateId } });
 
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    logError("templates.delete.unhandled_error", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

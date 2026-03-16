@@ -4,6 +4,7 @@ import { requireAuth } from "@/lib/auth/helpers";
 import { createAuditActor, getAuditRequestContext, recordAuditLog } from "@/lib/audit";
 import { getPageAccessContext } from "@/lib/pageAccess";
 import { deleteFile } from "@/lib/storage";
+import { logError } from "@/lib/logger";
 
 export async function GET(
   _req: NextRequest,
@@ -38,8 +39,12 @@ export async function GET(
     });
 
     return NextResponse.json(attachments);
-  } catch {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    logError("attachments.get.unhandled_error", error);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
 
@@ -104,7 +109,11 @@ export async function DELETE(
     });
 
     return NextResponse.json({ success: true });
-  } catch {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    logError("attachments.delete.unhandled_error", error);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

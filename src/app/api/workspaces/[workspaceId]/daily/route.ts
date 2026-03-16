@@ -90,16 +90,34 @@ export async function GET(
       _max: { position: true },
     });
 
-    page = await prisma.page.create({
-      data: {
-        title,
-        slug,
-        workspaceId,
-        parentId: null,
-        position: (maxPos._max.position || 0) + 1,
-        icon: "📓",
-      },
-    });
+    try {
+      page = await prisma.page.create({
+        data: {
+          title,
+          slug,
+          workspaceId,
+          parentId: null,
+          position: (maxPos._max.position || 0) + 1,
+          icon: "📓",
+        },
+      });
+    } catch (createError: unknown) {
+      // 동시 요청으로 unique constraint 위반 시 기존 레코드 반환
+      if (
+        typeof createError === "object" &&
+        createError !== null &&
+        "code" in createError &&
+        (createError as { code: string }).code === "P2002"
+      ) {
+        const existing = await prisma.page.findFirst({
+          where: { workspaceId, slug, isDeleted: false },
+        });
+        if (existing) {
+          return NextResponse.json(existing);
+        }
+      }
+      throw createError;
+    }
 
     try {
       // git에 초기 내용 저장

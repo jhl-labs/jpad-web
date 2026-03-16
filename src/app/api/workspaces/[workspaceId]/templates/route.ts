@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, checkWorkspaceAccess } from "@/lib/auth/helpers";
+import { logError } from "@/lib/logger";
 import { rateLimitRedis } from "@/lib/rateLimit";
 import { getBuiltInTemplates } from "@/lib/builtInTemplates";
 import { z } from "zod";
@@ -97,7 +98,11 @@ export async function POST(
     });
 
     return NextResponse.json(template, { status: 201 });
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    logError("templates.post.unhandled_error", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

@@ -1,8 +1,9 @@
 import { describe, it, expect } from "bun:test";
 import { createHmac } from "node:crypto";
 
-// ws.ts의 signToken / validateToken 로직을 재현하여 테스트합니다.
-// 서버 파일은 Redis/WebSocket 초기화가 포함되어 직접 import가 어렵기 때문입니다.
+// ⚠️ 이 테스트는 서버 로직(src/server/ws.ts)의 복제입니다.
+// ws.ts는 모듈 로드 시 Redis/WebSocketServer를 즉시 초기화하므로 직접 import가 불가합니다.
+// ws.ts의 validateToken / timingSafeEqual 로직이 변경되면 이 테스트도 동기화해야 합니다.
 
 const TOKEN_MAX_AGE_MS = 5 * 60 * 1000;
 
