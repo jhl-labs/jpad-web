@@ -108,6 +108,20 @@ export async function POST(
       );
     }
 
+    // Validate date parsing
+    if (isNaN(new Date(startAt).getTime())) {
+      return NextResponse.json(
+        { error: "Invalid startAt date" },
+        { status: 400 }
+      );
+    }
+    if (endAt && isNaN(new Date(endAt).getTime())) {
+      return NextResponse.json(
+        { error: "Invalid endAt date" },
+        { status: 400 }
+      );
+    }
+
     // 입력 길이 검증
     if (title.length > 500) {
       return NextResponse.json(

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Search, FileText } from "lucide-react";
+import { Search, FileText, Loader2 } from "lucide-react";
 
 interface SearchResult {
   id: string;
@@ -164,7 +164,8 @@ export function SearchModal({ workspaceId, isOpen, onClose }: SearchModalProps) 
         {/* 검색 결과 */}
         <div className="max-h-80 overflow-auto">
           {loading && (
-            <div className="px-4 py-3 text-sm" style={{ color: "var(--muted)" }}>
+            <div className="flex items-center gap-2 px-4 py-3 text-sm" style={{ color: "var(--muted)" }}>
+              <Loader2 size={14} className="animate-spin" />
               검색 중...
             </div>
           )}

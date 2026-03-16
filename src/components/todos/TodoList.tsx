@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef, KeyboardEvent } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo, KeyboardEvent } from "react";
 import {
   CheckCircle2,
   Circle,
@@ -227,7 +227,7 @@ export function TodoList({ workspaceId }: TodoListProps) {
     return date.toLocaleDateString("ko-KR", { month: "short", day: "numeric" });
   };
 
-  const sortedTodos = [...todos].sort((a, b) => {
+  const sortedTodos = useMemo(() => [...todos].sort((a, b) => {
     if (a.completed !== b.completed) return a.completed ? 1 : -1;
 
     if (sortBy === "priority") {
@@ -240,7 +240,7 @@ export function TodoList({ workspaceId }: TodoListProps) {
       return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
     }
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-  });
+  }), [todos, sortBy]);
 
   const totalCount = todos.length;
   const completedCount = todos.filter((t) => t.completed).length;

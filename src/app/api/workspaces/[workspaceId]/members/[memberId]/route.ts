@@ -15,6 +15,10 @@ export async function PATCH(
     const user = await requireAuth();
     const { workspaceId, memberId } = await params;
 
+    if (!/^[0-9a-f-]{36}$/.test(memberId)) {
+      return NextResponse.json({ error: "Invalid member ID" }, { status: 400 });
+    }
+
     const member = await checkWorkspaceAccess(user.id, workspaceId, [
       "owner",
       "admin",

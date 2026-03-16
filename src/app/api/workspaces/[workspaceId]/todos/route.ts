@@ -45,7 +45,11 @@ export async function GET(
     if (assignee) {
       where.assigneeId = assignee;
     }
+    const VALID_PRIORITIES = ["low", "medium", "high", "urgent"];
     if (priority) {
+      if (!VALID_PRIORITIES.includes(priority)) {
+        return NextResponse.json({ error: "Invalid priority" }, { status: 400 });
+      }
       where.priority = priority;
     }
     if (pageId) {

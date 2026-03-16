@@ -89,24 +89,29 @@ export function NotificationBell({ workspaceId }: NotificationBellProps) {
     }
   }, [workspaceId]);
 
+  // Cache poll interval config to avoid re-reading localStorage on each effect run
+  const pollIntervalMsRef = useRef<number | null>(null);
+  if (pollIntervalMsRef.current === null) {
+    try {
+      const raw = localStorage.getItem("notification-poll-interval");
+      if (raw === "off") {
+        pollIntervalMsRef.current = -1; // sentinel: polling disabled
+      } else {
+        const ms = raw ? parseInt(raw, 10) : 30000;
+        pollIntervalMsRef.current = isNaN(ms) || ms < 5000 ? 30000 : ms;
+      }
+    } catch (_error) {
+      pollIntervalMsRef.current = 30000;
+    }
+  }
+
   // Initial fetch and polling with configurable interval from localStorage
   useEffect(() => {
     fetchNotifications();
 
-    let pollInterval: string | null = null;
-    try {
-      pollInterval = localStorage.getItem("notification-poll-interval");
-    } catch (_error) {
-      // ignore
-    }
+    if (pollIntervalMsRef.current === -1) return;
 
-    // "off" disables polling entirely
-    if (pollInterval === "off") return;
-
-    const ms = pollInterval ? parseInt(pollInterval, 10) : 30000;
-    const intervalMs = isNaN(ms) || ms < 5000 ? 30000 : ms;
-
-    const interval = setInterval(fetchNotifications, intervalMs);
+    const interval = setInterval(fetchNotifications, pollIntervalMsRef.current!);
     return () => clearInterval(interval);
   }, [fetchNotifications]);
 

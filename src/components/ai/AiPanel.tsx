@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import {
   X,
   Sparkles,
@@ -155,7 +155,7 @@ export function AiPanel({
   const resultRef = useRef<HTMLDivElement>(null);
 
   // Chat state
-  const chatStorageKey = `ai-chat:${pageId}`;
+  const chatStorageKey = useMemo(() => `ai-chat:${pageId}`, [pageId]);
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     if (typeof window === "undefined") return [];
     try {

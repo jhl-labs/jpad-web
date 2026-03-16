@@ -4,6 +4,7 @@ import { requireAuth } from "@/lib/auth/helpers";
 import { logError } from "@/lib/logger";
 import { rateLimitRedis } from "@/lib/rateLimit";
 import { getPageAccessContext } from "@/lib/pageAccess";
+import { createAuditActor, getAuditRequestContext, recordAuditLog } from "@/lib/audit";
 
 export async function PATCH(
   req: NextRequest,
@@ -11,6 +12,7 @@ export async function PATCH(
 ) {
   try {
     const user = await requireAuth();
+    const requestContext = getAuditRequestContext(req);
     const { pageId, commentId } = await params;
 
     if (!(await rateLimitRedis(`comment:${user.id}`, 30, 60_000))) {
@@ -74,6 +76,20 @@ export async function PATCH(
       },
     });
 
+    await recordAuditLog({
+      action: "comment.updated",
+      actor: createAuditActor(user, access.member.role),
+      workspaceId: access.page.workspaceId,
+      pageId,
+      targetId: commentId,
+      targetType: "comment",
+      metadata: {
+        contentChanged: content !== undefined,
+        resolvedChanged: resolved !== undefined,
+      },
+      context: requestContext,
+    });
+
     return NextResponse.json(updated);
   } catch (error) {
     if (error instanceof Error && error.message === "Unauthorized") {
@@ -85,7 +101,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ pageId: string; commentId: string }> }
 ) {
   try {
@@ -122,6 +138,16 @@ export async function DELETE(
     }
 
     await prisma.comment.delete({ where: { id: commentId } });
+
+    await recordAuditLog({
+      action: "comment.deleted",
+      actor: createAuditActor(user, access.member.role),
+      workspaceId: access.page.workspaceId,
+      pageId,
+      targetId: commentId,
+      targetType: "comment",
+      context: getAuditRequestContext(req),
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

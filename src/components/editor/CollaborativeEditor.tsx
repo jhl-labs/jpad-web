@@ -770,15 +770,15 @@ function InnerEditor({
           className="flex items-center gap-2 rounded-md text-[13px]"
           style={{
             padding: "8px 12px",
-            background: "rgba(234, 179, 8, 0.12)",
-            color: "rgba(180,83,9,0.9)",
-            border: "1px solid rgba(234, 179, 8, 0.3)",
+            background: "var(--warning-bg, rgba(234, 179, 8, 0.12))",
+            color: "var(--warning, #f97316)",
+            border: "1px solid var(--warning-border, rgba(234, 179, 8, 0.3))",
             marginBottom: 8,
           }}
         >
           <span
             className="w-2 h-2 rounded-full shrink-0"
-            style={{ background: "rgba(234,179,8,0.9)" }}
+            style={{ background: "var(--warning, #f97316)" }}
           />
           인터넷 연결이 끊어졌습니다. 변경사항은 연결이 복원되면 동기화됩니다.
         </div>

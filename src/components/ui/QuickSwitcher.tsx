@@ -318,7 +318,7 @@ export function QuickSwitcher({ workspaceId, isOpen, onClose }: QuickSwitcherPro
         </div>
 
         {/* 결과 목록 */}
-        <div ref={listRef} className="max-h-[400px] overflow-auto py-2">
+        <div ref={listRef} className="max-h-[400px] overflow-auto py-2" aria-live="polite">
           {/* 최근 페이지 섹션 */}
           {!query && recentPages.length > 0 && (
             <div className="px-4 pt-1 pb-1.5">

@@ -22,6 +22,10 @@ export async function GET(
 
     const oid = req.nextUrl.searchParams.get("oid");
 
+    if (oid && !/^[0-9a-f]{7,40}$/.test(oid)) {
+      return NextResponse.json({ error: "Invalid commit hash" }, { status: 400 });
+    }
+
     if (oid) {
       const content = await getPageAtCommit(
         access.page.workspaceId,
