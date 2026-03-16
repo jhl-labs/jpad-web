@@ -1,6 +1,5 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
