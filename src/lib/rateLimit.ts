@@ -107,13 +107,13 @@ export async function rateLimitRedis(key: string, limit: number, windowMs: numbe
     if (pexpireResult?.[0] || pexpireResult?.[1] === 0) {
       try {
         await redis.del(redisKey);
-      } catch {
+      } catch (_error) {
         // best-effort 삭제
       }
     }
 
     return count <= limit;
-  } catch {
+  } catch (_error) {
     // Fallback to in-memory
     return rateLimit(key, limit, windowMs);
   }

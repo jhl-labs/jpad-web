@@ -296,7 +296,7 @@ function computeAllowedOrigins(): Set<string> {
   const origins = new Set<string>();
   const nextauthUrl = process.env.NEXTAUTH_URL;
   if (nextauthUrl) {
-    try { origins.add(new URL(nextauthUrl).origin); } catch {}
+    try { origins.add(new URL(nextauthUrl).origin); } catch (_error) {}
   }
   const extra = process.env.CORS_ALLOWED_ORIGINS;
   if (extra) {

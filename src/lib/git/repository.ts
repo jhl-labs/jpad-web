@@ -75,7 +75,7 @@ export async function readPage(
 
   try {
     return await fs.promises.readFile(fullPath, "utf-8");
-  } catch {
+  } catch (_error) {
     return null;
   }
 }
@@ -99,7 +99,7 @@ export async function deletePage(
         message: `Delete ${slug}`,
         author: { name: authorName, email: "user@jpad.local" },
       });
-    } catch {
+    } catch (_error) {
       // File might not exist
     }
   });
@@ -130,13 +130,13 @@ export async function getPageHistory(workspaceId: string, slug: string) {
             timestamp: commit.commit.author.timestamp * 1000,
           });
         }
-      } catch {
+      } catch (_error) {
         // File doesn't exist in this commit
       }
     }
 
     return relevant;
-  } catch {
+  } catch (_error) {
     return [];
   }
 }
@@ -152,7 +152,7 @@ export async function getPageAtCommit(
   try {
     const result = await git.readBlob({ fs, dir, oid, filepath });
     return new TextDecoder().decode(result.blob);
-  } catch {
+  } catch (_error) {
     return null;
   }
 }

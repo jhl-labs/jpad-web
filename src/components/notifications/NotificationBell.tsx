@@ -84,7 +84,7 @@ export function NotificationBell({ workspaceId }: NotificationBellProps) {
         setNotifications(data.data);
         setUnreadCount(data.unreadCount);
       }
-    } catch {
+    } catch (_error) {
       // ignore
     }
   }, [workspaceId]);
@@ -96,7 +96,7 @@ export function NotificationBell({ workspaceId }: NotificationBellProps) {
     let pollInterval: string | null = null;
     try {
       pollInterval = localStorage.getItem("notification-poll-interval");
-    } catch {
+    } catch (_error) {
       // ignore
     }
 

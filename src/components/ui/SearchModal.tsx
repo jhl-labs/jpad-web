@@ -83,7 +83,7 @@ export function SearchModal({ workspaceId, isOpen, onClose }: SearchModalProps) 
             setResults(data);
             setSelectedIndex(0);
           }
-        } catch {
+        } catch (_error) {
           // ignore
         } finally {
           setLoading(false);
@@ -200,7 +200,7 @@ export function SearchModal({ workspaceId, isOpen, onClose }: SearchModalProps) 
                             : "var(--sidebar-bg)",
                         color:
                           result.matchType === "semantic"
-                            ? "#2563eb"
+                            ? "var(--primary)"
                             : "var(--muted)",
                       }}
                     >

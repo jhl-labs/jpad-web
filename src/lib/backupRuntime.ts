@@ -21,7 +21,7 @@ export async function fileExists(targetPath: string): Promise<boolean> {
   try {
     await fs.promises.access(targetPath, fs.constants.F_OK);
     return true;
-  } catch {
+  } catch (_error) {
     return false;
   }
 }
@@ -29,7 +29,7 @@ export async function fileExists(targetPath: string): Promise<boolean> {
 export async function statPath(targetPath: string) {
   try {
     return await fs.promises.stat(targetPath);
-  } catch {
+  } catch (_error) {
     return null;
   }
 }
@@ -42,7 +42,7 @@ export async function isCommandAvailable(command: string): Promise<boolean> {
     try {
       await fs.promises.access(candidate, fs.constants.X_OK);
       return true;
-    } catch {
+    } catch (_error) {
       // Continue searching the next PATH entry.
     }
   }

@@ -45,7 +45,7 @@ class RedisSamlCacheProvider implements CacheProvider {
 
     try {
       await redis.set(`${CACHE_PREFIX}${key}`, value, "PX", this.ttlMs);
-    } catch {
+    } catch (_error) {
       cleanupFallbackCache(createdAt);
       samlCacheFallback.set(key, { value, expiresAt });
     }
@@ -57,7 +57,7 @@ class RedisSamlCacheProvider implements CacheProvider {
     try {
       const cached = await redis.get(`${CACHE_PREFIX}${key}`);
       if (cached) return cached;
-    } catch {
+    } catch (_error) {
       cleanupFallbackCache();
     }
 
@@ -77,7 +77,7 @@ class RedisSamlCacheProvider implements CacheProvider {
     try {
       redisValue = await redis.get(`${CACHE_PREFIX}${key}`);
       await redis.del(`${CACHE_PREFIX}${key}`);
-    } catch {
+    } catch (_error) {
       cleanupFallbackCache();
     }
 

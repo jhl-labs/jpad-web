@@ -252,7 +252,7 @@ export function ShareDialog({
     if (!value) return;
     try {
       await navigator.clipboard.writeText(value);
-    } catch {
+    } catch (error) {
       setError("클립보드 복사에 실패했습니다.");
     }
   }

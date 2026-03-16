@@ -284,7 +284,7 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
           const data = await res.json();
           setWorkspaces(data);
         }
-      } catch {
+      } catch (_error) {
         // ignore
       }
     })();
@@ -321,7 +321,7 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
         const data = await res.json();
         setTrashCount(data.length);
       }
-    } catch {
+    } catch (_error) {
       // ignore
     }
   }, [workspace.id, canManageTrash]);

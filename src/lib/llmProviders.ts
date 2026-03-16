@@ -65,7 +65,7 @@ async function parseErrorResponse(response: Response) {
       return data.error.message;
     }
     if (data?.message) return data.message;
-  } catch {
+  } catch (_error) {
     // ignore JSON parse failures
   }
 

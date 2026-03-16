@@ -91,7 +91,7 @@ export default function WorkspaceListPage() {
         | { error?: string }
         | null;
       setCreateError(payload?.error || "워크스페이스를 생성하지 못했습니다.");
-    } catch {
+    } catch (error) {
       setCreateError("워크스페이스 생성 요청 중 네트워크 오류가 발생했습니다.");
     } finally {
       setSubmittingCreate(false);

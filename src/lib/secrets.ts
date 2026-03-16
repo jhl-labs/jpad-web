@@ -64,7 +64,7 @@ export function decryptSecret(secret: string | null | undefined): string | null 
     ]);
 
     return plaintext.toString("utf8");
-  } catch {
+  } catch (error) {
     throw new SecretEncryptionError("Failed to decrypt workspace secret");
   }
 }

@@ -78,7 +78,7 @@ export default function WorkspaceHomePage() {
         const data = await res.json().catch(() => null);
         setCreateError((data as { error?: string } | null)?.error || "페이지 생성에 실패했습니다.");
       }
-    } catch {
+    } catch (error) {
       setCreateError("페이지 생성 요청 중 네트워크 오류가 발생했습니다.");
     }
   }

@@ -66,7 +66,7 @@ async function fetchWsToken(
     if (!res.ok) return null;
     const data = await res.json();
     return data.token;
-  } catch {
+  } catch (_error) {
     return null;
   }
 }
@@ -287,7 +287,7 @@ function InnerEditor({
         if (stored) {
           setFontSize(stored.endsWith("px") ? stored : `${stored}px`);
         }
-      } catch {
+      } catch (_error) {
         // ignore
       }
     };
@@ -362,7 +362,7 @@ function InnerEditor({
         try {
           const blocks = await editor.tryParseMarkdownToBlocks(initialContent);
           editor.replaceBlocks(editor.document, blocks);
-        } catch {
+        } catch (_error) {
           // ignore parse errors
         }
       }
@@ -412,7 +412,7 @@ function InnerEditor({
         if (!cancelled) {
           editor.replaceBlocks(editor.document, blocks);
         }
-      } catch {
+      } catch (_error) {
         // ignore parse errors on restore
       }
     }
@@ -439,7 +439,7 @@ function InnerEditor({
         await onSave(markdown);
         updateSaveStatus("saved");
         savedTimeout.current = setTimeout(() => updateSaveStatus("idle"), SAVED_STATUS_RESET_MS);
-      } catch {
+      } catch (error) {
         updateSaveStatus("error");
       }
     }, AUTO_SAVE_DEBOUNCE_MS);
@@ -490,7 +490,7 @@ function InnerEditor({
       const blocksUpToCursor = allBlocks.slice(0, idx + 1);
       const textBefore = blocksToMarkdown(blocksUpToCursor);
       onCursorContextChange({ blockId: cursorBlockId, textBefore });
-    } catch {
+    } catch (_error) {
       onCursorContextChange(null);
     }
   }, [editor, onCursorContextChange]);
@@ -530,7 +530,7 @@ function InnerEditor({
           editor.replaceBlocks(editor.document, blocks);
         }
         handleChange();
-      } catch {
+      } catch (_error) {
         // ignore insert failures
       }
     }
@@ -981,7 +981,7 @@ export function CollaborativeEditor({
               params: { token },
             }
           );
-        } catch {
+        } catch (_error) {
           // WS not available
         }
       }

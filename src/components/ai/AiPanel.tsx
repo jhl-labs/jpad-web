@@ -161,7 +161,7 @@ export function AiPanel({
     try {
       const stored = sessionStorage.getItem(`ai-chat:${pageId}`);
       return stored ? JSON.parse(stored) : [];
-    } catch {
+    } catch (_error) {
       return [];
     }
   });
@@ -177,7 +177,7 @@ export function AiPanel({
   useEffect(() => {
     try {
       sessionStorage.setItem(chatStorageKey, JSON.stringify(messages));
-    } catch {
+    } catch (_error) {
       // ignore storage errors
     }
   }, [messages, chatStorageKey]);
@@ -207,7 +207,7 @@ export function AiPanel({
             return;
           }
         }
-      } catch {
+      } catch (_error) {
         // DB 실패 시 sessionStorage fallback
       }
 
@@ -220,7 +220,7 @@ export function AiPanel({
           } else {
             setMessages([]);
           }
-        } catch {
+        } catch (_error) {
           setMessages([]);
         }
       }
@@ -237,7 +237,7 @@ export function AiPanel({
     setMessages([]);
     try {
       sessionStorage.removeItem(chatStorageKey);
-    } catch {
+    } catch (_error) {
       // ignore
     }
   }, [chatStorageKey]);
@@ -422,7 +422,7 @@ export function AiPanel({
       await navigator.clipboard.writeText(result);
       setCopyFeedback(true);
       setTimeout(() => setCopyFeedback(false), 2000);
-    } catch {
+    } catch (_error) {
       /* fallback: do nothing */
     }
   }

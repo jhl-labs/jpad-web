@@ -51,7 +51,7 @@ export function blocksToMarkdown(blocks: Block[]): string {
               }
             }
           }
-        } catch { /* skip malformed tables */ }
+        } catch (_error) { /* skip malformed tables */ }
         break;
       case "image":
         lines.push(`![${block.props?.caption || ""}](${block.props?.url || ""})`);

@@ -121,7 +121,7 @@ export function AttachmentPanel({
         const data = await res.json();
         setUploadError(data.error || "업로드 실패");
       }
-    } catch {
+    } catch (error) {
       setUploadError("업로드 중 오류가 발생했습니다");
     } finally {
       setUploading(false);

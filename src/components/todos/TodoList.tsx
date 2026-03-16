@@ -49,8 +49,8 @@ interface TodoListProps {
 }
 
 const PRIORITY_CONFIG = {
-  urgent: { label: "긴급", textColor: "#ef4444", bgColor: "rgba(239,68,68,0.1)" },
-  high: { label: "높음", textColor: "#f97316", bgColor: "rgba(249,115,22,0.1)" },
+  urgent: { label: "긴급", textColor: "var(--danger, #ef4444)", bgColor: "rgba(239,68,68,0.1)" },
+  high: { label: "높음", textColor: "var(--warning, #f97316)", bgColor: "rgba(249,115,22,0.1)" },
   medium: { label: "보통", textColor: "var(--primary)", bgColor: "rgba(59,130,246,0.1)" },
   low: { label: "낮음", textColor: "var(--muted)", bgColor: "var(--sidebar-bg)" },
 } as const;
@@ -289,7 +289,7 @@ export function TodoList({ workspaceId }: TodoListProps) {
                 className="h-full rounded-full transition-all"
                 style={{
                   width: `${progressPct}%`,
-                  background: progressPct === 100 ? "#22c55e" : "var(--primary)",
+                  background: progressPct === 100 ? "var(--success, #22c55e)" : "var(--primary)",
                 }}
               />
             </div>
@@ -516,7 +516,7 @@ function TodoItem({
         onClick={onToggle}
         className="border-none bg-transparent cursor-pointer p-0 mt-0.5 shrink-0 transition-colors"
         style={{
-          color: todo.completed ? "#22c55e" : "var(--muted)",
+          color: todo.completed ? "var(--success, #22c55e)" : "var(--muted)",
         }}
       >
         {todo.completed ? <CheckCircle2 size={18} /> : <Circle size={18} />}
@@ -575,7 +575,7 @@ function TodoItem({
             <span
               className="inline-flex items-center gap-1 text-[11px]"
               style={{
-                color: overdue && !todo.completed ? "#ef4444" : "var(--muted)",
+                color: overdue && !todo.completed ? "var(--danger, #ef4444)" : "var(--muted)",
                 fontWeight: overdue && !todo.completed ? 600 : 400,
               }}
             >
@@ -689,7 +689,7 @@ function TodoItem({
         }}
         className="border-none bg-transparent cursor-pointer p-1 rounded shrink-0 transition-opacity"
         style={{
-          color: "#ef4444",
+          color: "var(--danger, #ef4444)",
           opacity: hovered ? 0.7 : 0,
         }}
         title="삭제"

@@ -325,7 +325,7 @@ export function WorkspaceAiSettingsTab({
         throw new Error("인덱싱 작업을 불러오지 못했습니다.");
       }
       setIndexJobs(Array.isArray(data?.data) ? data.data : []);
-    } catch {
+    } catch (_error) {
       setIndexJobs([]);
     } finally {
       setIndexJobsLoading(false);
@@ -349,7 +349,7 @@ export function WorkspaceAiSettingsTab({
         throw new Error("워커 실행 이력을 불러오지 못했습니다.");
       }
       setWorkerRuns(Array.isArray(data?.data) ? data.data : []);
-    } catch {
+    } catch (_error) {
       setWorkerRuns([]);
     } finally {
       setWorkerRunsLoading(false);

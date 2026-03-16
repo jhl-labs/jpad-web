@@ -45,7 +45,7 @@ function loadState(workspaceId: string): ChecklistState {
   try {
     const raw = localStorage.getItem(getStorageKey(workspaceId));
     if (raw) return { ...INITIAL_STATE, ...JSON.parse(raw) };
-  } catch {
+  } catch (_error) {
     // ignore
   }
   return { ...INITIAL_STATE };
@@ -54,7 +54,7 @@ function loadState(workspaceId: string): ChecklistState {
 function saveState(workspaceId: string, state: ChecklistState) {
   try {
     localStorage.setItem(getStorageKey(workspaceId), JSON.stringify(state));
-  } catch {
+  } catch (_error) {
     // ignore
   }
 }
@@ -215,7 +215,7 @@ export function OnboardingChecklist({
               >
                 <span
                   className="shrink-0"
-                  style={{ color: item.done ? "#22c55e" : "var(--muted)" }}
+                  style={{ color: item.done ? "var(--success, #22c55e)" : "var(--muted)" }}
                 >
                   {item.done ? (
                     <CheckCircle2 size={18} />

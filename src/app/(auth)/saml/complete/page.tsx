@@ -38,7 +38,7 @@ function SamlCompleteInner() {
           if (url.origin === window.location.origin) {
             callbackUrl = url.pathname + url.search + url.hash;
           }
-        } catch {
+        } catch (_error) {
           // invalid URL, fallback to default /workspace
         }
       }

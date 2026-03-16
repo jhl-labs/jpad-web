@@ -93,7 +93,7 @@ export async function getFile(
         data: Buffer.concat(chunks),
         contentType: result.ContentType,
       };
-    } catch {
+    } catch (_error) {
       return null;
     }
   }
@@ -103,7 +103,7 @@ export async function getFile(
   try {
     const data = await fs.promises.readFile(fullPath);
     return { data };
-  } catch {
+  } catch (_error) {
     return null;
   }
 }
@@ -125,7 +125,7 @@ export async function deleteFile(
   const fullPath = resolveLocalPath(filePath);
   try {
     await fs.promises.unlink(fullPath);
-  } catch {
+  } catch (_error) {
     // File might not exist
   }
 }

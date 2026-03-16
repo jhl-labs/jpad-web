@@ -49,7 +49,7 @@ export function CoverPicker({ pageId, workspaceId, onSelect, onClose }: CoverPic
         onSelect(data.url);
         onClose();
       }
-    } catch {
+    } catch (_error) {
       // ignore
     } finally {
       setUploading(false);

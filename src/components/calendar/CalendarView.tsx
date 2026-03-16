@@ -136,7 +136,7 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
       } else {
         setErrorMessage("일정을 불러오는 데 실패했습니다.");
       }
-    } catch {
+    } catch (error) {
       setErrorMessage("네트워크 오류로 일정을 불러올 수 없습니다.");
     } finally {
       setLoading(false);
@@ -184,7 +184,7 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
       setSyncResult(data);
       setLastSyncAt(new Date().toISOString());
       fetchEvents();
-    } catch {
+    } catch (_error) {
       // ignore
     } finally {
       setSyncing(false);
@@ -200,7 +200,7 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
       setGoogleConnected(false);
       setLastSyncAt(null);
       setSyncResult(null);
-    } catch {
+    } catch (_error) {
       // ignore
     }
   }
@@ -351,7 +351,7 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
       setShowModal(false);
       resetForm();
       fetchEvents();
-    } catch {
+    } catch (error) {
       setErrorMessage("일정 저장에 실패했습니다. 다시 시도해주세요.");
     }
   }
@@ -375,7 +375,7 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
       setShowModal(false);
       resetForm();
       fetchEvents();
-    } catch {
+    } catch (error) {
       setErrorMessage("일정 삭제에 실패했습니다. 다시 시도해주세요.");
     }
   }

@@ -96,7 +96,7 @@ export function BacklinkSuggestion({
           return;
         }
         setSuggestions(await res.json());
-      } catch {
+      } catch (error) {
         setSuggestions([]);
       }
     }, 150);

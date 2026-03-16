@@ -116,7 +116,7 @@ export default function DailyNotePage() {
             return next;
           });
         }
-      } catch {
+      } catch (_error) {
         // ignore
       }
     },

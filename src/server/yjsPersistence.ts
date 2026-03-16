@@ -29,7 +29,7 @@ export async function loadDocSnapshot(docName: string): Promise<Uint8Array | nul
   try {
     const data = await fs.promises.readFile(filePath);
     return new Uint8Array(data);
-  } catch {
+  } catch (_error) {
     return null;
   }
 }

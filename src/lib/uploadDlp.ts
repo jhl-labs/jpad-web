@@ -232,7 +232,7 @@ function extractTextForDlp(
     if (mimeType === "image/svg+xml" || lowerFilename.endsWith(".svg")) {
       return extractXmlLikeText(buffer, maxCharacters);
     }
-  } catch {
+  } catch (error) {
     return {
       supported: true,
       succeeded: false,

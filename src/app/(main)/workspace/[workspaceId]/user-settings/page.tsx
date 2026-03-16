@@ -399,7 +399,7 @@ function ProfileTab() {
             {saveMsg && (
               <div
                 className="text-xs mt-2"
-                style={{ color: saveMsg === "저장되었습니다" ? "var(--primary)" : "#ef4444" }}
+                style={{ color: saveMsg === "저장되었습니다" ? "var(--primary)" : "var(--danger, #ef4444)" }}
               >
                 {saveMsg}
               </div>
@@ -475,7 +475,7 @@ function PasswordChangeSection() {
             : "비밀번호 변경 실패";
         setMessage({ text: errorMsg, isError: true });
       }
-    } catch {
+    } catch (error) {
       setMessage({ text: "비밀번호 변경 중 오류가 발생했습니다", isError: true });
     } finally {
       setSaving(false);
@@ -542,7 +542,7 @@ function PasswordChangeSection() {
             </button>
           </div>
           {passwordTooShort && (
-            <div className="text-xs mt-1" style={{ color: "#ef4444" }}>
+            <div className="text-xs mt-1" style={{ color: "var(--danger, #ef4444)" }}>
               비밀번호는 최소 8자 이상이어야 합니다
             </div>
           )}
@@ -571,7 +571,7 @@ function PasswordChangeSection() {
             </button>
           </div>
           {passwordMismatch && (
-            <div className="text-xs mt-1" style={{ color: "#ef4444" }}>
+            <div className="text-xs mt-1" style={{ color: "var(--danger, #ef4444)" }}>
               비밀번호가 일치하지 않습니다
             </div>
           )}
@@ -591,7 +591,7 @@ function PasswordChangeSection() {
           {message && (
             <span
               className="text-xs"
-              style={{ color: message.isError ? "#ef4444" : "var(--primary)" }}
+              style={{ color: message.isError ? "var(--danger, #ef4444)" : "var(--primary)" }}
             >
               {message.text}
             </span>
@@ -747,7 +747,7 @@ function DataTab({ workspaceId }: { workspaceId: string }) {
           pageCount = data.total ?? (Array.isArray(data) ? data.length : 0);
         }
         setStats({ pageCount, attachmentCount: 0 });
-      } catch {
+      } catch (_error) {
         // ignore
       }
     })();
@@ -785,7 +785,7 @@ function DataTab({ workspaceId }: { workspaceId: string }) {
               .slice(0, 100);
             files.push({ name: `${safeName}.md`, content: md });
           }
-        } catch {
+        } catch (_error) {
           // skip failed pages
         }
       }
@@ -847,7 +847,7 @@ function DataTab({ workspaceId }: { workspaceId: string }) {
         alert(`${items.length}개 페이지가 영구 삭제되었습니다.`);
         window.dispatchEvent(new Event("sidebar:refresh"));
       }
-    } catch {
+    } catch (error) {
       alert("휴지통 비우기 중 오류가 발생했습니다.");
     } finally {
       setEmptyingTrash(false);
@@ -893,7 +893,7 @@ function DataTab({ workspaceId }: { workspaceId: string }) {
             onClick={handleEmptyTrash}
             disabled={emptyingTrash}
             className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50"
-            style={{ color: "#ef4444", border: "1px solid rgba(239,68,68,0.5)" }}
+            style={{ color: "var(--danger, #ef4444)", border: "1px solid rgba(239,68,68,0.5)" }}
           >
             {emptyingTrash ? (
               <Loader2 size={14} className="animate-spin" />
@@ -1073,7 +1073,7 @@ function VersionTab() {
         isUpToDate,
         url: releaseUrl,
       });
-    } catch {
+    } catch (_error) {
       setUpdateInfo({ latest: "확인 실패", isUpToDate: true });
     } finally {
       setChecking(false);

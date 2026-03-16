@@ -55,7 +55,7 @@ function getRecentPages(workspaceId: string): SearchResult[] {
     const raw = localStorage.getItem(`${RECENT_KEY}:${workspaceId}`);
     if (!raw) return [];
     return JSON.parse(raw) as SearchResult[];
-  } catch {
+  } catch (_error) {
     return [];
   }
 }
@@ -67,7 +67,7 @@ export function trackRecentPage(workspaceId: string, page: { id: string; title: 
     const entry: SearchResult = { ...page, snippet: null, matchType: "recent" };
     const updated = [entry, ...filtered].slice(0, MAX_RECENT);
     localStorage.setItem(`${RECENT_KEY}:${workspaceId}`, JSON.stringify(updated));
-  } catch {
+  } catch (_error) {
     // ignore
   }
 }
@@ -211,7 +211,7 @@ export function QuickSwitcher({ workspaceId, isOpen, onClose }: QuickSwitcherPro
             setResults(data);
             setSelectedIndex(0);
           }
-        } catch {
+        } catch (_error) {
           // ignore
         } finally {
           setLoading(false);

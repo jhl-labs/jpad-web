@@ -82,7 +82,7 @@ export function TemplatePickerModal({
         setBuiltIn(data.builtIn || []);
         setCustom(data.custom || []);
       }
-    } catch {
+    } catch (_error) {
       // ignore
     } finally {
       setLoading(false);
@@ -144,7 +144,7 @@ export function TemplatePickerModal({
         setSaveIcon("");
         fetchTemplates();
       }
-    } catch {
+    } catch (_error) {
       // ignore
     } finally {
       setSaving(false);
