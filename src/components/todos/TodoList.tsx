@@ -57,11 +57,19 @@ const PRIORITY_CONFIG = {
 
 const PRIORITY_ORDER: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
 
+interface WorkspaceMember {
+  id: string;
+  userId: string;
+  user: { id: string; name: string; email: string };
+}
+
 export function TodoList({ workspaceId }: TodoListProps) {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [loading, setLoading] = useState(true);
   const [newTitle, setNewTitle] = useState("");
   const [newPriority, setNewPriority] = useState<"low" | "medium" | "high" | "urgent">("medium");
+  const [newAssigneeId, setNewAssigneeId] = useState<string>("");
+  const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [filterCompleted, setFilterCompleted] = useState<"all" | "active" | "completed">("all");
   const [sortBy, setSortBy] = useState<"priority" | "dueDate" | "created">("created");
   const [submitting, setSubmitting] = useState(false);
@@ -86,9 +94,21 @@ export function TodoList({ workspaceId }: TodoListProps) {
     }
   }, [workspaceId, filterCompleted]);
 
+  const fetchMembers = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/workspaces/${workspaceId}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setMembers(data.members || []);
+    } catch (e) {
+      console.error("Failed to fetch members:", e);
+    }
+  }, [workspaceId]);
+
   useEffect(() => {
     fetchTodos();
-  }, [fetchTodos]);
+    fetchMembers();
+  }, [fetchTodos, fetchMembers]);
 
   const addTodo = async () => {
     const title = newTitle.trim();
@@ -96,16 +116,19 @@ export function TodoList({ workspaceId }: TodoListProps) {
 
     setSubmitting(true);
     try {
+      const body: Record<string, unknown> = { title, priority: newPriority };
+      if (newAssigneeId) body.assigneeId = newAssigneeId;
       const res = await fetch(`/api/workspaces/${workspaceId}/todos`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, priority: newPriority }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error("Failed to create");
       const todo = await res.json();
       setTodos((prev) => [todo, ...prev]);
       setNewTitle("");
       setNewPriority("medium");
+      setNewAssigneeId("");
       inputRef.current?.focus();
     } catch (e) {
       console.error("Failed to create todo:", e);
@@ -144,7 +167,7 @@ export function TodoList({ workspaceId }: TodoListProps) {
     }
   };
 
-  const updateTodo = async (todoId: string, updates: Partial<Pick<Todo, "title" | "dueDate">>) => {
+  const updateTodo = async (todoId: string, updates: Partial<Pick<Todo, "title" | "dueDate">> & { assigneeId?: string | null }) => {
     try {
       const res = await fetch(
         `/api/workspaces/${workspaceId}/todos/${todoId}`,
@@ -310,6 +333,25 @@ export function TodoList({ workspaceId }: TodoListProps) {
             <option value="high">높음</option>
             <option value="urgent">긴급</option>
           </select>
+          {members.length > 0 && (
+            <select
+              value={newAssigneeId}
+              onChange={(e) => setNewAssigneeId(e.target.value)}
+              className="text-xs rounded px-2 py-1 cursor-pointer outline-none"
+              style={{
+                background: "var(--background)",
+                border: "1px solid var(--border)",
+                color: newAssigneeId ? "var(--foreground)" : "var(--muted)",
+              }}
+            >
+              <option value="">담당자 없음</option>
+              {members.map((m) => (
+                <option key={m.user.id} value={m.user.id}>
+                  {m.user.name || m.user.email}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
         <button
           onClick={addTodo}
@@ -380,6 +422,7 @@ export function TodoList({ workspaceId }: TodoListProps) {
           <TodoItem
             key={todo.id}
             todo={todo}
+            members={members}
             onToggle={() => toggleTodo(todo)}
             onDelete={() => deleteTodo(todo.id)}
             onUpdate={(updates) => updateTodo(todo.id, updates)}
@@ -394,6 +437,7 @@ export function TodoList({ workspaceId }: TodoListProps) {
 
 function TodoItem({
   todo,
+  members,
   onToggle,
   onDelete,
   onUpdate,
@@ -401,9 +445,10 @@ function TodoItem({
   formatDate,
 }: {
   todo: Todo;
+  members: WorkspaceMember[];
   onToggle: () => void;
   onDelete: () => void;
-  onUpdate: (updates: Partial<Pick<Todo, "title" | "dueDate">>) => void;
+  onUpdate: (updates: Partial<Pick<Todo, "title" | "dueDate">> & { assigneeId?: string | null }) => void;
   isOverdue: boolean;
   formatDate: (d: string) => string;
 }) {
@@ -411,6 +456,7 @@ function TodoItem({
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(todo.title);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showAssigneePicker, setShowAssigneePicker] = useState(false);
   const editInputRef = useRef<HTMLInputElement>(null);
   const config = PRIORITY_CONFIG[todo.priority];
 
@@ -569,7 +615,47 @@ function TodoItem({
           )}
 
           {/* Assignee */}
-          {todo.assignee && (
+          {!todo.completed && members.length > 0 && (
+            <span className="relative inline-flex items-center">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowAssigneePicker(!showAssigneePicker);
+                }}
+                className="inline-flex items-center gap-0.5 text-[11px] border-none bg-transparent cursor-pointer p-0 transition-opacity hover:opacity-70"
+                style={{ color: "var(--muted)" }}
+                title="담당자 변경"
+              >
+                <User size={10} />
+                {todo.assignee ? todo.assignee.name : "담당자"}
+              </button>
+              {showAssigneePicker && (
+                <select
+                  value={todo.assignee?.id || ""}
+                  onChange={(e) => {
+                    setShowAssigneePicker(false);
+                    onUpdate({ assigneeId: e.target.value || null });
+                  }}
+                  onBlur={() => setShowAssigneePicker(false)}
+                  autoFocus
+                  className="absolute left-0 top-5 z-10 text-xs rounded px-1 py-0.5"
+                  style={{
+                    background: "var(--background)",
+                    border: "1px solid var(--border)",
+                    color: "var(--foreground)",
+                  }}
+                >
+                  <option value="">담당자 없음</option>
+                  {members.map((m) => (
+                    <option key={m.user.id} value={m.user.id}>
+                      {m.user.name || m.user.email}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </span>
+          )}
+          {todo.completed && todo.assignee && (
             <span
               className="inline-flex items-center gap-1 text-[11px]"
               style={{ color: "var(--muted)" }}

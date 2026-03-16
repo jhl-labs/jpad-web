@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 
 const EMOJI_CATEGORIES: Record<string, string[]> = {
   "표정": ["😀", "😂", "🥰", "😎", "🤔", "😢", "😡", "🥳", "😴", "🤗", "😱", "🤩", "😇", "🫠"],
@@ -21,7 +21,11 @@ interface EmojiPickerProps {
 
 export function EmojiPicker({ onSelect, onClose }: EmojiPickerProps) {
   const [activeCategory, setActiveCategory] = useState(CATEGORY_NAMES[0]);
+  const [focusedIndex, setFocusedIndex] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+
+  const emojis = EMOJI_CATEGORIES[activeCategory];
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -32,6 +36,50 @@ export function EmojiPicker({ onSelect, onClose }: EmojiPickerProps) {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [onClose]);
+
+  // Reset focus index when category changes
+  useEffect(() => {
+    setFocusedIndex(0);
+  }, [activeCategory]);
+
+  const handleGridKeyDown = useCallback((e: React.KeyboardEvent) => {
+    const cols = 7;
+    let next = focusedIndex;
+
+    switch (e.key) {
+      case "ArrowRight":
+        e.preventDefault();
+        next = focusedIndex + 1 < emojis.length ? focusedIndex + 1 : focusedIndex;
+        break;
+      case "ArrowLeft":
+        e.preventDefault();
+        next = focusedIndex - 1 >= 0 ? focusedIndex - 1 : focusedIndex;
+        break;
+      case "ArrowDown":
+        e.preventDefault();
+        next = focusedIndex + cols < emojis.length ? focusedIndex + cols : focusedIndex;
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        next = focusedIndex - cols >= 0 ? focusedIndex - cols : focusedIndex;
+        break;
+      case "Enter":
+      case " ":
+        e.preventDefault();
+        onSelect(emojis[focusedIndex]);
+        onClose();
+        return;
+      default:
+        return;
+    }
+
+    setFocusedIndex(next);
+    const grid = gridRef.current;
+    if (grid) {
+      const buttons = grid.querySelectorAll<HTMLButtonElement>('[role="gridcell"] button, [role="gridcell"]');
+      buttons[next]?.focus();
+    }
+  }, [focusedIndex, emojis, onSelect, onClose]);
 
   return (
     <div
@@ -68,18 +116,28 @@ export function EmojiPicker({ onSelect, onClose }: EmojiPickerProps) {
       </div>
 
       {/* Emoji grid */}
-      <div className="grid grid-cols-7 gap-1 p-2">
-        {EMOJI_CATEGORIES[activeCategory].map((emoji) => (
-          <button
-            key={emoji}
-            onClick={() => { onSelect(emoji); onClose(); }}
-            className="flex items-center justify-center w-9 h-9 rounded text-xl hover:scale-110 transition-transform"
-            style={{ background: "transparent" }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--sidebar-hover)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-          >
-            {emoji}
-          </button>
+      <div
+        ref={gridRef}
+        role="grid"
+        aria-label={activeCategory}
+        className="grid grid-cols-7 gap-1 p-2"
+        onKeyDown={handleGridKeyDown}
+      >
+        {emojis.map((emoji, index) => (
+          <div key={emoji} role="gridcell">
+            <button
+              onClick={() => { onSelect(emoji); onClose(); }}
+              tabIndex={index === focusedIndex ? 0 : -1}
+              aria-label={emoji}
+              className="flex items-center justify-center w-9 h-9 rounded text-xl hover:scale-110 transition-transform"
+              style={{ background: "transparent" }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--sidebar-hover)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+              onFocus={() => setFocusedIndex(index)}
+            >
+              {emoji}
+            </button>
+          </div>
         ))}
       </div>
 

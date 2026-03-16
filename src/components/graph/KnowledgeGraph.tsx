@@ -545,9 +545,16 @@ export function KnowledgeGraph({ workspaceId, currentPageId }: KnowledgeGraphPro
     <div ref={containerRef} className="relative w-full h-full">
       <canvas
         ref={canvasRef}
+        role="img"
+        aria-label="지식 그래프"
         className="block w-full h-full"
         style={{ cursor: "grab" }}
       />
+
+      {/* Screen reader accessible node summary */}
+      <span className="sr-only">
+        {nodeCount}개 페이지, {edgeCount}개 연결
+      </span>
 
       {/* Stats overlay */}
       <div

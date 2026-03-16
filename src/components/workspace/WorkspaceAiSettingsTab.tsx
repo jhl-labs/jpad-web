@@ -135,15 +135,15 @@ function getSearchIndexJobTypeLabel(jobType: string) {
 
 function getSearchIndexJobStatusMeta(status: string) {
   if (status === "success") {
-    return { background: "#dcfce7", color: "#166534", label: "완료" };
+    return { background: "rgba(34,197,94,0.1)", color: "rgba(22,101,52,0.9)", label: "완료" };
   }
   if (status === "running") {
-    return { background: "#dbeafe", color: "#1d4ed8", label: "실행 중" };
+    return { background: "rgba(59,130,246,0.1)", color: "rgba(29,78,216,0.9)", label: "실행 중" };
   }
   if (status === "error") {
-    return { background: "#fee2e2", color: "#991b1b", label: "오류" };
+    return { background: "rgba(239,68,68,0.1)", color: "rgba(153,27,27,0.9)", label: "오류" };
   }
-  return { background: "#f3f4f6", color: "#374151", label: "대기 중" };
+  return { background: "rgba(107,114,128,0.08)", color: "rgba(55,65,81,0.9)", label: "대기 중" };
 }
 
 function getSearchIndexJobSummary(job: SearchIndexJobEntry) {
@@ -737,7 +737,7 @@ export function WorkspaceAiSettingsTab({
       {error && (
         <div
           className="rounded-lg px-4 py-3 text-sm"
-          style={{ background: "#fef2f2", color: "#b91c1c" }}
+          style={{ background: "rgba(239,68,68,0.08)", color: "rgba(185,28,28,0.9)" }}
         >
           {error}
         </div>
@@ -1157,16 +1157,16 @@ export function WorkspaceAiSettingsTab({
                         style={{
                           background:
                             status.tone === "success"
-                              ? "#ecfdf5"
+                              ? "rgba(34,197,94,0.08)"
                               : status.tone === "error"
-                                ? "#fef2f2"
-                                : "#eff6ff",
+                                ? "rgba(239,68,68,0.08)"
+                                : "rgba(59,130,246,0.08)",
                           color:
                             status.tone === "success"
-                              ? "#047857"
+                              ? "rgba(4,120,87,0.9)"
                               : status.tone === "error"
-                                ? "#b91c1c"
-                                : "#1d4ed8",
+                                ? "rgba(185,28,28,0.9)"
+                                : "rgba(29,78,216,0.9)",
                         }}
                       >
                         {status.text}
@@ -1425,7 +1425,7 @@ export function WorkspaceAiSettingsTab({
               {vectorStoreError ? (
                 <div
                   className="mt-3 rounded px-3 py-2 text-xs"
-                  style={{ background: "#fef2f2", color: "#b91c1c" }}
+                  style={{ background: "rgba(239,68,68,0.08)", color: "rgba(185,28,28,0.9)" }}
                 >
                   {vectorStoreError}
                 </div>
@@ -1555,7 +1555,7 @@ export function WorkspaceAiSettingsTab({
                   {vectorStoreStatus.fallbackActive && (
                     <div
                       className="mt-3 rounded px-3 py-2 text-xs"
-                      style={{ background: "#fff7ed", color: "#9a3412" }}
+                      style={{ background: "rgba(251,146,60,0.08)", color: "rgba(154,52,18,0.9)" }}
                     >
                       <div className="flex items-center gap-2 font-medium">
                         <AlertTriangle size={14} />
@@ -1730,7 +1730,7 @@ export function WorkspaceAiSettingsTab({
                         {job.lastError && (
                           <div
                             className="mt-2 rounded px-2 py-2 text-xs"
-                            style={{ background: "#fef2f2", color: "#b91c1c" }}
+                            style={{ background: "rgba(239,68,68,0.08)", color: "rgba(185,28,28,0.9)" }}
                           >
                             {job.lastError}
                           </div>
@@ -1830,7 +1830,7 @@ export function WorkspaceAiSettingsTab({
                         {run.errorMessage && (
                           <div
                             className="mt-2 rounded px-2 py-2 text-xs"
-                            style={{ background: "#fef2f2", color: "#b91c1c" }}
+                            style={{ background: "rgba(239,68,68,0.08)", color: "rgba(185,28,28,0.9)" }}
                           >
                             {run.errorMessage}
                           </div>
@@ -1847,16 +1847,16 @@ export function WorkspaceAiSettingsTab({
                 style={{
                   background:
                     reindexStatus.tone === "success"
-                      ? "#ecfdf5"
+                      ? "rgba(34,197,94,0.08)"
                       : reindexStatus.tone === "error"
-                        ? "#fef2f2"
-                        : "#eff6ff",
+                        ? "rgba(239,68,68,0.08)"
+                        : "rgba(59,130,246,0.08)",
                   color:
                     reindexStatus.tone === "success"
-                      ? "#166534"
+                      ? "rgba(22,101,52,0.9)"
                       : reindexStatus.tone === "error"
-                        ? "#b91c1c"
-                        : "#1d4ed8",
+                        ? "rgba(185,28,28,0.9)"
+                        : "rgba(29,78,216,0.9)",
                 }}
               >
                 {reindexStatus.text}

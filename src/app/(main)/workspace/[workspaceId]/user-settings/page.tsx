@@ -21,7 +21,11 @@ import {
   Check,
   Loader2,
   RefreshCw,
+  Lock,
+  Eye,
+  EyeOff,
 } from "lucide-react";
+import { ImportModal } from "@/components/editor/ImportModal";
 
 // ── 타입 ──────────────────────────────────────────────────────
 
@@ -417,7 +421,184 @@ function ProfileTab() {
           </Field>
         </div>
       </Section>
+
+      <PasswordChangeSection />
     </div>
+  );
+}
+
+// ── 비밀번호 변경 섹션 ──────────────────────────────────────────
+
+function PasswordChangeSection() {
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const passwordMismatch = confirmPassword.length > 0 && newPassword !== confirmPassword;
+  const passwordTooShort = newPassword.length > 0 && newPassword.length < 8;
+  const canSubmit =
+    currentPassword.length > 0 &&
+    newPassword.length >= 8 &&
+    newPassword === confirmPassword &&
+    !saving;
+
+  async function handleChangePassword() {
+    if (!canSubmit) return;
+    setSaving(true);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/auth/password", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      if (res.ok) {
+        setMessage({ text: "비밀번호가 변경되었습니다", isError: false });
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+        setTimeout(() => setMessage(null), 3000);
+      } else {
+        const err = await res.json();
+        const errorMsg =
+          err.error === "Current password is incorrect"
+            ? "현재 비밀번호가 올바르지 않습니다"
+            : err.error === "Password login is not configured for this account"
+            ? "이 계정은 비밀번호 로그인이 설정되지 않았습니다"
+            : err.error === "Rate limit exceeded. Please wait a moment."
+            ? "요청이 너무 많습니다. 잠시 후 다시 시도하세요."
+            : "비밀번호 변경 실패";
+        setMessage({ text: errorMsg, isError: true });
+      }
+    } catch {
+      setMessage({ text: "비밀번호 변경 중 오류가 발생했습니다", isError: true });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Section title="비밀번호 변경">
+      <div
+        className="rounded-lg p-4 space-y-4"
+        style={{ border: "1px solid var(--border)", background: "var(--sidebar-bg)" }}
+      >
+        <div className="flex items-center gap-2 mb-2">
+          <Lock size={16} style={{ color: "var(--muted)" }} />
+          <span className="text-sm" style={{ color: "var(--muted)" }}>
+            비밀번호 로그인 계정만 변경할 수 있습니다
+          </span>
+        </div>
+
+        {/* 현재 비밀번호 */}
+        <div>
+          <label className="text-sm font-medium block mb-1.5">현재 비밀번호</label>
+          <div className="relative">
+            <input
+              type={showCurrent ? "text" : "password"}
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              className="w-full px-3 py-2 pr-10 rounded-md text-sm bg-transparent outline-none"
+              style={{ border: "1px solid var(--border)" }}
+              placeholder="현재 비밀번호를 입력하세요"
+            />
+            <button
+              type="button"
+              onClick={() => setShowCurrent(!showCurrent)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:opacity-70"
+              style={{ color: "var(--muted)" }}
+              tabIndex={-1}
+            >
+              {showCurrent ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
+        </div>
+
+        {/* 새 비밀번호 */}
+        <div>
+          <label className="text-sm font-medium block mb-1.5">새 비밀번호</label>
+          <div className="relative">
+            <input
+              type={showNew ? "text" : "password"}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="w-full px-3 py-2 pr-10 rounded-md text-sm bg-transparent outline-none"
+              style={{ border: "1px solid var(--border)" }}
+              placeholder="최소 8자 이상"
+            />
+            <button
+              type="button"
+              onClick={() => setShowNew(!showNew)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:opacity-70"
+              style={{ color: "var(--muted)" }}
+              tabIndex={-1}
+            >
+              {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
+          {passwordTooShort && (
+            <div className="text-xs mt-1" style={{ color: "#ef4444" }}>
+              비밀번호는 최소 8자 이상이어야 합니다
+            </div>
+          )}
+        </div>
+
+        {/* 비밀번호 확인 */}
+        <div>
+          <label className="text-sm font-medium block mb-1.5">비밀번호 확인</label>
+          <div className="relative">
+            <input
+              type={showConfirm ? "text" : "password"}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full px-3 py-2 pr-10 rounded-md text-sm bg-transparent outline-none"
+              style={{ border: "1px solid var(--border)" }}
+              placeholder="새 비밀번호를 다시 입력하세요"
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirm(!showConfirm)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:opacity-70"
+              style={{ color: "var(--muted)" }}
+              tabIndex={-1}
+            >
+              {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
+          {passwordMismatch && (
+            <div className="text-xs mt-1" style={{ color: "#ef4444" }}>
+              비밀번호가 일치하지 않습니다
+            </div>
+          )}
+        </div>
+
+        {/* 저장 버튼 & 메시지 */}
+        <div className="flex items-center gap-3 pt-1">
+          <button
+            onClick={handleChangePassword}
+            disabled={!canSubmit}
+            className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50"
+            style={{ background: "var(--primary)", color: "white" }}
+          >
+            {saving ? <Loader2 size={14} className="animate-spin" /> : <Lock size={14} />}
+            {saving ? "변경 중..." : "비밀번호 변경"}
+          </button>
+          {message && (
+            <span
+              className="text-xs"
+              style={{ color: message.isError ? "#ef4444" : "var(--primary)" }}
+            >
+              {message.text}
+            </span>
+          )}
+        </div>
+      </div>
+    </Section>
   );
 }
 
@@ -552,6 +733,7 @@ function ThemeTab() {
 function DataTab({ workspaceId }: { workspaceId: string }) {
   const [exporting, setExporting] = useState(false);
   const [emptyingTrash, setEmptyingTrash] = useState(false);
+  const [importModalOpen, setImportModalOpen] = useState(false);
   const [stats, setStats] = useState<{ pageCount: number; attachmentCount: number } | null>(null);
 
   useEffect(() => {
@@ -637,10 +819,16 @@ function DataTab({ workspaceId }: { workspaceId: string }) {
     }
   }
 
+  useEffect(() => {
+    function handleOpenImport() {
+      setImportModalOpen(true);
+    }
+    window.addEventListener("open-import-modal", handleOpenImport);
+    return () => window.removeEventListener("open-import-modal", handleOpenImport);
+  }, []);
+
   function handleImport() {
-    window.dispatchEvent(new Event("open-import-modal"));
-    // Fallback: also try the sidebar import modal
-    window.dispatchEvent(new Event("sidebar:import"));
+    setImportModalOpen(true);
   }
 
   async function handleEmptyTrash() {
@@ -705,7 +893,7 @@ function DataTab({ workspaceId }: { workspaceId: string }) {
             onClick={handleEmptyTrash}
             disabled={emptyingTrash}
             className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50"
-            style={{ color: "#ef4444", border: "1px solid #ef4444" }}
+            style={{ color: "#ef4444", border: "1px solid rgba(239,68,68,0.5)" }}
           >
             {emptyingTrash ? (
               <Loader2 size={14} className="animate-spin" />
@@ -732,6 +920,16 @@ function DataTab({ workspaceId }: { workspaceId: string }) {
           </div>
         </div>
       </Section>
+
+      {importModalOpen && (
+        <ImportModal
+          workspaceId={workspaceId}
+          onClose={() => setImportModalOpen(false)}
+          onImported={() => {
+            setImportModalOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -923,9 +1121,9 @@ function VersionTab() {
             <div
               className="mt-3 p-3 rounded-md text-sm"
               style={{
-                background: updateInfo.isUpToDate ? "transparent" : "#fef3c7",
+                background: updateInfo.isUpToDate ? "transparent" : "rgba(245,158,11,0.1)",
                 border: "1px solid var(--border)",
-                color: updateInfo.isUpToDate ? "var(--foreground)" : "#92400e",
+                color: updateInfo.isUpToDate ? "var(--foreground)" : "rgba(146,64,14,0.8)",
               }}
             >
               {updateInfo.isUpToDate ? (

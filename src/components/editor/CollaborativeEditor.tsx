@@ -757,14 +757,14 @@ function InnerEditor({
           style={{
             padding: "8px 12px",
             background: "rgba(234, 179, 8, 0.12)",
-            color: "#b45309",
+            color: "rgba(180,83,9,0.9)",
             border: "1px solid rgba(234, 179, 8, 0.3)",
             marginBottom: 8,
           }}
         >
           <span
             className="w-2 h-2 rounded-full shrink-0"
-            style={{ background: "#eab308" }}
+            style={{ background: "rgba(234,179,8,0.9)" }}
           />
           인터넷 연결이 끊어졌습니다. 변경사항은 연결이 복원되면 동기화됩니다.
         </div>
@@ -886,7 +886,7 @@ function InnerEditor({
               onClick={handleChange}
               className="px-2 py-0.5 rounded text-[11px] font-medium transition-opacity hover:opacity-80"
               style={{
-                background: "#ef4444",
+                background: "rgba(239,68,68,0.9)",
                 color: "white",
               }}
             >

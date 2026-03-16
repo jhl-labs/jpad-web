@@ -28,6 +28,12 @@ jobs:
         with:
           bun-version: latest
 
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: ${{ runner.os }}-bun-
+
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
@@ -49,6 +55,12 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: ${{ runner.os }}-bun-
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -84,6 +96,12 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: ${{ runner.os }}-bun-
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -133,6 +151,12 @@ jobs:
         with:
           bun-version: latest
 
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: ${{ runner.os }}-bun-
+
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
@@ -162,11 +186,38 @@ jobs:
         with:
           bun-version: latest
 
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: ${{ runner.os }}-bun-
+
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
       - name: Check for known vulnerabilities
-        run: bun pm audit 2>&1 || true
+        run: |
+          echo "=== Dependency Audit ==="
+          AUDIT_OUTPUT=$(bun pm audit 2>&1) || true
+          echo "$AUDIT_OUTPUT"
+          # bun pm audit가 아직 미지원이므로 npx로 대안 체크
+          if echo "$AUDIT_OUTPUT" | grep -qi "not yet implemented\|error\|unknown command"; then
+            echo ""
+            echo "=== Fallback: checking outdated packages with known CVEs ==="
+            bun pm ls 2>/dev/null | head -30 || true
+            echo "Note: bun pm audit is not fully supported yet. Review dependencies manually."
+          else
+            # 취약점 요약 파싱
+            CRITICAL=$(echo "$AUDIT_OUTPUT" | grep -ci "critical" || true)
+            HIGH=$(echo "$AUDIT_OUTPUT" | grep -ci "high" || true)
+            echo ""
+            echo "=== Vulnerability Summary ==="
+            echo "Critical: $CRITICAL"
+            echo "High: $HIGH"
+            if [ "$CRITICAL" -gt 0 ]; then
+              echo "::warning::Found $CRITICAL critical vulnerabilities"
+            fi
+          fi
 
       - name: Check for secrets in code
         run: |

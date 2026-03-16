@@ -250,7 +250,7 @@ export default function PageEditorPage() {
     if (!res.ok) throw new Error("Save failed");
   }
 
-  async function handleAutocomplete() {
+  const handleAutocomplete = useCallback(async () => {
     if (autocompleteLoading || isReadOnly) return;
 
     setAutocompleteLoading(true);
@@ -293,7 +293,7 @@ export default function PageEditorPage() {
     } finally {
       setAutocompleteLoading(false);
     }
-  }
+  }, [autocompleteLoading, isReadOnly, content, workspaceId, pageId]);
 
   // 더보기 메뉴 외부 클릭 닫기
   useEffect(() => {
@@ -383,8 +383,7 @@ export default function PageEditorPage() {
       window.removeEventListener("ai:action", onAiAction);
       window.removeEventListener("ai:open-panel", onOpenPanel);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autocompleteLoading, isReadOnly, content]);
+  }, [handleAutocomplete]);
 
   if (loadError) {
     return (

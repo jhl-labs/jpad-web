@@ -285,12 +285,12 @@ function formatBytes(value: string | undefined) {
 
 function getStatusStyle(status: string) {
   if (status === "success") {
-    return { background: "#dcfce7", color: "#166534", label: "성공" };
+    return { background: "rgba(34,197,94,0.1)", color: "rgba(22,101,52,0.9)", label: "성공" };
   }
   if (status === "running") {
-    return { background: "#dbeafe", color: "#1d4ed8", label: "실행 중" };
+    return { background: "rgba(59,130,246,0.1)", color: "rgba(29,78,216,0.9)", label: "실행 중" };
   }
-  return { background: "#fee2e2", color: "#991b1b", label: "오류" };
+  return { background: "rgba(239,68,68,0.1)", color: "rgba(153,27,27,0.9)", label: "오류" };
 }
 
 function getVectorBackendLabel(backend: "json" | "pgvector" | "qdrant") {
@@ -309,23 +309,23 @@ function getAttachmentSecurityState(entry: AttachmentSecurityEntry) {
   if (entry.securityStatus === "blocked" && entry.securityDisposition === "released") {
     return {
       label: "수동 허용",
-      background: "#dbeafe",
-      color: "#1d4ed8",
+      background: "rgba(59,130,246,0.1)",
+      color: "rgba(29,78,216,0.9)",
     };
   }
 
   if (entry.securityStatus === "blocked") {
     return {
       label: "격리",
-      background: "#fee2e2",
-      color: "#991b1b",
+      background: "rgba(239,68,68,0.1)",
+      color: "rgba(153,27,27,0.9)",
     };
   }
 
   return {
     label: "경고",
-    background: "#fff7ed",
-    color: "#9a3412",
+    background: "rgba(251,146,60,0.08)",
+    color: "rgba(154,52,18,0.9)",
   };
 }
 
@@ -568,7 +568,7 @@ export function OpsDashboard() {
       {error && (
         <div
           className="mb-6 rounded-lg px-4 py-3 text-sm"
-          style={{ background: "#fee2e2", color: "#991b1b" }}
+          style={{ background: "rgba(239,68,68,0.1)", color: "rgba(153,27,27,0.9)" }}
         >
           {error}
         </div>
@@ -693,8 +693,8 @@ export function OpsDashboard() {
               <span
                 className="rounded-full px-3 py-1 text-xs font-medium"
                 style={{
-                  background: overview.vectorStoreStatus.fallbackActive ? "#fff7ed" : "#dcfce7",
-                  color: overview.vectorStoreStatus.fallbackActive ? "#9a3412" : "#166534",
+                  background: overview.vectorStoreStatus.fallbackActive ? "rgba(251,146,60,0.08)" : "rgba(34,197,94,0.1)",
+                  color: overview.vectorStoreStatus.fallbackActive ? "rgba(154,52,18,0.9)" : "rgba(22,101,52,0.9)",
                 }}
               >
                 {overview.vectorStoreStatus.fallbackActive
@@ -791,7 +791,7 @@ export function OpsDashboard() {
               : overview.vectorStoreStatus.qdrant.lastError) && (
               <div
                 className="mt-3 rounded-lg px-3 py-2 text-xs"
-                style={{ background: "#fff7ed", color: "#9a3412" }}
+                style={{ background: "rgba(251,146,60,0.08)", color: "rgba(154,52,18,0.9)" }}
               >
                 {overview.vectorStoreStatus.configuredBackend === "pgvector"
                   ? overview.vectorStoreStatus.pgvector.lastError
@@ -934,7 +934,7 @@ export function OpsDashboard() {
                             disabled={attachmentActionId === `release:${actionKeyPrefix}`}
                             className="px-3 py-2 rounded text-sm text-white"
                             style={{
-                              background: "#1d4ed8",
+                              background: "rgba(29,78,216,0.9)",
                               opacity:
                                 attachmentActionId === `release:${actionKeyPrefix}`
                                   ? 0.7
@@ -951,8 +951,8 @@ export function OpsDashboard() {
                             disabled={attachmentActionId === `reblock:${actionKeyPrefix}`}
                             className="px-3 py-2 rounded text-sm"
                             style={{
-                              background: "#fee2e2",
-                              color: "#991b1b",
+                              background: "rgba(239,68,68,0.1)",
+                              color: "rgba(153,27,27,0.9)",
                               opacity:
                                 attachmentActionId === `reblock:${actionKeyPrefix}`
                                   ? 0.7
@@ -1071,7 +1071,7 @@ export function OpsDashboard() {
                     )}
 
                     {summaryWarnings.length > 0 && (
-                      <div className="mt-3 text-xs" style={{ color: "#92400e" }}>
+                      <div className="mt-3 text-xs" style={{ color: "rgba(146,64,14,0.9)" }}>
                         경고: {summaryWarnings.join(" | ")}
                       </div>
                     )}
@@ -1198,7 +1198,7 @@ export function OpsDashboard() {
                     )}
 
                     {warningList.length > 0 && (
-                      <div className="mt-3 text-xs" style={{ color: "#92400e" }}>
+                      <div className="mt-3 text-xs" style={{ color: "rgba(146,64,14,0.9)" }}>
                         경고: {warningList.join(" | ")}
                       </div>
                     )}

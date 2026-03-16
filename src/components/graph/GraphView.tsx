@@ -408,6 +408,8 @@ export function GraphView({ workspaceId, currentPageId }: GraphViewProps) {
     <div ref={containerRef} className="relative w-full h-full">
       <canvas
         ref={canvasRef}
+        role="img"
+        aria-label="지식 그래프"
         className="block w-full h-full"
         style={{ cursor: "grab" }}
       />

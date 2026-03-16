@@ -135,7 +135,7 @@ export function RegisterPageClient({
         {error && (
           <p
             className="text-sm p-3 rounded mb-4"
-            style={{ color: "var(--danger)", background: "#fef2f2" }}
+            style={{ color: "var(--danger)", background: "rgba(239,68,68,0.08)" }}
           >
             {error}
           </p>

@@ -89,11 +89,11 @@ const ROLE_ICONS: Record<string, React.ReactNode> = {
 };
 
 const ROLE_COLORS: Record<string, string> = {
-  owner: "#f59e0b",
-  admin: "#ef4444",
-  maintainer: "#8b5cf6",
-  editor: "#3b82f6",
-  viewer: "#6b7280",
+  owner: "rgba(245,158,11,0.9)",
+  admin: "rgba(239,68,68,0.9)",
+  maintainer: "rgba(139,92,246,0.9)",
+  editor: "rgba(59,130,246,0.9)",
+  viewer: "rgba(107,114,128,0.9)",
 };
 
 const AUDIT_ACTION_LABELS: Record<string, string> = {
@@ -527,7 +527,7 @@ export default function WorkspaceSettingsPage() {
       {toast && (
         <div
           className="fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-sm text-white"
-          style={{ background: "#22c55e" }}
+          style={{ background: "rgba(34,197,94,0.9)" }}
         >
           {toast}
         </div>
@@ -702,7 +702,7 @@ export default function WorkspaceSettingsPage() {
                           {scimControlled && (
                             <span
                               className="text-[10px] px-1.5 py-0.5 rounded"
-                              style={{ background: "#dbeafe", color: "#1d4ed8" }}
+                              style={{ background: "rgba(59,130,246,0.1)", color: "rgba(29,78,216,0.9)" }}
                             >
                               SCIM
                             </span>
@@ -716,14 +716,14 @@ export default function WorkspaceSettingsPage() {
                       {m.role === "owner" ? (
                         <span
                           className="text-xs px-2 py-1 rounded"
-                          style={{ background: "#fef3c7", color: "#92400e" }}
+                          style={{ background: "rgba(245,158,11,0.1)", color: "rgba(146,64,14,0.9)" }}
                         >
                           소유자
                         </span>
                       ) : scimControlled ? (
                         <span
                           className="text-xs px-2 py-1 rounded"
-                          style={{ background: "#dbeafe", color: "#1d4ed8" }}
+                          style={{ background: "rgba(59,130,246,0.1)", color: "rgba(29,78,216,0.9)" }}
                         >
                           IdP 관리
                         </span>
@@ -909,16 +909,16 @@ export default function WorkspaceSettingsPage() {
                         style={{
                           background:
                             run.status === "success"
-                              ? "#dcfce7"
+                              ? "rgba(34,197,94,0.1)"
                               : run.status === "running"
-                                ? "#dbeafe"
-                                : "#fee2e2",
+                                ? "rgba(59,130,246,0.1)"
+                                : "rgba(239,68,68,0.1)",
                           color:
                             run.status === "success"
-                              ? "#166534"
+                              ? "rgba(22,101,52,0.9)"
                               : run.status === "running"
-                                ? "#1d4ed8"
-                                : "#991b1b",
+                                ? "rgba(29,78,216,0.9)"
+                                : "rgba(153,27,27,0.9)",
                         }}
                       >
                         {run.status === "success"
@@ -1103,16 +1103,16 @@ export default function WorkspaceSettingsPage() {
                         style={{
                           background:
                             log.status === "success"
-                              ? "#dcfce7"
+                              ? "rgba(34,197,94,0.1)"
                               : log.status === "denied"
-                                ? "#fef3c7"
-                                : "#fee2e2",
+                                ? "rgba(245,158,11,0.1)"
+                                : "rgba(239,68,68,0.1)",
                           color:
                             log.status === "success"
-                              ? "#166534"
+                              ? "rgba(22,101,52,0.9)"
                               : log.status === "denied"
-                                ? "#92400e"
-                                : "#991b1b",
+                                ? "rgba(146,64,14,0.9)"
+                                : "rgba(153,27,27,0.9)",
                         }}
                       >
                         {log.status === "success"

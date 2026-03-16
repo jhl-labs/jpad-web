@@ -75,10 +75,11 @@ export function CoverPicker({ pageId, workspaceId, onSelect, onClose }: CoverPic
           그라디언트
         </p>
         <div className="grid grid-cols-4 gap-2 mb-3">
-          {GRADIENT_OPTIONS.map((gradient) => (
+          {GRADIENT_OPTIONS.map((gradient, index) => (
             <button
               key={gradient}
               onClick={() => { onSelect(gradient); onClose(); }}
+              aria-label={`그라디언트 ${index + 1}`}
               className="h-10 rounded-md hover:ring-2 hover:ring-offset-1 transition-all"
               style={{
                 background: gradient,

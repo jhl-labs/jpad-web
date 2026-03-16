@@ -267,6 +267,9 @@ export function OnboardingChecklist({
           }}
         >
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="키보드 단축키"
             className="rounded-xl shadow-2xl w-full max-w-md mx-4"
             style={{
               background: "var(--background)",

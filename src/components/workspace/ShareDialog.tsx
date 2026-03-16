@@ -578,7 +578,7 @@ export function ShareDialog({
                         {scimControlled && (
                           <span
                             className="text-[10px] px-1.5 py-0.5 rounded"
-                            style={{ background: "#dbeafe", color: "#1d4ed8" }}
+                            style={{ background: "rgba(59,130,246,0.1)", color: "var(--primary)" }}
                           >
                             SCIM
                           </span>
@@ -604,7 +604,7 @@ export function ShareDialog({
                       {scimControlled ? (
                         <span
                           className="text-[10px] px-1.5 py-0.5 rounded"
-                          style={{ background: "#dbeafe", color: "#1d4ed8" }}
+                          style={{ background: "rgba(59,130,246,0.1)", color: "var(--primary)" }}
                         >
                           IdP 관리
                         </span>
