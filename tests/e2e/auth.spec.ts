@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { loginUser, registerAndLogin } from "./helpers";
+import { loginUser } from "./helpers";
 
 test.describe("인증", () => {
   test("비인증 사용자는 /workspace 접근 시 /login으로 리다이렉트", async ({

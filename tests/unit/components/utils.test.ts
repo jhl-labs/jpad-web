@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "bun:test";
+import { describe, it, expect } from "bun:test";
 
 // TrashPanel.tsx의 relativeTime 함수 로직을 재현하여 테스트합니다.
 // 컴포넌트 내부 함수이므로 직접 import이 어렵습니다.
