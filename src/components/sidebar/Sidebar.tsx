@@ -274,21 +274,24 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
   const [workspaces, setWorkspaces] = useState<{ id: string; name: string }[]>([]);
   const wsDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Workspace dropdown: fetch workspaces when opened
+  // Workspace dropdown: fetch workspaces when opened, cache results
+  const wsListFetchedRef = useRef(false);
   useEffect(() => {
     if (!wsDropdownOpen) return;
+    if (wsListFetchedRef.current && workspaces.length > 0) return;
     (async () => {
       try {
         const res = await fetch("/api/workspaces");
         if (res.ok) {
           const data = await res.json();
           setWorkspaces(data);
+          wsListFetchedRef.current = true;
         }
       } catch (_error) {
         // ignore
       }
     })();
-  }, [wsDropdownOpen]);
+  }, [wsDropdownOpen, workspaces.length]);
 
   // Close workspace dropdown on outside click
   useEffect(() => {

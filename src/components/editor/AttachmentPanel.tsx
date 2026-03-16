@@ -87,6 +87,7 @@ export function AttachmentPanel({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const confirmTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const fetchAttachments = useCallback(() => {
     fetch(`/api/pages/${pageId}/attachments`)
@@ -128,9 +129,17 @@ export function AttachmentPanel({
     }
   }
 
+  // Cleanup confirm timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (confirmTimeoutRef.current) clearTimeout(confirmTimeoutRef.current);
+    };
+  }, []);
+
   function requestDelete(attachmentId: string) {
     setConfirmingDeleteId(attachmentId);
-    setTimeout(() => {
+    if (confirmTimeoutRef.current) clearTimeout(confirmTimeoutRef.current);
+    confirmTimeoutRef.current = setTimeout(() => {
       setConfirmingDeleteId((prev) => (prev === attachmentId ? null : prev));
     }, 4000);
   }

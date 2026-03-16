@@ -153,6 +153,7 @@ export function AiPanel({
   const [expandedAction, setExpandedAction] = useState<WritingAction | null>(null);
   const [copyFeedback, setCopyFeedback] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
+  const lastActionRef = useRef<WritingAction | null>(null);
 
   // Chat state
   const chatStorageKey = useMemo(() => `ai-chat:${pageId}`, [pageId]);
@@ -283,6 +284,7 @@ export function AiPanel({
     async (action: WritingAction, optionOverride?: Record<string, string>) => {
       setLoading(true);
       setActiveAction(action);
+      lastActionRef.current = action;
       setError(null);
       setResult("");
       setExpandedAction(null);
@@ -673,10 +675,25 @@ export function AiPanel({
 
               {error && (
                 <div
-                  className="px-3 py-2 text-sm"
+                  className="px-3 py-2 text-sm flex items-center justify-between gap-2"
                   style={{ background: "rgba(239,68,68,0.06)", color: "var(--danger, #ef4444)" }}
                 >
-                  {error}
+                  <span>{error}</span>
+                  <button
+                    onClick={() => {
+                      setError(null);
+                      if (lastActionRef.current) {
+                        handleWriteAction(lastActionRef.current);
+                      }
+                    }}
+                    className="shrink-0 px-2 py-1 rounded text-xs font-medium transition-opacity hover:opacity-80"
+                    style={{
+                      background: "var(--danger, #ef4444)",
+                      color: "white",
+                    }}
+                  >
+                    재시도
+                  </button>
                 </div>
               )}
 
