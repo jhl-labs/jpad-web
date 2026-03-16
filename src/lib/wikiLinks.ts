@@ -24,5 +24,5 @@ export function rewriteWikiLinksForMarkdown(
 }
 
 function escapeMarkdownLabel(value: string): string {
-  return value.replace(/([\[\]])/g, "\\$1");
+  return value.replaceAll("[", "\\[").replaceAll("]", "\\]");
 }

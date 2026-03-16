@@ -66,7 +66,12 @@ export async function readPage(
   slug: string
 ): Promise<string | null> {
   const dir = getRepoPath(workspaceId);
-  const fullPath = path.join(dir, `${slug}.md`);
+  const fullPath = path.resolve(dir, `${slug}.md`);
+
+  // Path traversal defense
+  if (!fullPath.startsWith(dir)) {
+    return null;
+  }
 
   try {
     return await fs.promises.readFile(fullPath, "utf-8");

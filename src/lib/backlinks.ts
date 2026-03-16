@@ -15,7 +15,8 @@ export function formatBacklink(identifier: string, label?: string | null): strin
 }
 
 export function parseBacklinks(content: string): ParsedBacklink[] {
-  const regex = /\[\[([^\]]+)\]\]/g;
+  // Match [[link]] or [[link|label]] — no nested brackets
+  const regex = /\[\[([^\[\]]+)\]\]/g;
   const unique = new Map<string, ParsedBacklink>();
   let match: RegExpExecArray | null;
 

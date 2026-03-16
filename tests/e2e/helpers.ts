@@ -14,7 +14,10 @@ export interface PageRecord {
 }
 
 export function uniqueValue(prefix: string) {
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const bytes = new Uint8Array(4);
+  crypto.getRandomValues(bytes);
+  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+  return `${prefix}-${Date.now()}-${hex}`;
 }
 
 export async function registerUser(

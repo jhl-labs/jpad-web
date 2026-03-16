@@ -81,12 +81,13 @@ function getUploadDlpConfig(): UploadDlpConfig {
 }
 
 function decodeXmlEntities(value: string) {
+  // &amp; must be decoded last to avoid double-unescaping (e.g. &amp;lt; → &lt; → <)
   return value
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&amp;/g, "&")
+    .replace(/&#39;/g, "'")
     .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'");
+    .replace(/&gt;/g, ">")
+    .replace(/&lt;/g, "<")
+    .replace(/&amp;/g, "&");
 }
 
 function normalizeText(value: string, maxCharacters: number) {

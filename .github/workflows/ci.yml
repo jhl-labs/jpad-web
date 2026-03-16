@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [master]
 
+permissions:
+  contents: read
+
 env:
   DATABASE_URL: postgresql://jpad:jpad_test@localhost:5432/jpad_test
   NEXTAUTH_SECRET: ci-test-secret-do-not-use-in-production

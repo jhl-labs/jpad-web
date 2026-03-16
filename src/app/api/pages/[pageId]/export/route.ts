@@ -25,9 +25,9 @@ export async function GET(
     // Build YAML frontmatter
     const frontmatter = [
       "---",
-      `title: "${access.page.title.replace(/"/g, '\\"')}"`,
+      `title: "${access.page.title.replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`,
       `date: "${new Date().toISOString()}"`,
-      `author: "${user.name.replace(/"/g, '\\"')}"`,
+      `author: "${(user.name || "").replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`,
       "---",
       "",
     ].join("\n");

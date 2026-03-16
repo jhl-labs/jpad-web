@@ -40,7 +40,11 @@ async function searchContent(
   query: string,
   allowedSlugs: Set<string>
 ): Promise<ContentMatch[]> {
-  const repoDir = path.join(process.cwd(), "data", "repos", workspaceId);
+  const baseRepoDir = path.join(process.cwd(), "data", "repos");
+  const repoDir = path.resolve(baseRepoDir, workspaceId);
+  if (!repoDir.startsWith(baseRepoDir)) {
+    return []; // path traversal defense
+  }
   const results: ContentMatch[] = [];
 
   try {
