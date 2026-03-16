@@ -54,5 +54,6 @@ test-results/
 # plan
 PLAN.md
 
-# claude code
-.claude/
+# claude code (skills는 프로젝트에 포함)
+.claude/*
+!.claude/skills/
