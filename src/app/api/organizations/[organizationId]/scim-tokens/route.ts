@@ -73,7 +73,7 @@ export async function POST(
     const body = await req.json();
     const parsed = createScimTokenSchema.safeParse(body);
     if (!parsed.success) {
-      const errors = parsed.error.errors.map((entry) => entry.message);
+      const errors = parsed.error.issues.map((entry) => entry.message);
       return NextResponse.json({ error: errors[0], errors }, { status: 400 });
     }
 

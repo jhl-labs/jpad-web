@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
 
     const parsed = scimCreateGroupSchema.safeParse(body);
     if (!parsed.success) {
-      const firstError = parsed.error.errors[0]?.message || "Invalid SCIM group payload";
+      const firstError = parsed.error.issues[0]?.message || "Invalid SCIM group payload";
       return scimError(firstError, 400, "invalidValue");
     }
 

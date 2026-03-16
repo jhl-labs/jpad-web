@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
 
     const parsed = createPageSchema.safeParse(body);
     if (!parsed.success) {
-      const errors = parsed.error.errors.map((e) => e.message);
+      const errors = parsed.error.issues.map((e) => e.message);
       return NextResponse.json({ error: errors[0], errors }, { status: 400 });
     }
 

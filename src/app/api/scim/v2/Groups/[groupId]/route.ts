@@ -206,7 +206,7 @@ export async function PATCH(
 
     const parsed = scimPatchSchema.safeParse(body);
     if (!parsed.success) {
-      const firstError = parsed.error.errors[0]?.message || "Invalid SCIM patch payload";
+      const firstError = parsed.error.issues[0]?.message || "Invalid SCIM patch payload";
       return scimError(firstError, 400, "invalidValue");
     }
 

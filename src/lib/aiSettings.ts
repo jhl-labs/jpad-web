@@ -80,7 +80,7 @@ function normalizeProfile(profile: z.infer<typeof profileSchema>): WorkspaceAiPr
 export function parseAiProfileInput(value: unknown) {
   const parsed = profileSchema.safeParse(value);
   if (!parsed.success) {
-    throw new Error(parsed.error.errors[0]?.message || "Invalid AI profile");
+    throw new Error(parsed.error.issues[0]?.message || "Invalid AI profile");
   }
 
   return normalizeProfile(parsed.data);
@@ -171,7 +171,7 @@ export function mergeAndEncryptAiProfiles(
   return incomingValue.map((entry) => {
     const parsed = profileSchema.safeParse(entry);
     if (!parsed.success) {
-      throw new Error(parsed.error.errors[0]?.message || "Invalid AI profile");
+      throw new Error(parsed.error.issues[0]?.message || "Invalid AI profile");
     }
 
     const normalized = normalizeProfile(parsed.data);

@@ -8,7 +8,7 @@
     "dev:ws": "bun run src/server/ws.ts",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "bunx eslint . --ext .ts,.tsx --max-warnings 0",
     "test": "bun test",
     "test:unit": "bun test tests/unit",
     "test:e2e": "bunx playwright test",
