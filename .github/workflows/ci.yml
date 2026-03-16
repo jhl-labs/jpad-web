@@ -89,7 +89,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Push database schema
-        run: bunx prisma db push --skip-generate
+        run: bunx prisma db push --url "$DATABASE_URL"
 
       - name: Generate Prisma Client
         run: bunx prisma generate
@@ -136,7 +136,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Push database schema
-        run: bunx prisma db push --skip-generate
+        run: bunx prisma db push --url "$DATABASE_URL"
 
       - name: Generate Prisma Client
         run: bunx prisma generate
