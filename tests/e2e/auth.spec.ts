@@ -35,13 +35,32 @@ test.describe("인증", () => {
       await expect(page).toHaveURL(/\/workspace/);
     } finally {
       // 테스트에서 생성한 유저를 정리합니다.
-      // /test-utils/delete-user 엔드포인트가 구현되면 활성화하세요.
+      // 우선 /test-utils/delete-user 엔드포인트를 시도하고,
+      // 실패하면 UI 플로우를 통해 계정을 삭제하거나 최소한 로그아웃합니다.
       try {
-        await page.request.post("/test-utils/delete-user", {
+        const response = await page.request.post("/test-utils/delete-user", {
           data: { email: uniqueEmail },
         });
+        if (!response.ok()) {
+          throw new Error(`Unexpected status from /test-utils/delete-user: ${response.status()}`);
+        }
       } catch (err) {
-        console.error("Failed to delete test user:", uniqueEmail, err);
+        console.error("Failed to delete test user via /test-utils/delete-user:", uniqueEmail, err);
+        // 폴백: 생성한 계정으로 로그인한 뒤, 로그아웃 또는 계정 삭제 플로우를 실행합니다.
+        try {
+          await page.goto("/login");
+          await page.getByLabel("이메일").fill(uniqueEmail);
+          await page.getByLabel("비밀번호").fill(password);
+          await page.getByRole("button", { name: "로그인" }).click();
+          // 여기서는 최소한 세션을 정리하기 위해 로그아웃 버튼을 클릭합니다.
+          // 실제 계정 삭제 버튼이 존재한다면 해당 버튼으로 교체하세요.
+          await page.getByRole("button", { name: "로그아웃" }).click();
+        } catch (fallbackErr) {
+          console.error("Fallback cleanup (login/logout) for test user failed:", uniqueEmail, fallbackErr);
+        }
+        throw new Error(
+          `Cleanup failed for test user ${uniqueEmail}: ${err instanceof Error ? err.message : String(err)}`,
+        );
       }
     }
   });
