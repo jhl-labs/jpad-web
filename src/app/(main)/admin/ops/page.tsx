@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { redirect } from "next/navigation";
 import { requirePlatformAdmin } from "@/lib/auth/helpers";
 import { OpsDashboard } from "@/components/admin/OpsDashboard";
