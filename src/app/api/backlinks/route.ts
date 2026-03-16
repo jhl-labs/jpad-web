@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth/helpers";
 import { getPageAccessContext, listAccessiblePageIds } from "@/lib/pageAccess";
+import { logError } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
   try {
@@ -66,6 +67,7 @@ export async function GET(req: NextRequest) {
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    logError("backlinks.get.error", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

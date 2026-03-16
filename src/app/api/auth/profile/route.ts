@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth/helpers";
 import { rateLimitRedis } from "@/lib/rateLimit";
+import { logError } from "@/lib/logger";
 import { z } from "zod";
 
 export async function GET() {
@@ -17,6 +18,7 @@ export async function GET() {
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    logError("profile.get.error", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
@@ -58,6 +60,7 @@ export async function PATCH(req: NextRequest) {
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    logError("profile.patch.error", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

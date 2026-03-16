@@ -5,6 +5,7 @@ import { isAttachmentQuarantined } from "@/lib/attachmentSecurity";
 import { isShareLinkActive } from "@/lib/publicAccess";
 import { getPageAccessContext } from "@/lib/pageAccess";
 import { getFile } from "@/lib/storage";
+import { logError } from "@/lib/logger";
 
 export async function GET(
   _req: NextRequest,
@@ -113,6 +114,7 @@ export async function GET(
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    logError("upload.delete.error", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

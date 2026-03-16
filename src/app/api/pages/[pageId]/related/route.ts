@@ -3,6 +3,7 @@ import { requireAuth } from "@/lib/auth/helpers";
 import { readPage } from "@/lib/git/repository";
 import { getPageAccessContext, listAccessiblePages } from "@/lib/pageAccess";
 import { findRelatedPages } from "@/lib/semanticSearch";
+import { logError } from "@/lib/logger";
 
 export async function GET(
   _req: NextRequest,
@@ -50,7 +51,7 @@ export async function GET(
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
+    logError("related.get.error", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

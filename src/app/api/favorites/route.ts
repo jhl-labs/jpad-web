@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, checkWorkspaceAccess } from "@/lib/auth/helpers";
 import { listAccessiblePageIds, getPageAccessContext } from "@/lib/pageAccess";
+import { logError } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
   try {
@@ -45,6 +46,7 @@ export async function GET(req: NextRequest) {
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    logError("favorites.get.error", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
@@ -85,6 +87,7 @@ export async function POST(req: NextRequest) {
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    logError("favorites.post.error", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
@@ -107,6 +110,7 @@ export async function DELETE(req: NextRequest) {
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    logError("favorites.delete.error", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
