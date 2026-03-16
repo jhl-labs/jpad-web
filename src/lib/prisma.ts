@@ -19,3 +19,11 @@ function createPrismaClient(): PrismaClient {
 export const prisma = globalForPrisma.prisma || createPrismaClient();
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+
+/**
+ * Gracefully disconnect Prisma and close the underlying database connection pool.
+ * Call this during application shutdown to ensure connections are cleaned up.
+ */
+export async function disconnectPrisma(): Promise<void> {
+  await prisma.$disconnect();
+}
