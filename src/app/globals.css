@@ -50,6 +50,45 @@ select:focus-visible {
   outline-offset: 0;
 }
 
+/* Print styles for PDF export */
+@media print {
+  /* Hide non-content UI elements */
+  nav,
+  aside,
+  header,
+  footer,
+  button,
+  [data-print-hide] {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 12pt;
+  }
+
+  /* Show only the editor content */
+  main {
+    overflow: visible !important;
+    position: static !important;
+  }
+
+  .bn-container {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  a {
+    text-decoration: underline;
+    color: black !important;
+  }
+
+  @page {
+    margin: 2cm;
+  }
+}
+
 /* BlockNote overrides */
 .bn-container {
   font-family: inherit !important;

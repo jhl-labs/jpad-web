@@ -9,3 +9,8 @@ export const AI_EVENTS = {
 export const SIDEBAR_EVENTS = {
   REFRESH: "sidebar:refresh",
 } as const;
+
+export const ZEN_EVENTS = {
+  TOGGLE: "zen:toggle",
+  EXIT: "zen:exit",
+} as const;

@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import type { CursorContext } from "@/components/editor/CollaborativeEditor";
-import { AI_EVENTS, SIDEBAR_EVENTS } from "@/lib/events";
+import { AI_EVENTS, SIDEBAR_EVENTS, ZEN_EVENTS } from "@/lib/events";
 import { BacklinkPanel } from "@/components/editor/BacklinkPanel";
 import { AttachmentPanel } from "@/components/editor/AttachmentPanel";
 import { BacklinkSuggestion } from "@/components/editor/BacklinkSuggestion";
@@ -23,17 +23,21 @@ import { TableOfContents } from "@/components/editor/TableOfContents";
 import {
   Clock,
   Download,
+  Eye,
   FileText,
   ImageIcon,
   ListTree,
   Loader2,
+  Lock,
   MessageCircle,
   MoreHorizontal,
   Network,
+  Printer,
   Share2,
   SmilePlus,
   Sparkles,
   Star,
+  Unlock,
   WandSparkles,
 } from "lucide-react";
 import { trackRecentPage } from "@/components/ui/QuickSwitcher";
@@ -96,6 +100,9 @@ export default function PageEditorPage() {
   const [autocompleteLoading, setAutocompleteLoading] = useState(false);
   const [autocompleteError, setAutocompleteError] = useState<string | null>(null);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [zenMode, setZenMode] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
+  const [lockedByName, setLockedByName] = useState<string | null>(null);
   const cursorContextRef = useRef<CursorContext | null>(null);
   const titleTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
   const editorContainerRef = useRef<HTMLDivElement>(null);
@@ -378,6 +385,50 @@ export default function PageEditorPage() {
     URL.revokeObjectURL(url);
   }
 
+  // Zen Mode 이벤트 수신
+  useEffect(() => {
+    function handleZenToggle() { setZenMode((prev) => !prev); }
+    function handleZenExit() { setZenMode(false); }
+    window.addEventListener(ZEN_EVENTS.TOGGLE, handleZenToggle);
+    window.addEventListener(ZEN_EVENTS.EXIT, handleZenExit);
+    return () => {
+      window.removeEventListener(ZEN_EVENTS.TOGGLE, handleZenToggle);
+      window.removeEventListener(ZEN_EVENTS.EXIT, handleZenExit);
+    };
+  }, []);
+
+  // 페이지 잠금 상태 조회
+  useEffect(() => {
+    fetch(`/api/pages/${pageId}/lock`)
+      .then((r) => r.json())
+      .then((data: { isLocked: boolean; lockedByName?: string }) => {
+        setIsLocked(data.isLocked);
+        setLockedByName(data.lockedByName || null);
+      })
+      .catch(() => {});
+  }, [pageId]);
+
+  async function handleToggleLock() {
+    try {
+      if (isLocked) {
+        const res = await fetch(`/api/pages/${pageId}/lock`, { method: "DELETE" });
+        if (res.ok) {
+          setIsLocked(false);
+          setLockedByName(null);
+        }
+      } else {
+        const res = await fetch(`/api/pages/${pageId}/lock`, { method: "POST" });
+        if (res.ok) {
+          const data = await res.json();
+          setIsLocked(true);
+          setLockedByName(data.lockedByName || session?.user?.name || null);
+        }
+      }
+    } catch {
+      // 네트워크 오류 무시
+    }
+  }
+
   // Listen for AI slash command events from editor
   useEffect(() => {
     const onAutocomplete = () => handleAutocomplete();
@@ -445,10 +496,33 @@ export default function PageEditorPage() {
 
   return (
     <div className="h-full flex flex-col">
+      {/* Lock Banner */}
+      {isLocked && (
+        <div
+          className="flex items-center justify-center gap-2 px-4 py-2 text-sm"
+          style={{ background: "rgba(234,179,8,0.12)", color: "#ca8a04", borderBottom: "1px solid rgba(234,179,8,0.25)" }}
+          data-print-hide
+        >
+          <Lock size={14} />
+          <span>{lockedByName ? `${lockedByName}님이 잠금` : "이 페이지는 잠겨 있습니다"}</span>
+          {!isReadOnly && (
+            <button
+              onClick={handleToggleLock}
+              className="ml-2 px-2 py-0.5 rounded text-xs hover:opacity-80"
+              style={{ background: "rgba(234,179,8,0.2)" }}
+            >
+              잠금 해제
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Toolbar */}
+      {!zenMode && (
       <div
         className="flex items-center justify-between gap-2 px-4 py-2 shrink-0"
         style={{ borderBottom: "1px solid var(--border)" }}
+        data-print-hide
       >
         {/* 브레드크럼 */}
         <div className="min-w-0 flex-1">
@@ -557,6 +631,15 @@ export default function PageEditorPage() {
                   <FileText size={14} style={{ color: "var(--muted)" }} />
                   HTML (.html)
                 </button>
+                <button
+                  onClick={() => { setShowExportMenu(false); window.print(); }}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-left transition-colors"
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "var(--sidebar-hover)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                >
+                  <Printer size={14} style={{ color: "var(--muted)" }} />
+                  PDF (인쇄)
+                </button>
               </div>
             )}
           </div>
@@ -567,6 +650,16 @@ export default function PageEditorPage() {
               style={{ color: "var(--muted)" }}
             >
               <Share2 size={14} /> 공유
+            </button>
+          )}
+          {!isReadOnly && (
+            <button
+              onClick={handleToggleLock}
+              className="hidden md:flex items-center gap-1 px-2 py-1 rounded text-sm hover:opacity-70"
+              style={{ color: isLocked ? "#ca8a04" : "var(--muted)" }}
+              title={isLocked ? "잠금 해제" : "페이지 잠금"}
+            >
+              {isLocked ? <Lock size={14} /> : <Unlock size={14} />}
             </button>
           )}
 
@@ -669,6 +762,7 @@ export default function PageEditorPage() {
           )}
         </div>
       </div>
+      )}
 
       {/* AI Summary Badge */}
       <AiSummaryBadge
@@ -934,6 +1028,26 @@ export default function PageEditorPage() {
           pageTitle={page.title}
           onClose={() => setShowShare(false)}
         />
+      )}
+
+      {/* Zen Mode 해제 플로팅 버튼 */}
+      {zenMode && (
+        <button
+          onClick={() => {
+            setZenMode(false);
+            window.dispatchEvent(new Event(ZEN_EVENTS.EXIT));
+          }}
+          className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-2 rounded-full shadow-lg text-sm hover:opacity-90 transition-opacity"
+          style={{
+            background: "var(--foreground)",
+            color: "var(--background)",
+          }}
+          title="집중 모드 해제 (Ctrl+\)"
+          data-print-hide
+        >
+          <Eye size={16} />
+          집중 모드 해제
+        </button>
       )}
     </div>
   );

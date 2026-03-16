@@ -283,6 +283,9 @@ model Page {
   accessMode  String   @default("workspace") // "workspace" | "restricted"
   position    Int      @default(0)
   summary     String?  @db.Text // AI-generated summary
+  isLocked    Boolean  @default(false)
+  lockedById  String?
+  lockedAt    DateTime?
   isDeleted   Boolean  @default(false)
   deletedAt   DateTime?
   createdAt   DateTime @default(now())

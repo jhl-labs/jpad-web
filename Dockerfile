@@ -21,5 +21,6 @@ COPY --from=build /app/package.json ./
 COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/prisma.config.ts ./
 COPY --from=build /app/src/server ./src/server
+COPY entrypoint.sh ./
 EXPOSE 3000 1234
-CMD ["bun", "run", "start"]
+CMD ["sh", "entrypoint.sh"]

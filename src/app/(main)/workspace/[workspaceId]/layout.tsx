@@ -9,6 +9,7 @@ import { TemplatePickerModal } from "@/components/templates/TemplatePickerModal"
 import { KeyboardShortcutsHelp } from "@/components/ui/KeyboardShortcutsHelp";
 import { FeedbackModal } from "@/components/ui/FeedbackModal";
 import { Menu } from "lucide-react";
+import { ZEN_EVENTS } from "@/lib/events";
 
 interface Page {
   id: string;
@@ -38,6 +39,7 @@ export default function WorkspaceLayout({
   const [favorites, setFavorites] = useState<{ id: string; title: string; slug: string; icon: string | null }[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [zenMode, setZenMode] = useState(false);
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
   const pendingParentIdRef = useRef<string | undefined>(undefined);
 
@@ -76,16 +78,32 @@ export default function WorkspaceLayout({
     return () => mql.removeEventListener("change", handler);
   }, []);
 
-  // Cmd+K / Ctrl+K 단축키
+  // Cmd+K / Ctrl+K 단축키, Ctrl+\ Zen Mode
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         setSearchOpen((prev) => !prev);
       }
+      if ((e.metaKey || e.ctrlKey) && e.key === "\\") {
+        e.preventDefault();
+        setZenMode((prev) => !prev);
+      }
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // Zen Mode 이벤트 수신
+  useEffect(() => {
+    function handleZenToggle() { setZenMode((prev) => !prev); }
+    function handleZenExit() { setZenMode(false); }
+    window.addEventListener(ZEN_EVENTS.TOGGLE, handleZenToggle);
+    window.addEventListener(ZEN_EVENTS.EXIT, handleZenExit);
+    return () => {
+      window.removeEventListener(ZEN_EVENTS.TOGGLE, handleZenToggle);
+      window.removeEventListener(ZEN_EVENTS.EXIT, handleZenExit);
+    };
   }, []);
 
   // 페이지 메타데이터 변경 시 사이드바 갱신 (title, icon 등)
@@ -171,17 +189,19 @@ export default function WorkspaceLayout({
 
   return (
     <div className="flex h-screen">
-      <Sidebar
-        workspace={workspace}
-        pages={pages}
-        favorites={favorites}
-        onCreatePage={handleCreatePage}
-        onDeletePage={handleDeletePage}
-        onRefresh={() => { fetchPages(); fetchFavorites(); }}
-        isOpen={sidebarOpen}
-        onToggle={() => setSidebarOpen(!sidebarOpen)}
-      />
-      {!sidebarOpen && (
+      {!zenMode && (
+        <Sidebar
+          workspace={workspace}
+          pages={pages}
+          favorites={favorites}
+          onCreatePage={handleCreatePage}
+          onDeletePage={handleDeletePage}
+          onRefresh={() => { fetchPages(); fetchFavorites(); }}
+          isOpen={sidebarOpen}
+          onToggle={() => setSidebarOpen(!sidebarOpen)}
+        />
+      )}
+      {!zenMode && !sidebarOpen && (
         <button
           onClick={() => setSidebarOpen(true)}
           className="fixed top-3 left-3 z-30 p-2 rounded-lg"

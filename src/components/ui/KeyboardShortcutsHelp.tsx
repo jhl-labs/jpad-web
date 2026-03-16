@@ -10,6 +10,7 @@ const shortcuts = [
   { keys: ["/"], description: "슬래시 메뉴" },
   { keys: ["Ctrl", "Z"], description: "실행취소" },
   { keys: ["Ctrl", "S"], description: "저장 (수동)" },
+  { keys: ["Ctrl", "\\"], description: "집중 모드 (Zen Mode)" },
   { keys: ["Ctrl", "/"], description: "단축키 도움말" },
 ];
 
