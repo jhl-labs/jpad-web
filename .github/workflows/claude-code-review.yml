@@ -14,7 +14,7 @@ jobs:
     steps:
       - uses: anthropics/claude-code-action@v1
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          use_claude_max: true
           prompt: |
             Review this pull request. Check for:
             1. TypeScript type safety (no `any`, proper error handling)

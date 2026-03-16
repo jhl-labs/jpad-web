@@ -23,6 +23,8 @@ jobs:
     steps:
       - uses: anthropics/claude-code-action@v1
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Max 구독: GitHub App 인증 사용 (API 키 불필요)
+          # https://github.com/apps/claude 에서 앱 설치 필요
+          use_claude_max: true
           trigger_phrase: "@claude"
           claude_args: "--max-turns 10"
