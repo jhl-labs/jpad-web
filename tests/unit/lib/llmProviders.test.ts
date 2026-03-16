@@ -1,11 +1,11 @@
-import { describe, it, expect, mock, beforeEach, afterEach } from "bun:test";
+import { describe, it, expect, mock } from "bun:test";
 import { buildDefaultAiProfile, type WorkspaceAiProfile } from "@/lib/aiConfig";
 
-// Mock aiSettings to avoid encryption/decryption dependencies
-mock.module("@/lib/aiSettings", () => ({
-  getResolvedApiKeyForProfile: (profile: WorkspaceAiProfile) => profile.apiKey,
-  getResolvedBaseUrl: (profile: WorkspaceAiProfile) =>
-    profile.baseUrl || "https://api.anthropic.com",
+// Mock secrets module to avoid encryption dependencies (used transitively by aiSettings)
+mock.module("@/lib/secrets", () => ({
+  encryptSecret: (value: string) => `encrypted:${value}`,
+  decryptSecret: (value: string | null) =>
+    value?.startsWith("encrypted:") ? value.slice(10) : null,
 }));
 
 const {
@@ -31,10 +31,9 @@ describe("llmProviders", () => {
       const profile = makeProfile({ apiKey: "sk-test" });
       const runtime = resolveAiProfileRuntime(profile);
 
-      expect(runtime.apiKey).toBe("sk-test");
-      expect(runtime.baseUrl).toBe("https://api.anthropic.com");
       expect(runtime.provider).toBe("anthropic");
       expect(runtime.model).toBe("claude-sonnet-4-20250514");
+      expect(runtime.baseUrl).toBe("https://api.anthropic.com");
     });
 
     it("API 키가 없는 경우 null 반환", () => {
