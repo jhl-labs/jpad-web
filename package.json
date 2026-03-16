@@ -75,7 +75,7 @@
     "y-protocols": "^1.0.7",
     "y-websocket": "^3.0.0",
     "yjs": "^13.6.0",
-    "zod": "^3.24.0"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.0.0",
