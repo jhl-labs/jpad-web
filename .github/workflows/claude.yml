@@ -1,9 +1,5 @@
 name: Claude Code
 
-# Claude GitHub App이 org에 설치되어 있으면 @claude 멘션은 앱이 직접 처리합니다.
-# 이 워크플로우는 API 키가 설정된 경우에만 커스텀 자동화에 사용됩니다.
-# API 키 없이 @claude 멘션을 사용하려면 https://github.com/apps/claude 앱만 설치하면 됩니다.
-
 on:
   issue_comment:
     types: [created]
@@ -11,20 +7,44 @@ on:
     types: [created]
   issues:
     types: [opened, assigned]
-
-permissions:
-  contents: write
-  pull-requests: write
-  issues: write
+  pull_request_review:
+    types: [submitted]
 
 jobs:
   claude:
     if: |
-      github.event_name == 'issues' && contains(github.event.issue.labels.*.name, 'claude')
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
+      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
+      id-token: write
+      actions: read # Required for Claude to read CI results on PRs
     steps:
-      - uses: anthropics/claude-code-action@v1
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          trigger_phrase: "@claude"
-          claude_args: "--max-turns 10"
+          fetch-depth: 1
+
+      - name: Run Claude Code
+        id: claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+          # This is an optional setting that allows Claude to read CI results on PRs
+          additional_permissions: |
+            actions: read
+
+          # Optional: Give a custom prompt to Claude. If this is not specified, Claude will perform the instructions specified in the comment that tagged it.
+          # prompt: 'Update the pull request description to include a summary of changes.'
+
+          # Optional: Add claude_args to customize behavior and configuration
+          # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
+          # or https://code.claude.com/docs/en/cli-reference for available options
+          # claude_args: '--allowed-tools Bash(gh pr:*)'
+
