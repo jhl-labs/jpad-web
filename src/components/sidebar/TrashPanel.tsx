@@ -144,7 +144,7 @@ export function TrashPanel({
               onClick={requestEmptyAll}
               disabled={emptyingAll}
               className="flex items-center gap-1 text-xs px-2 py-1 rounded hover:opacity-70"
-              style={{ color: "#ef4444" }}
+              style={{ color: "var(--danger, #ef4444)" }}
               title="전체 비우기"
             >
               <Trash2 size={12} /> 전체 비우기
@@ -241,7 +241,7 @@ export function TrashPanel({
                   onClick={() => requestPermanentDelete(page.id)}
                   className="flex items-center gap-1 text-xs px-2 py-1 rounded hover:opacity-70"
                   style={{
-                    color: "#ef4444",
+                    color: "var(--danger, #ef4444)",
                     border: "1px solid var(--border)",
                   }}
                 >

@@ -711,7 +711,7 @@ export default function WorkspaceSettingsPage() {
                       {row.perms.map((p, i) => (
                         <td key={i} className="text-center py-2 px-2">
                           {p ? (
-                            <span style={{ color: "#22c55e" }}>&#10003;</span>
+                            <span style={{ color: "var(--success, #22c55e)" }}>&#10003;</span>
                           ) : (
                             <span style={{ color: "var(--muted)" }}>&#8212;</span>
                           )}

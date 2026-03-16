@@ -332,7 +332,7 @@ function InnerEditor({
         if (clientId !== localId && state.user) {
           others.push({
             name: state.user.name || "익명",
-            color: state.user.color || "#888",
+            color: state.user.color || "var(--muted)",
           });
         }
       });
@@ -891,10 +891,10 @@ function InnerEditor({
       >
         {saveStatus === "saving" && <span>저장 중...</span>}
         {saveStatus === "saved" && (
-          <span style={{ color: "#22c55e" }}>저장됨</span>
+          <span style={{ color: "var(--success, #22c55e)" }}>저장됨</span>
         )}
         {saveStatus === "error" && (
-          <span className="flex items-center gap-1.5" style={{ color: "#ef4444" }}>
+          <span className="flex items-center gap-1.5" style={{ color: "var(--danger, #ef4444)" }}>
             저장 실패
             <button
               onClick={handleChange}
@@ -912,7 +912,7 @@ function InnerEditor({
           className="w-2 h-2 rounded-full"
           role="status"
           aria-label={connected ? "실시간 연결됨" : "연결 끊김"}
-          style={{ background: connected ? "#22c55e" : "#ef4444" }}
+          style={{ background: connected ? "var(--success, #22c55e)" : "var(--danger, #ef4444)" }}
           title={connected ? "실시간 연결됨" : "연결 끊김"}
         />
         <span className="text-[10px]" style={{ color: "var(--muted)" }}>

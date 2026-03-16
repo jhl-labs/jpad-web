@@ -103,7 +103,7 @@ export function AiSummaryBadge({ pageId, summary, onUpdate }: AiSummaryBadgeProp
       )}
 
       {error && (
-        <p className="mt-1 text-xs" style={{ color: "#ef4444" }}>
+        <p className="mt-1 text-xs" style={{ color: "var(--danger, #ef4444)" }}>
           {error}
         </p>
       )}

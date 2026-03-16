@@ -168,7 +168,7 @@ export function NotificationBell({ workspaceId }: NotificationBellProps) {
           <span
             className="absolute -top-0.5 -right-0.5 flex items-center justify-center text-white text-[10px] font-bold rounded-full"
             style={{
-              background: "#ef4444",
+              background: "var(--danger, #ef4444)",
               minWidth: 16,
               height: 16,
               padding: "0 4px",

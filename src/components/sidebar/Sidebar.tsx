@@ -247,7 +247,7 @@ function PageContextMenu({
             role="menuitem"
             onClick={item.action}
             className="flex items-center gap-2.5 w-full px-3 py-1.5 text-sm text-left transition-colors"
-            style={{ color: item.danger ? "#ef4444" : undefined }}
+            style={{ color: item.danger ? "var(--danger, #ef4444)" : undefined }}
             onMouseEnter={(e) => { e.currentTarget.style.background = "var(--sidebar-hover)"; }}
             onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
           >

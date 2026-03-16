@@ -674,7 +674,7 @@ export function AiPanel({
               {error && (
                 <div
                   className="px-3 py-2 text-sm"
-                  style={{ background: "rgba(239,68,68,0.06)", color: "#ef4444" }}
+                  style={{ background: "rgba(239,68,68,0.06)", color: "var(--danger, #ef4444)" }}
                 >
                   {error}
                 </div>
@@ -724,7 +724,7 @@ export function AiPanel({
                             ? "rgba(34,197,94,0.1)"
                             : "var(--background)",
                           border: `1px solid ${copyFeedback ? "rgba(34,197,94,0.3)" : "var(--border)"}`,
-                          color: copyFeedback ? "#16a34a" : "var(--foreground)",
+                          color: copyFeedback ? "var(--success, #16a34a)" : "var(--foreground)",
                         }}
                       >
                         {copyFeedback ? (

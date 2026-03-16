@@ -498,7 +498,7 @@ export function ShareDialog({
                 onClick={handleTogglePublicWiki}
                 disabled={!canManageWorkspace || busy}
                 className="px-3 py-2 rounded-md text-sm text-white disabled:opacity-60"
-                style={{ background: publicWikiEnabled ? "#ef4444" : "var(--primary)" }}
+                style={{ background: publicWikiEnabled ? "var(--danger, #ef4444)" : "var(--primary)" }}
               >
                 {publicWikiEnabled ? "공개 위키 비활성화" : "공개 위키 활성화"}
               </button>

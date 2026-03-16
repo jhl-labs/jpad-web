@@ -117,7 +117,7 @@ export function FeedbackModal() {
               style={{
                 background: "rgba(34,197,94,0.08)",
                 border: "1px solid rgba(34,197,94,0.2)",
-                color: "#22c55e",
+                color: "var(--success, #22c55e)",
               }}
             >
               {successMessage}
@@ -149,7 +149,7 @@ export function FeedbackModal() {
           {/* 제목 */}
           <div>
             <label className="text-sm font-medium block mb-1.5">
-              제목 <span style={{ color: "#ef4444" }}>*</span>
+              제목 <span style={{ color: "var(--danger, #ef4444)" }}>*</span>
             </label>
             <input
               value={title}
