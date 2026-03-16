@@ -98,7 +98,27 @@ export default function WorkspaceListPage() {
     }
   }
 
-  if (status === "loading") return null;
+  if (status === "loading")
+    return (
+      <div className="min-h-screen p-8 max-w-3xl mx-auto">
+        <div className="flex items-center justify-between mb-8">
+          <div className="h-8 w-48 rounded" style={{ background: "var(--sidebar-hover)" }} />
+          <div className="h-9 w-36 rounded" style={{ background: "var(--sidebar-hover)" }} />
+        </div>
+        <div className="space-y-2">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="p-4 rounded-lg animate-pulse"
+              style={{ border: "1px solid var(--border)" }}
+            >
+              <div className="h-5 w-40 rounded mb-2" style={{ background: "var(--sidebar-hover)" }} />
+              <div className="h-3 w-24 rounded" style={{ background: "var(--sidebar-hover)" }} />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
 
   return (
     <div className="min-h-screen p-8 max-w-3xl mx-auto">

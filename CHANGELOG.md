@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- Health check endpoint (`GET /api/health`) with DB connectivity test
+- User profile API (`GET/PATCH /api/auth/profile`)
+- Password change API (`PATCH /api/auth/password`) with rate limiting and audit log
+- User settings page with 6 tabs (profile, theme, data, notifications, info, advanced)
+- FeedbackModal component with GitHub Issues integration
+- CORS middleware with configurable allowed origins
+- Request-id middleware for request tracing
+- `scripts/setup.sh` one-click setup script
+- Dockerfile with multi-stage build (deps/build/runner)
+- docker-compose `jpad` app service with healthcheck dependencies
+
+### Changed
+- PostgreSQL version updated from 15 to 16-alpine in docker-compose
+- API endpoint count increased to 130
+
+### Fixed
+- Documentation sync: `@db.Text` annotations, SearchIndexJob fields, prisma.config.ts reference
+
 ## [1.0.0] - 2025-03-17
 
 ### Added

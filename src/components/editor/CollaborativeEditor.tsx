@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback, useState } from "react";
+import { useEffect, useRef, useCallback, useState, useMemo } from "react";
 import { useCreateBlockNote, SuggestionMenuController } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/mantine/style.css";
@@ -13,10 +13,18 @@ import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import { blocksToMarkdown } from "@/lib/markdown/serializer";
 import { Sparkles, FileText, Expand, Languages, SpellCheck } from "lucide-react";
+import { AI_EVENTS } from "@/lib/events";
 
 const SYNC_FALLBACK_MS = 3000;
 const AUTO_SAVE_DEBOUNCE_MS = 2000;
 const SAVED_STATUS_RESET_MS = 2000;
+
+const FLOATING_AI_ACTIONS = [
+  { label: "AI 요약", action: "summarize", icon: <FileText size={13} /> },
+  { label: "AI 확장", action: "expand", icon: <Expand size={13} /> },
+  { label: "AI 번역", action: "translate", icon: <Languages size={13} /> },
+  { label: "AI 교정", action: "fixGrammar", icon: <SpellCheck size={13} /> },
+] as const;
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -81,7 +89,7 @@ function getCustomSlashMenuItems(editor: BlockNoteEditor) {
       subtext: "커서 위치에서 자연스럽게 이어 씁니다",
       group: "AI",
       onItemClick: () => {
-        window.dispatchEvent(new CustomEvent("ai:autocomplete"));
+        window.dispatchEvent(new CustomEvent(AI_EVENTS.AUTOCOMPLETE));
       },
     },
     {
@@ -89,7 +97,7 @@ function getCustomSlashMenuItems(editor: BlockNoteEditor) {
       subtext: "문서 내용을 핵심만 요약합니다",
       group: "AI",
       onItemClick: () => {
-        window.dispatchEvent(new CustomEvent("ai:action", { detail: { action: "summarize" } }));
+        window.dispatchEvent(new CustomEvent(AI_EVENTS.ACTION, { detail: { action: "summarize" } }));
       },
     },
     {
@@ -97,7 +105,7 @@ function getCustomSlashMenuItems(editor: BlockNoteEditor) {
       subtext: "내용을 더 상세하게 보강합니다",
       group: "AI",
       onItemClick: () => {
-        window.dispatchEvent(new CustomEvent("ai:action", { detail: { action: "expand" } }));
+        window.dispatchEvent(new CustomEvent(AI_EVENTS.ACTION, { detail: { action: "expand" } }));
       },
     },
     {
@@ -105,7 +113,7 @@ function getCustomSlashMenuItems(editor: BlockNoteEditor) {
       subtext: "맞춤법과 문법을 교정합니다",
       group: "AI",
       onItemClick: () => {
-        window.dispatchEvent(new CustomEvent("ai:action", { detail: { action: "fixGrammar" } }));
+        window.dispatchEvent(new CustomEvent(AI_EVENTS.ACTION, { detail: { action: "fixGrammar" } }));
       },
     },
     {
@@ -113,7 +121,7 @@ function getCustomSlashMenuItems(editor: BlockNoteEditor) {
       subtext: "영어로 번역합니다",
       group: "AI",
       onItemClick: () => {
-        window.dispatchEvent(new CustomEvent("ai:action", { detail: { action: "translate" } }));
+        window.dispatchEvent(new CustomEvent(AI_EVENTS.ACTION, { detail: { action: "translate" } }));
       },
     },
     {
@@ -121,7 +129,7 @@ function getCustomSlashMenuItems(editor: BlockNoteEditor) {
       subtext: "격식체/친근한/전문적 톤으로 변경",
       group: "AI",
       onItemClick: () => {
-        window.dispatchEvent(new CustomEvent("ai:action", { detail: { action: "changeTone" } }));
+        window.dispatchEvent(new CustomEvent(AI_EVENTS.ACTION, { detail: { action: "changeTone" } }));
       },
     },
     {
@@ -129,7 +137,7 @@ function getCustomSlashMenuItems(editor: BlockNoteEditor) {
       subtext: "할 일 목록을 추출합니다",
       group: "AI",
       onItemClick: () => {
-        window.dispatchEvent(new CustomEvent("ai:action", { detail: { action: "actionItems" } }));
+        window.dispatchEvent(new CustomEvent(AI_EVENTS.ACTION, { detail: { action: "actionItems" } }));
       },
     },
   ];
@@ -434,17 +442,25 @@ function InnerEditor({
     }, AUTO_SAVE_DEBOUNCE_MS);
   }, [editor, onSave, readOnly, updateSaveStatus]);
 
+  // Cleanup save timers on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeout.current) clearTimeout(saveTimeout.current);
+      if (savedTimeout.current) clearTimeout(savedTimeout.current);
+    };
+  }, []);
+
   // Keyboard shortcut: Ctrl+J or Cmd+J to trigger AI autocomplete
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "j") {
         e.preventDefault();
-        window.dispatchEvent(new CustomEvent("ai:open-panel"));
+        window.dispatchEvent(new CustomEvent(AI_EVENTS.OPEN_PANEL));
         return;
       }
       if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === "j") {
         e.preventDefault();
-        window.dispatchEvent(new CustomEvent("ai:autocomplete"));
+        window.dispatchEvent(new CustomEvent(AI_EVENTS.AUTOCOMPLETE));
       }
     };
     document.addEventListener("keydown", handler);
@@ -594,7 +610,7 @@ function InnerEditor({
     (action: string) => {
       // Set inputText on AiPanel via custom event
       window.dispatchEvent(
-        new CustomEvent("ai:inline-action", {
+        new CustomEvent(AI_EVENTS.INLINE_ACTION, {
           detail: { action, text: selectedText },
         })
       );
@@ -606,12 +622,7 @@ function InnerEditor({
     [selectedText]
   );
 
-  const floatingAiActions = [
-    { label: "AI 요약", action: "summarize", icon: <FileText size={13} /> },
-    { label: "AI 확장", action: "expand", icon: <Expand size={13} /> },
-    { label: "AI 번역", action: "translate", icon: <Languages size={13} /> },
-    { label: "AI 교정", action: "fixGrammar", icon: <SpellCheck size={13} /> },
-  ];
+  // floatingAiActions is defined at module level to avoid re-creating on every render
 
   // Right-click context menu
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
@@ -637,7 +648,7 @@ function InnerEditor({
     };
   }, [contextMenu]);
 
-  const contextActions = [
+  const contextActions = useMemo(() => [
     {
       group: "편집",
       items: [
@@ -727,26 +738,26 @@ function InnerEditor({
         {
           label: "AI 이어쓰기",
           shortcut: "Ctrl+J",
-          action: () => window.dispatchEvent(new CustomEvent("ai:autocomplete")),
+          action: () => window.dispatchEvent(new CustomEvent(AI_EVENTS.AUTOCOMPLETE)),
         },
         {
           label: "AI 요약",
           shortcut: "",
-          action: () => window.dispatchEvent(new CustomEvent("ai:action", { detail: { action: "summarize" } })),
+          action: () => window.dispatchEvent(new CustomEvent(AI_EVENTS.ACTION, { detail: { action: "summarize" } })),
         },
         {
           label: "AI 확장",
           shortcut: "",
-          action: () => window.dispatchEvent(new CustomEvent("ai:action", { detail: { action: "expand" } })),
+          action: () => window.dispatchEvent(new CustomEvent(AI_EVENTS.ACTION, { detail: { action: "expand" } })),
         },
         {
           label: "AI 문법 교정",
           shortcut: "",
-          action: () => window.dispatchEvent(new CustomEvent("ai:action", { detail: { action: "fixGrammar" } })),
+          action: () => window.dispatchEvent(new CustomEvent(AI_EVENTS.ACTION, { detail: { action: "fixGrammar" } })),
         },
       ],
     },
-  ];
+  ], [editor]);
 
   return (
     <div className="relative" onContextMenu={handleContextMenu} ref={editorContainerRef}>
@@ -787,7 +798,7 @@ function InnerEditor({
           onMouseDown={(e) => e.preventDefault()}
         >
           <Sparkles size={13} style={{ color: "var(--primary)", marginLeft: 6, marginRight: 2 }} />
-          {floatingAiActions.map((item) => (
+          {FLOATING_AI_ACTIONS.map((item) => (
             <button
               key={item.action}
               onClick={() => handleFloatingAiAction(item.action)}

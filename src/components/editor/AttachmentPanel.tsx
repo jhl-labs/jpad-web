@@ -85,6 +85,7 @@ export function AttachmentPanel({
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchAttachments = useCallback(() => {
@@ -127,9 +128,15 @@ export function AttachmentPanel({
     }
   }
 
-  async function handleDelete(attachmentId: string) {
-    if (!confirm("이 첨부파일을 삭제하시겠습니까?")) return;
+  function requestDelete(attachmentId: string) {
+    setConfirmingDeleteId(attachmentId);
+    setTimeout(() => {
+      setConfirmingDeleteId((prev) => (prev === attachmentId ? null : prev));
+    }, 4000);
+  }
 
+  async function handleDelete(attachmentId: string) {
+    setConfirmingDeleteId(null);
     const res = await fetch(`/api/pages/${pageId}/attachments`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
@@ -387,11 +394,30 @@ export function AttachmentPanel({
                       </button>
                     )}
 
-                  {!readOnly && (
+                  {!readOnly && confirmingDeleteId === att.id && (
+                    <span className="flex items-center gap-1 text-xs" onClick={(e) => e.stopPropagation()}>
+                      <span style={{ color: "rgba(239,68,68,0.9)" }}>삭제?</span>
+                      <button
+                        onClick={() => handleDelete(att.id)}
+                        className="px-1.5 py-0.5 rounded text-white text-xs"
+                        style={{ background: "rgba(239,68,68,0.9)" }}
+                      >
+                        삭제
+                      </button>
+                      <button
+                        onClick={() => setConfirmingDeleteId(null)}
+                        className="px-1.5 py-0.5 rounded text-xs"
+                        style={{ border: "1px solid var(--border)" }}
+                      >
+                        취소
+                      </button>
+                    </span>
+                  )}
+                  {!readOnly && confirmingDeleteId !== att.id && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDelete(att.id);
+                        requestDelete(att.id);
                       }}
                       className="p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
                       style={{ color: "var(--muted)" }}

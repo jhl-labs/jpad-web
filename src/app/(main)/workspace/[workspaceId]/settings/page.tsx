@@ -21,6 +21,9 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { WorkspaceAiSettingsTab } from "@/components/workspace/WorkspaceAiSettingsTab";
+import { formatDateTimeFull } from "@/lib/utils/dateFormat";
+import { ROLE_LABELS, ROLE_COLORS, AUDIT_ACTION_LABELS, AUDIT_ACTION_OPTIONS } from "@/lib/constants/workspace";
+import { Section, Field } from "@/components/ui/FormLayout";
 
 interface WorkspaceData {
   id: string;
@@ -72,14 +75,6 @@ interface RetentionRunEntry {
   };
 }
 
-const ROLE_LABELS: Record<string, string> = {
-  owner: "소유자",
-  admin: "관리자",
-  maintainer: "메인테이너",
-  editor: "편집자",
-  viewer: "뷰어",
-};
-
 const ROLE_ICONS: Record<string, React.ReactNode> = {
   owner: <Crown size={14} />,
   admin: <Shield size={14} />,
@@ -87,79 +82,6 @@ const ROLE_ICONS: Record<string, React.ReactNode> = {
   editor: <Edit3 size={14} />,
   viewer: <Eye size={14} />,
 };
-
-const ROLE_COLORS: Record<string, string> = {
-  owner: "rgba(245,158,11,0.9)",
-  admin: "rgba(239,68,68,0.9)",
-  maintainer: "rgba(139,92,246,0.9)",
-  editor: "rgba(59,130,246,0.9)",
-  viewer: "rgba(107,114,128,0.9)",
-};
-
-const AUDIT_ACTION_LABELS: Record<string, string> = {
-  "workspace.member.invited": "멤버 초대",
-  "workspace.member.removed": "멤버 제거",
-  "workspace.member.provisioned_by_scim": "SCIM 멤버 프로비저닝",
-  "workspace.member.scim_role_updated": "SCIM 멤버 역할 변경",
-  "workspace.member.deprovisioned_by_scim": "SCIM 멤버 제거",
-  "workspace.updated": "워크스페이스 수정",
-  "workspace.deleted": "워크스페이스 삭제",
-  "workspace.settings.updated": "설정 변경",
-  "page.share.created": "공유 링크 생성",
-  "page.share.revoked": "공유 링크 폐기",
-  "page.permissions.updated": "페이지 권한 변경",
-  "attachment.uploaded": "첨부 업로드",
-  "attachment.upload.blocked": "첨부 업로드 차단",
-  "attachment.security.rescanned": "첨부 보안 재검사",
-  "attachment.quarantined": "첨부 격리",
-  "attachment.quarantine.released": "첨부 격리 해제",
-  "attachment.quarantine.reblocked": "첨부 다시 격리",
-  "attachment.deleted": "첨부 삭제",
-  "page.restored": "페이지 복원",
-  "page.deleted.permanently": "페이지 영구 삭제",
-  "ai.write.completed": "AI 작성",
-  "ai.chat.completed": "AI 채팅",
-  "ai.summary.completed": "AI 요약",
-  "ai.autocomplete.completed": "AI 이어쓰기",
-  "search.reindex.executed": "검색 재색인",
-  "search.index_jobs.processed": "인덱싱 큐 처리",
-  "search.index_worker.executed": "인덱싱 워커 실행",
-  "retention.executed": "Retention 실행",
-  "organization.scim_group_mapping.created": "SCIM 그룹 매핑 생성",
-  "organization.scim_group_mapping.deleted": "SCIM 그룹 매핑 삭제",
-};
-
-const AUDIT_ACTION_OPTIONS = [
-  "workspace.member.invited",
-  "workspace.member.removed",
-  "workspace.member.provisioned_by_scim",
-  "workspace.member.scim_role_updated",
-  "workspace.member.deprovisioned_by_scim",
-  "workspace.updated",
-  "workspace.settings.updated",
-  "page.share.created",
-  "page.share.revoked",
-  "page.permissions.updated",
-  "attachment.uploaded",
-  "attachment.upload.blocked",
-  "attachment.security.rescanned",
-  "attachment.quarantined",
-  "attachment.quarantine.released",
-  "attachment.quarantine.reblocked",
-  "attachment.deleted",
-  "page.restored",
-  "page.deleted.permanently",
-  "ai.write.completed",
-  "ai.chat.completed",
-  "ai.summary.completed",
-  "ai.autocomplete.completed",
-  "search.reindex.executed",
-  "search.index_jobs.processed",
-  "search.index_worker.executed",
-  "retention.executed",
-  "organization.scim_group_mapping.created",
-  "organization.scim_group_mapping.deleted",
-];
 
 type Tab = "general" | "members" | "ai" | "audit";
 
@@ -449,16 +371,7 @@ export default function WorkspaceSettingsPage() {
     }
   }
 
-  function formatDateTime(value: string) {
-    return new Intl.DateTimeFormat("ko-KR", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    }).format(new Date(value));
-  }
+  const formatDateTime = formatDateTimeFull;
 
   function getAuditActionLabel(action: string) {
     return AUDIT_ACTION_LABELS[action] || action;
@@ -1220,22 +1133,3 @@ export default function WorkspaceSettingsPage() {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <h2 className="text-sm font-semibold mb-3">{title}</h2>
-      <div className="space-y-3">{children}</div>
-    </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label className="block text-xs font-medium mb-1" style={{ color: "var(--muted)" }}>
-        {label}
-      </label>
-      {children}
-    </div>
-  );
-}

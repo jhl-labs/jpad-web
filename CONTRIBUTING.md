@@ -52,7 +52,10 @@ The app runs at `http://localhost:3000`.
 3. **Test** — ensure all tests pass:
    ```bash
    bun run lint
-   bun run test:e2e
+   bun test              # 유닛 테스트
+   bun run test:e2e      # E2E 테스트 (Playwright)
+   # Smoke 테스트 (선택)
+   bun run tests/smoke/*.test.ts
    ```
 4. **Push** your branch and open a Pull Request against `main`
 
@@ -101,4 +104,4 @@ docs: API 레퍼런스 업데이트
 
 ## License / 라이선스
 
-By contributing, you agree that your contributions will be licensed under the [Apache License 2.0](./LICENSE).
+By contributing, you agree that your contributions will be licensed under the [jpad License](./LICENSE).

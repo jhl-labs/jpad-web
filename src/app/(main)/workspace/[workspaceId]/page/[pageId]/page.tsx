@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import type { CursorContext } from "@/components/editor/CollaborativeEditor";
+import { AI_EVENTS, SIDEBAR_EVENTS } from "@/lib/events";
 import { BacklinkPanel } from "@/components/editor/BacklinkPanel";
 import { AttachmentPanel } from "@/components/editor/AttachmentPanel";
 import { BacklinkSuggestion } from "@/components/editor/BacklinkSuggestion";
@@ -164,6 +165,10 @@ export default function PageEditorPage() {
         setIsFavorited(favs.some((f) => f.id === pageId));
       })
       .catch(() => {});
+
+    return () => {
+      if (titleTimeout.current) clearTimeout(titleTimeout.current);
+    };
   }, [fetchPage, workspaceId, pageId]);
 
   async function handleToggleFavorite() {
@@ -198,7 +203,7 @@ export default function PageEditorPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ title: newTitle }),
         });
-        window.dispatchEvent(new Event("sidebar:refresh"));
+        window.dispatchEvent(new Event(SIDEBAR_EVENTS.REFRESH));
       } catch {
         // 네트워크 오류 무시 — 다음 저장 시 재시도
       }
@@ -213,7 +218,7 @@ export default function PageEditorPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ icon: newIcon }),
       });
-      window.dispatchEvent(new Event("sidebar:refresh"));
+      window.dispatchEvent(new Event(SIDEBAR_EVENTS.REFRESH));
     } catch {
       // 네트워크 오류 무시
     }
@@ -295,6 +300,17 @@ export default function PageEditorPage() {
     }
   }, [autocompleteLoading, isReadOnly, content, workspaceId, pageId]);
 
+  const onRemoteTitleChange = useCallback((remoteTitle: string) => {
+    setTitle((prev) => (remoteTitle !== prev ? remoteTitle : prev));
+  }, []);
+
+  const onInsertText = useCallback((text: string) => {
+    setPendingInsertMarkdown({
+      key: Date.now(),
+      markdown: text,
+    });
+  }, []);
+
   // 더보기 메뉴 외부 클릭 닫기
   useEffect(() => {
     if (!showMoreMenu) return;
@@ -369,19 +385,19 @@ export default function PageEditorPage() {
         setShowAi(true);
         setTimeout(() => {
           window.dispatchEvent(
-            new CustomEvent("ai:execute-action", { detail })
+            new CustomEvent(AI_EVENTS.EXECUTE_ACTION, { detail })
           );
         }, 100);
       }
     };
     const onOpenPanel = () => setShowAi(true);
-    window.addEventListener("ai:autocomplete", onAutocomplete);
-    window.addEventListener("ai:action", onAiAction);
-    window.addEventListener("ai:open-panel", onOpenPanel);
+    window.addEventListener(AI_EVENTS.AUTOCOMPLETE, onAutocomplete);
+    window.addEventListener(AI_EVENTS.ACTION, onAiAction);
+    window.addEventListener(AI_EVENTS.OPEN_PANEL, onOpenPanel);
     return () => {
-      window.removeEventListener("ai:autocomplete", onAutocomplete);
-      window.removeEventListener("ai:action", onAiAction);
-      window.removeEventListener("ai:open-panel", onOpenPanel);
+      window.removeEventListener(AI_EVENTS.AUTOCOMPLETE, onAutocomplete);
+      window.removeEventListener(AI_EVENTS.ACTION, onAiAction);
+      window.removeEventListener(AI_EVENTS.OPEN_PANEL, onOpenPanel);
     };
   }, [handleAutocomplete]);
 
@@ -833,11 +849,7 @@ export default function PageEditorPage() {
             userName={session?.user?.name || "익명"}
             onSave={handleSave}
             title={title}
-            onRemoteTitleChange={(remoteTitle) => {
-              if (remoteTitle !== title) {
-                setTitle(remoteTitle);
-              }
-            }}
+            onRemoteTitleChange={onRemoteTitleChange}
             onCursorContextChange={(ctx) => { cursorContextRef.current = ctx; }}
             onAwarenessChange={handleAwarenessChange}
           />
@@ -905,12 +917,7 @@ export default function PageEditorPage() {
           pageContent={content}
           isOpen={showAi}
           onClose={() => setShowAi(false)}
-          onInsertText={(text) => {
-            setPendingInsertMarkdown({
-              key: Date.now(),
-              markdown: text,
-            });
-          }}
+          onInsertText={onInsertText}
         />
       )}
 

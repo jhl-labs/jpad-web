@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { Clock, X } from "lucide-react";
 
 interface HistoryEntry {
   oid: string;
@@ -73,9 +73,10 @@ export function HistoryPanel({
           </button>
         ))}
         {history.length === 0 && (
-          <p className="p-4 text-sm text-center" style={{ color: "var(--muted)" }}>
-            히스토리가 없습니다
-          </p>
+          <div className="flex flex-col items-center justify-center py-12 gap-2" style={{ color: "var(--muted)" }}>
+            <Clock size={32} strokeWidth={1.5} />
+            <p className="text-sm">아직 저장된 버전이 없습니다</p>
+          </div>
         )}
       </div>
 

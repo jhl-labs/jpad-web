@@ -2,6 +2,23 @@
 
 모든 API는 `/api` 경로 하에 위치합니다. 인증이 필요한 엔드포인트는 NextAuth JWT 세션 쿠키를 통해 인증합니다.
 
+## 헬스체크 API
+
+### `GET /api/health`
+서버 및 데이터베이스 상태 확인. 인증 불필요.
+
+**응답 (200):**
+```json
+{ "status": "ok", "version": "1.0.0", "uptime": 12345.678 }
+```
+
+**응답 (503):**
+```json
+{ "status": "error", "error": "Database connection failed" }
+```
+
+---
+
 ## 인증 API
 
 ### `POST /api/auth/register`
@@ -23,6 +40,30 @@ SAML ACS (Assertion Consumer Service). IdP로부터 SAML Response 수신 및 검
 
 ### `GET /api/auth/saml/metadata`
 SAML SP 메타데이터 XML 반환.
+
+### `GET /api/auth/profile`
+현재 인증된 사용자의 프로필 정보 조회.
+
+**응답:**
+```json
+{ "id": "uuid", "name": "홍길동", "email": "user@example.com", "createdAt": "..." }
+```
+
+### `PATCH /api/auth/profile`
+사용자 이름 수정.
+
+**Body:**
+```json
+{ "name": "새 이름" }
+```
+
+### `PATCH /api/auth/password`
+비밀번호 변경. 현재 비밀번호 확인 후 새 비밀번호로 변경. Rate limit 적용 (5회/분).
+
+**Body:**
+```json
+{ "currentPassword": "현재 비밀번호", "newPassword": "새 비밀번호 (8자 이상)" }
+```
 
 ---
 

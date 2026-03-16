@@ -346,9 +346,10 @@ export function CommentPanel({
           />
         ))}
         {comments.length === 0 && (
-          <p className="text-sm text-center py-8" style={{ color: "var(--muted)" }}>
-            아직 댓글이 없습니다
-          </p>
+          <div className="flex flex-col items-center justify-center py-12 gap-2" style={{ color: "var(--muted)" }}>
+            <MessageCircle size={32} strokeWidth={1.5} />
+            <p className="text-sm">첫 댓글을 남겨보세요</p>
+          </div>
         )}
       </div>
     </div>

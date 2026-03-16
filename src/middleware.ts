@@ -1,20 +1,6 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse, type NextRequest } from "next/server";
-
-function getAllowedOrigins(): string[] {
-  const url = process.env.NEXTAUTH_URL || "http://localhost:3000";
-  const origins = [new URL(url).origin];
-  const extra = process.env.CORS_ALLOWED_ORIGINS;
-  if (extra) {
-    origins.push(
-      ...extra
-        .split(",")
-        .map((o) => o.trim())
-        .filter(Boolean)
-    );
-  }
-  return origins;
-}
+import { getAllowedOrigins, isApiRoute } from "@/lib/middlewareUtils";
 
 function setCorsHeaders(
   response: NextResponse,
@@ -33,10 +19,6 @@ function setCorsHeaders(
   response.headers.set("Access-Control-Allow-Credentials", "true");
   response.headers.set("Access-Control-Max-Age", "86400");
   return response;
-}
-
-function isApiRoute(pathname: string): boolean {
-  return pathname.startsWith("/api/");
 }
 
 export default withAuth(

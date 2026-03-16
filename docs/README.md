@@ -210,9 +210,20 @@ jpad/
 │   ├── repos/           # Git 저장소 (워크스페이스별)
 │   ├── uploads/         # 로컬 파일 첨부
 │   └── yjs/             # Yjs 스냅샷
+├── .claude/             # Claude Code 설정
+│   ├── rules/           # 코딩 규칙
+│   ├── settings.json    # Claude 설정
+│   └── skills/          # Claude 스킬
+├── .github/             # GitHub 설정
+│   ├── ISSUE_TEMPLATE/  # 이슈 템플릿
+│   ├── PULL_REQUEST_TEMPLATE.md
+│   ├── dependabot.yml
+│   └── workflows/       # CI/CD 워크플로우
+├── CONTRIBUTING.md
 ├── LICENSE
 ├── README.md
-└── CONTRIBUTING.md
+├── SECURITY.md          # 보안 정책
+└── CHANGELOG.md
 ```
 
 ---

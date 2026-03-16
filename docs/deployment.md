@@ -3,7 +3,7 @@
 ## 필수 요구사항
 
 - **Bun** (런타임 + 패키지 매니저)
-- **PostgreSQL** 15+
+- **PostgreSQL** 16+
 - **Redis** 7+
 - **Node.js** 18+ (Next.js 호환)
 
@@ -447,6 +447,46 @@ bun run saml:keycloak:smoke
 | `test:e2e` | Playwright E2E 테스트 |
 | `test:e2e:ui` | Playwright UI 모드 |
 
+## 원클릭 셋업
+
+`scripts/setup.sh`를 실행하면 다음 단계를 자동으로 수행합니다:
+
+1. `.env.example` → `.env` 복사 (이미 있으면 스킵)
+2. Docker 서비스 시작 (PostgreSQL, Redis 등)
+3. `bun install` 의존성 설치
+4. `bunx prisma db push` 스키마 반영
+5. (선택) DB seed 실행
+
+```bash
+./scripts/setup.sh
+```
+
+## Dockerfile
+
+멀티스테이지 빌드 (`Dockerfile`):
+
+1. **deps**: production 의존성만 설치 (`--frozen-lockfile --production`)
+2. **build**: 전체 의존성 설치 → Prisma generate → Next.js build
+3. **runner**: production 아티팩트만 복사, `NODE_ENV=production`으로 실행
+
+```
+FROM oven/bun:1 (base)
+→ deps: bun install --production
+→ build: prisma generate + bun run build
+→ runner: .next, public, prisma, prisma.config.ts, src/server 복사
+EXPOSE 3000 1234
+CMD ["bun", "run", "start"]
+```
+
+## docker-compose 앱 서비스
+
+`docker-compose.yml`의 `jpad` 서비스:
+
+- `.` 디렉토리에서 Dockerfile 빌드
+- 포트 `3000` (Next.js) + `1234` (WebSocket) 노출
+- `postgres`, `redis` 서비스의 healthcheck 완료 후 시작 (`service_healthy`)
+- `.env` 파일을 `env_file`로 주입
+
 ## Docker 구성 (예시)
 
 ### PostgreSQL
@@ -459,7 +499,7 @@ docker run -d \
   -e POSTGRES_DB=jpad \
   -p 5432:5432 \
   -v jpad-pgdata:/var/lib/postgresql/data \
-  postgres:15
+  postgres:16
 ```
 
 ### Redis

@@ -24,6 +24,9 @@ import {
   getAiProviderLabel,
   getAiTaskLabel,
 } from "@/lib/aiConfig";
+import { formatDateTime } from "@/lib/utils/dateFormat";
+import { getStatusBadgeStyle } from "@/lib/utils/statusStyles";
+import { Section, Field } from "@/components/ui/FormLayout";
 
 interface WorkspaceAiSettingsResponse {
   aiEnabled: boolean;
@@ -113,16 +116,6 @@ type StatusMessage = {
 
 const TEST_PROMPT = "Reply with exactly OK.";
 
-function formatDateTime(value: string | null) {
-  if (!value) return "-";
-  return new Intl.DateTimeFormat("ko-KR", {
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
-}
-
 function getSearchIndexJobTypeLabel(jobType: string) {
   if (jobType === "workspace_reindex") {
     return "워크스페이스 재색인";
@@ -134,16 +127,7 @@ function getSearchIndexJobTypeLabel(jobType: string) {
 }
 
 function getSearchIndexJobStatusMeta(status: string) {
-  if (status === "success") {
-    return { background: "rgba(34,197,94,0.1)", color: "rgba(22,101,52,0.9)", label: "완료" };
-  }
-  if (status === "running") {
-    return { background: "rgba(59,130,246,0.1)", color: "rgba(29,78,216,0.9)", label: "실행 중" };
-  }
-  if (status === "error") {
-    return { background: "rgba(239,68,68,0.1)", color: "rgba(153,27,27,0.9)", label: "오류" };
-  }
-  return { background: "rgba(107,114,128,0.08)", color: "rgba(55,65,81,0.9)", label: "대기 중" };
+  return getStatusBadgeStyle(status);
 }
 
 function getSearchIndexJobSummary(job: SearchIndexJobEntry) {
@@ -240,44 +224,6 @@ function createProfile(index: number) {
     apiKey: null,
     maxTokens: 2048,
   });
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <div className="mb-1 text-xs font-medium" style={{ color: "var(--muted)" }}>
-        {label}
-      </div>
-      {children}
-    </label>
-  );
-}
-
-function Section({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section
-      className="rounded-xl p-5"
-      style={{ border: "1px solid var(--border)", background: "var(--background)" }}
-    >
-      <div className="mb-4">
-        <h2 className="text-sm font-semibold">{title}</h2>
-        {description && (
-          <p className="mt-1 text-xs" style={{ color: "var(--muted)" }}>
-            {description}
-          </p>
-        )}
-      </div>
-      {children}
-    </section>
-  );
 }
 
 export function WorkspaceAiSettingsTab({

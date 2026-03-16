@@ -102,6 +102,7 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [, setSelectedDate] = useState<string | null>(null);
 
   // Form state
@@ -355,9 +356,16 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
     }
   }
 
+  function requestDelete() {
+    setConfirmingDelete(true);
+    setTimeout(() => {
+      setConfirmingDelete(false);
+    }, 4000);
+  }
+
   async function handleDelete() {
     if (!editingEvent) return;
-    if (!confirm("이 일정을 삭제하시겠습니까?")) return;
+    setConfirmingDelete(false);
 
     try {
       await fetch(
@@ -1249,10 +1257,10 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
                 }}
               >
                 <div>
-                  {editingEvent && (
+                  {editingEvent && !confirmingDelete && (
                     <button
                       type="button"
-                      onClick={handleDelete}
+                      onClick={requestDelete}
                       style={{
                         background: "none",
                         border: "1px solid rgba(239,68,68,0.6)",
@@ -1269,6 +1277,40 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
                       <Trash2 size={14} />
                       삭제
                     </button>
+                  )}
+                  {editingEvent && confirmingDelete && (
+                    <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
+                      <span style={{ color: "rgba(239,68,68,0.9)" }}>정말 삭제하시겠습니까?</span>
+                      <button
+                        type="button"
+                        onClick={handleDelete}
+                        style={{
+                          background: "rgba(239,68,68,0.9)",
+                          color: "#fff",
+                          border: "none",
+                          borderRadius: 6,
+                          padding: "5px 12px",
+                          cursor: "pointer",
+                          fontSize: 13,
+                        }}
+                      >
+                        삭제
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmingDelete(false)}
+                        style={{
+                          background: "none",
+                          border: "1px solid var(--border)",
+                          borderRadius: 6,
+                          padding: "5px 12px",
+                          cursor: "pointer",
+                          fontSize: 13,
+                        }}
+                      >
+                        취소
+                      </button>
+                    </span>
                   )}
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>

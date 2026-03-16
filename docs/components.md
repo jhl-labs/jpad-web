@@ -31,6 +31,16 @@
 - Public/Private 뱃지 표시
 - 설명, 페이지 수, 멤버 수 표시
 
+### `UserSettingsPage` (`src/app/(main)/workspace/[workspaceId]/user-settings/page.tsx`)
+사용자 개인 설정 페이지. 6개 탭:
+
+1. **프로필**: 이름 변경, 이메일 표시, 비밀번호 변경
+2. **테마**: 라이트/다크/시스템 테마 전환
+3. **데이터**: 내 워크스페이스 데이터 내보내기/가져오기
+4. **알림**: 알림 설정 관리
+5. **정보**: 앱 버전 및 라이선스 정보
+6. **고급**: 계정 관련 고급 설정
+
 ### `WorkspaceSettingsPage` (`src/app/(main)/workspace/[workspaceId]/settings/page.tsx`)
 워크스페이스 관리 설정 페이지. 3개 탭:
 
@@ -249,6 +259,11 @@ AI 기능 패널. 2개 탭: 글쓰기 도우미 + AI 채팅.
 
 ### `OnboardingChecklist` (`src/components/ui/OnboardingChecklist.tsx`)
 신규 사용자 온보딩 체크리스트 컴포넌트.
+
+### `FeedbackModal` (`src/components/ui/FeedbackModal.tsx`)
+GitHub Issues 연동 피드백 모달. 버그 제보, 기능 요청, 기타 피드백 유형 선택.
+- 환경 정보 자동 수집 (User Agent, 화면 크기, URL 등)
+- Issue 템플릿(bug_report.md, feature_request.md) 연동
 
 ### `AppLogo` (`src/components/ui/AppLogo.tsx`)
 애플리케이션 로고 컴포넌트.

@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Activity, ArrowLeft, Database, HardDriveDownload, RefreshCw, ShieldCheck } from "lucide-react";
+import { formatDateTimeFull } from "@/lib/utils/dateFormat";
+import { getStatusBadgeStyle } from "@/lib/utils/statusStyles";
 
 interface OverviewSummary {
   latestSuccessfulBackup: {
@@ -256,17 +258,7 @@ interface AttachmentSecurityEntry {
   } | null;
 }
 
-function formatDateTime(value: string | null) {
-  if (!value) return "-";
-  return new Intl.DateTimeFormat("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  }).format(new Date(value));
-}
+const formatDateTime = formatDateTimeFull;
 
 function formatBytes(value: string | undefined) {
   if (!value) return "-";
@@ -284,13 +276,9 @@ function formatBytes(value: string | undefined) {
 }
 
 function getStatusStyle(status: string) {
-  if (status === "success") {
-    return { background: "rgba(34,197,94,0.1)", color: "rgba(22,101,52,0.9)", label: "성공" };
-  }
-  if (status === "running") {
-    return { background: "rgba(59,130,246,0.1)", color: "rgba(29,78,216,0.9)", label: "실행 중" };
-  }
-  return { background: "rgba(239,68,68,0.1)", color: "rgba(153,27,27,0.9)", label: "오류" };
+  const style = getStatusBadgeStyle(status);
+  if (status === "success") return { ...style, label: "성공" };
+  return style;
 }
 
 function getVectorBackendLabel(backend: "json" | "pgvector" | "qdrant") {

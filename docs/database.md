@@ -1,6 +1,6 @@
 # 데이터베이스 스키마
 
-PostgreSQL + Prisma ORM 기반. 스키마 파일: `prisma/schema.prisma`
+PostgreSQL + Prisma ORM 기반. 스키마 파일: `prisma/schema.prisma`, Prisma 설정: `prisma.config.ts`
 
 ## 모델 관계도
 
@@ -202,7 +202,7 @@ SCIM group을 워크스페이스 role로 연결하는 매핑.
 | coverImage | String? | 커버 이미지 URL 또는 CSS gradient |
 | accessMode | String | `"workspace"` \| `"restricted"` |
 | position | Int | 정렬 순서 |
-| summary | String? | AI 생성 요약 |
+| summary | String? @db.Text | AI 생성 요약 |
 | isDeleted | Boolean | 소프트 삭제 플래그 |
 | deletedAt | DateTime? | 삭제 시각 |
 | parentId | UUID? | FK -> Page (부모 페이지, 트리 구조) |
@@ -219,7 +219,7 @@ SCIM group을 워크스페이스 role로 연결하는 매핑.
 | id | UUID | PK |
 | chunkIndex | Int | 청크 순서 |
 | title | String | 청크 제목 |
-| content | String | 청크 내용 |
+| content | String @db.Text | 청크 내용 |
 | contentHash | String | 콘텐츠 해시 (변경 감지) |
 | embedding | Json | 임베딩 벡터 |
 | dimension | Int | 벡터 차원 |
@@ -239,9 +239,16 @@ SCIM group을 워크스페이스 role로 연결하는 매핑.
 | jobType | String | `"page_reindex"` \| `"workspace_reindex"` |
 | status | String | `"pending"` \| `"running"` \| `"success"` \| `"error"` |
 | attempts | Int | 시도 횟수 |
-| lastError | String? | 마지막 오류 |
+| lastError | String? @db.Text | 마지막 오류 |
+| payload | Json? | 작업 파라미터 |
+| summary | Json? | 실행 결과 요약 |
+| startedAt | DateTime? | 작업 시작 시각 |
+| processedAt | DateTime? | 작업 완료 시각 |
 | workspaceId | UUID | FK -> Workspace |
 | pageId | UUID? | FK -> Page |
+
+- `@@index([workspaceId, createdAt])` - 워크스페이스별 조회
+- `@@index([workspaceId, status, createdAt])` - 상태별 필터링
 
 ### PagePermission
 페이지 접근 제한 모드에서 허용된 사용자.
@@ -276,7 +283,7 @@ SCIM group을 워크스페이스 role로 연결하는 매핑.
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
-| content | String | 댓글 내용 |
+| content | String @db.Text | 댓글 내용 |
 | resolved | Boolean | 해결 여부 |
 | pageId | UUID | FK -> Page |
 | userId | UUID | FK -> User |
@@ -322,7 +329,7 @@ AI 채팅 히스토리.
 | 필드 | 타입 | 설명 |
 |------|------|------|
 | role | String | `"user"` \| `"assistant"` |
-| content | String | 메시지 내용 |
+| content | String @db.Text | 메시지 내용 |
 | pageId | String? | 관련 페이지 |
 | workspaceId | String | 워크스페이스 |
 | userId | String | 사용자 |
@@ -413,7 +420,7 @@ Google Calendar OAuth 연결 정보.
 | name | String | 템플릿 이름 |
 | description | String? | 설명 |
 | icon | String? | 아이콘 |
-| content | String (Text) | Markdown 콘텐츠 |
+| content | String @db.Text | Markdown 콘텐츠 |
 | category | String | `"meeting"` \| `"project"` \| `"journal"` \| `"custom"` (기본: custom) |
 | isBuiltIn | Boolean | 내장 템플릿 여부 (기본: false) |
 | workspaceId | UUID | FK -> Workspace |

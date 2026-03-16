@@ -34,6 +34,7 @@ export function TrashPanel({
 }) {
   const [pages, setPages] = useState<DeletedPage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
 
   const fetchTrash = useCallback(async () => {
     setLoading(true);
@@ -60,10 +61,15 @@ export function TrashPanel({
     }
   }
 
+  function requestPermanentDelete(pageId: string) {
+    setConfirmingDeleteId(pageId);
+    setTimeout(() => {
+      setConfirmingDeleteId((prev) => (prev === pageId ? null : prev));
+    }, 4000);
+  }
+
   async function handlePermanentDelete(pageId: string) {
-    if (!confirm("이 페이지를 영구적으로 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) {
-      return;
-    }
+    setConfirmingDeleteId(null);
     const res = await fetch(`/api/trash/${pageId}`, { method: "DELETE" });
     if (res.ok) {
       setPages((prev) => prev.filter((p) => p.id !== pageId));
@@ -111,9 +117,10 @@ export function TrashPanel({
         )}
 
         {!loading && pages.length === 0 && (
-          <p className="text-sm text-center py-8" style={{ color: "var(--muted)" }}>
-            휴지통이 비어있습니다
-          </p>
+          <div className="flex flex-col items-center justify-center py-12 gap-2" style={{ color: "var(--muted)" }}>
+            <Trash2 size={32} strokeWidth={1.5} />
+            <p className="text-sm">휴지통이 비어 있습니다</p>
+          </div>
         )}
 
         {pages.map((page) => (
@@ -144,16 +151,36 @@ export function TrashPanel({
               >
                 <RotateCcw size={12} /> 복원
               </button>
-              <button
-                onClick={() => handlePermanentDelete(page.id)}
-                className="flex items-center gap-1 text-xs px-2 py-1 rounded hover:opacity-70"
-                style={{
-                  color: "#ef4444",
-                  border: "1px solid var(--border)",
-                }}
-              >
-                <AlertTriangle size={12} /> 영구 삭제
-              </button>
+              {confirmingDeleteId === page.id ? (
+                <span className="flex items-center gap-1.5 text-xs">
+                  <span style={{ color: "rgba(239,68,68,0.9)" }}>정말 삭제하시겠습니까?</span>
+                  <button
+                    onClick={() => handlePermanentDelete(page.id)}
+                    className="px-2 py-1 rounded text-white text-xs"
+                    style={{ background: "rgba(239,68,68,0.9)" }}
+                  >
+                    삭제
+                  </button>
+                  <button
+                    onClick={() => setConfirmingDeleteId(null)}
+                    className="px-2 py-1 rounded text-xs"
+                    style={{ border: "1px solid var(--border)" }}
+                  >
+                    취소
+                  </button>
+                </span>
+              ) : (
+                <button
+                  onClick={() => requestPermanentDelete(page.id)}
+                  className="flex items-center gap-1 text-xs px-2 py-1 rounded hover:opacity-70"
+                  style={{
+                    color: "#ef4444",
+                    border: "1px solid var(--border)",
+                  }}
+                >
+                  <AlertTriangle size={12} /> 영구 삭제
+                </button>
+              )}
             </div>
           </div>
         ))}
