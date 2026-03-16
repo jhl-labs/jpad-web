@@ -161,7 +161,7 @@ jpad-web/
 │   ├── app/             # Next.js routes & API
 │   │   ├── (auth)/      # Login, register, SSO
 │   │   ├── (main)/      # Workspace, pages, settings
-│   │   └── api/         # REST API (127 endpoints)
+│   │   └── api/         # REST API (133 endpoints)
 │   ├── components/      # React components (40+)
 │   │   ├── ai/          # AI panel, summary badge
 │   │   ├── editor/      # Collaborative editor, TOC, panels
@@ -220,7 +220,7 @@ See [docs/deployment.md](./docs/deployment.md) for production deployment with Do
 | Document | Description |
 |----------|-------------|
 | [Architecture](./docs/architecture.md) | System architecture and data flow |
-| [API Reference](./docs/api-reference.md) | All 127 REST API endpoints |
+| [API Reference](./docs/api-reference.md) | All 133 REST API endpoints |
 | [Auth & Permissions](./docs/auth-and-permissions.md) | RBAC, SSO, SCIM |
 | [Database](./docs/database.md) | Prisma schema and models |
 | [AI Features](./docs/ai-features.md) | AI assistant capabilities |

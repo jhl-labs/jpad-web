@@ -638,6 +638,19 @@ AI 채팅 (컨텍스트 기반 대화). SSE 스트리밍 지원.
 }
 ```
 
+### `GET /api/ai/chat/history?workspaceId={id}&pageId={id}&limit={n}`
+페이지별 AI 채팅 히스토리를 DB에서 조회.
+
+**응답:**
+```json
+{
+  "messages": [
+    { "id": "uuid", "role": "user", "content": "질문", "pageId": "uuid", "createdAt": "..." },
+    { "id": "uuid", "role": "assistant", "content": "답변", "pageId": "uuid", "createdAt": "..." }
+  ]
+}
+```
+
 ### `POST /api/ai/autocomplete`
 AI 이어쓰기 (커서 위치 기반 문서 계속 작성).
 
@@ -682,6 +695,25 @@ LLM 실제 생성 테스트.
 
 ### `GET /api/workspaces/[workspaceId]/ai/vector-store-status`
 벡터 스토어 상태 조회 (configured backend, read backend, chunk count 등).
+
+---
+
+## 워크스페이스 통계 API
+
+### `GET /api/workspaces/[workspaceId]/stats`
+워크스페이스 통계 조회: 페이지 수, 멤버 수, 첨부파일 수, 총 저장 용량, 할 일 수, 캘린더 이벤트 수.
+
+**응답:**
+```json
+{
+  "pageCount": 42,
+  "memberCount": 5,
+  "attachmentCount": 18,
+  "totalStorageBytes": 104857600,
+  "todoCount": 12,
+  "calendarEventCount": 8
+}
+```
 
 ---
 

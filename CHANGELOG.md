@@ -15,13 +15,20 @@ All notable changes to this project will be documented in this file.
 - `scripts/setup.sh` one-click setup script
 - Dockerfile with multi-stage build (deps/build/runner)
 - docker-compose `jpad` app service with healthcheck dependencies
+- Workspace stats API (`GET /api/workspaces/[workspaceId]/stats`)
+- AI chat history API (`GET /api/ai/chat/history`)
+- `WordCount` editor component (글자 수, 단어 수, 읽기 시간)
+- `FormLayout` UI component (설정 페이지용 폼 레이아웃)
+- Trash permanent delete (`DELETE /api/trash/[pageId]`)
 
 ### Changed
 - PostgreSQL version updated from 15 to 16-alpine in docker-compose
-- API endpoint count increased to 130
+- API endpoint count increased to 133
+- All bare `catch {}` blocks replaced with `catch (error)` + Unauthorized branch + `logError()`
 
 ### Fixed
 - Documentation sync: `@db.Text` annotations, SearchIndexJob fields, prisma.config.ts reference
+- Removed 8 broken smoke test scripts from package.json (files moved to tests/smoke/)
 
 ## [1.0.0] - 2025-03-17
 
