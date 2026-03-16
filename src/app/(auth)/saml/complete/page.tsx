@@ -1,10 +1,11 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
-export default function SamlCompletePage() {
+function SamlCompleteInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState("");
@@ -50,5 +51,13 @@ export default function SamlCompletePage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function SamlCompletePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><p>로딩 중...</p></div>}>
+      <SamlCompleteInner />
+    </Suspense>
   );
 }
