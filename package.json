@@ -57,7 +57,7 @@
     "ioredis": "^5.10.0",
     "isomorphic-git": "^1.27.0",
     "lib0": "^0.2.117",
-    "lucide-react": "^0.468.0",
+    "lucide-react": "^0.577.0",
     "next": "^15.1.0",
     "next-auth": "^4.24.0",
     "react": "^19.0.0",
