@@ -9,6 +9,22 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/jhl-labs/jpad-web/actions/workflows/ci.yml"><img src="https://github.com/jhl-labs/jpad-web/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://github.com/jhl-labs/jpad-web/releases/latest"><img src="https://img.shields.io/github/v/release/jhl-labs/jpad-web?color=blue&label=release" alt="Release" /></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-jhl--labs-purple" alt="License" /></a>
+  <a href="https://github.com/jhl-labs/jpad-web"><img src="https://img.shields.io/github/stars/jhl-labs/jpad-web?style=social" alt="Stars" /></a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-16-black?logo=next.js" alt="Next.js 16" />
+  <img src="https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Prisma-7-2D3748?logo=prisma&logoColor=white" alt="Prisma 7" />
+  <img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white" alt="Redis" />
+  <img src="https://img.shields.io/badge/Bun-1.x-F9F1E1?logo=bun&logoColor=black" alt="Bun" />
+</p>
+
+<p align="center">
   <a href="./docs/README.md">한국어 문서</a> ·
   <a href="#features">Features</a> ·
   <a href="#quick-start">Quick Start</a> ·
