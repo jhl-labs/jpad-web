@@ -1,32 +1,44 @@
 name: Claude Code Review
 
-# PR 자동 코드 리뷰 — ANTHROPIC_API_KEY 시크릿이 설정된 경우에만 동작합니다.
-# Max 구독자는 이 워크플로우 없이도 PR에서 @claude 멘션으로 리뷰 요청 가능합니다.
-
 on:
   pull_request:
-    types: [opened, synchronize]
-
-permissions:
-  contents: read
-  pull-requests: write
+    types: [opened, synchronize, ready_for_review, reopened]
+    # Optional: Only run on specific file changes
+    # paths:
+    #   - "src/**/*.ts"
+    #   - "src/**/*.tsx"
+    #   - "src/**/*.js"
+    #   - "src/**/*.jsx"
 
 jobs:
-  review:
-    if: ${{ secrets.ANTHROPIC_API_KEY != '' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: anthropics/claude-code-action@v1
-        with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          prompt: |
-            Review this pull request. Check for:
-            1. TypeScript type safety (no `any`, proper error handling)
-            2. Security issues (auth checks, input validation, secrets)
-            3. React patterns (useEffect deps, cleanup, accessibility)
-            4. Code style (CSS variables, Korean UI text, English API errors)
-            5. Test coverage for new features
+  claude-review:
+    # Optional: Filter by PR author
+    # if: |
+    #   github.event.pull_request.user.login == 'external-contributor' ||
+    #   github.event.pull_request.user.login == 'new-developer' ||
+    #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
 
-            Reference CLAUDE.md for project coding standards.
-            Post findings as review comments on specific lines.
-          claude_args: "--max-turns 5"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Code Review
+        id: claude-review
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
+          plugins: 'code-review@claude-code-plugins'
+          prompt: '/code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }}'
+          # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
+          # or https://code.claude.com/docs/en/cli-reference for available options
+
