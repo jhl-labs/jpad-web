@@ -8,9 +8,7 @@ import {
   refreshAccessToken,
   listGoogleEvents,
   createGoogleEvent,
-  deleteGoogleEvent,
   updateGoogleEvent,
-  type GoogleEvent,
   type GoogleOAuthCredentials,
 } from "@/lib/googleCalendar";
 import type { GoogleCalendarConnection, CalendarEvent } from "@prisma/client";

@@ -41,7 +41,7 @@ export default function WorkspaceHomePage() {
   const [pages, setPages] = useState<PageItem[]>([]);
   const [workspaceName, setWorkspaceName] = useState("");
   const [workspaceRole, setWorkspaceRole] = useState("viewer");
-  const [createError, setCreateError] = useState<string | null>(null);
+  const [, setCreateError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`/api/pages?workspaceId=${workspaceId}`)

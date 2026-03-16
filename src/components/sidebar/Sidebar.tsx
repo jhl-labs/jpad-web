@@ -6,7 +6,7 @@ import { AppLogo } from "@/components/ui/AppLogo";
 import {
   Plus, FileText, ChevronRight, ChevronDown, ChevronLeft, LogOut,
   Settings, GripVertical, Trash2, Star, Network, Copy, Link,
-  FilePlus, Edit3, MoreHorizontal, StarOff, ExternalLink, ListTodo,
+  FilePlus, Edit3, MoreHorizontal, StarOff, ExternalLink,
   Calendar, CheckSquare, BookOpen, Upload, ChevronsUpDown, Check,
 } from "lucide-react";
 import { ImportModal } from "@/components/editor/ImportModal";
@@ -764,6 +764,7 @@ function SortablePageItem({
     <div ref={setNodeRef} style={style}>
       <div
         role="treeitem"
+        aria-selected={false}
         aria-expanded={children.length > 0 ? expanded : undefined}
         tabIndex={0}
         className="flex items-center group rounded px-1 py-0.5 cursor-pointer text-sm"

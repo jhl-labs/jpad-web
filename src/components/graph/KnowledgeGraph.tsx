@@ -210,8 +210,8 @@ export function KnowledgeGraph({ workspaceId, currentPageId }: KnowledgeGraphPro
         for (let j = i + 1; j < nodes.length; j++) {
           const a = nodes[i],
             b = nodes[j];
-          let dx = b.x - a.x;
-          let dy = b.y - a.y;
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
           const dist = Math.sqrt(dx * dx + dy * dy) || 1;
           // Stronger repulsion for more connected nodes
           const repulsion = -500 / (dist * dist);
@@ -483,7 +483,7 @@ export function KnowledgeGraph({ workspaceId, currentPageId }: KnowledgeGraphPro
       }
     }
 
-    function handleMouseUp(e: MouseEvent) {
+    function handleMouseUp(_e: MouseEvent) {
       const drag = dragRef.current;
       if (drag.type === "node" && drag.nodeId && !drag.moved) {
         // Click - navigate to page

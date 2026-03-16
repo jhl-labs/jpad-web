@@ -90,7 +90,6 @@ export default function PageEditorPage() {
   const [autocompleteLoading, setAutocompleteLoading] = useState(false);
   const [autocompleteError, setAutocompleteError] = useState<string | null>(null);
   const [showExportMenu, setShowExportMenu] = useState(false);
-  const exportMenuRef = useRef<HTMLDivElement>(null);
   const cursorContextRef = useRef<CursorContext | null>(null);
   const titleTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
   const editorContainerRef = useRef<HTMLDivElement>(null);

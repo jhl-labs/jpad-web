@@ -102,7 +102,7 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [, setSelectedDate] = useState<string | null>(null);
 
   // Form state
   const [formTitle, setFormTitle] = useState("");
