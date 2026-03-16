@@ -12,30 +12,35 @@ function SamlCompleteInner() {
   useEffect(() => {
     async function finishSamlLogin() {
       const token = searchParams.get("token");
-      const callbackUrl = searchParams.get("callbackUrl") || "/workspace";
+      const rawCallback = searchParams.get("callbackUrl") || "/workspace";
+
+      // Open redirect 방지: 상대 경로만 허용
+      const callbackUrl = rawCallback.startsWith("/") ? rawCallback : "/workspace";
 
       if (!token) {
         router.replace("/login?error=SAMLSessionInvalid");
         return;
       }
 
-      const result = await signIn("saml", {
-        token,
-        callbackUrl,
-        redirect: false,
-      });
+      try {
+        const result = await signIn("saml", {
+          token,
+          callbackUrl,
+          redirect: false,
+        });
 
-      if (result?.error) {
-        router.replace(`/login?error=${encodeURIComponent(result.error)}`);
-        return;
+        if (result?.error) {
+          router.replace(`/login?error=${encodeURIComponent(result.error)}`);
+          return;
+        }
+
+        router.replace(callbackUrl);
+      } catch {
+        setError("SAML 로그인 세션을 마무리하지 못했습니다.");
       }
-
-      router.replace(callbackUrl);
     }
 
-    void finishSamlLogin().catch(() => {
-      setError("SAML 로그인 세션을 마무리하지 못했습니다.");
-    });
+    finishSamlLogin();
   }, [router, searchParams]);
 
   return (
