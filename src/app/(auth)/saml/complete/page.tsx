@@ -4,6 +4,22 @@ import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
+function SamlLoadingLayout({ message }: { message: string }) {
+  return (
+    <div
+      className="min-h-screen flex items-center justify-center"
+      style={{ background: "var(--background)" }}
+    >
+      <div className="w-full max-w-sm p-8 text-center">
+        <h1 className="text-2xl font-bold mb-4">JPAD</h1>
+        <p className="text-sm" style={{ color: "var(--muted)" }}>
+          {message}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function SamlCompleteInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -55,23 +71,15 @@ function SamlCompleteInner() {
   }, [router, searchParams]);
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center"
-      style={{ background: "var(--background)" }}
-    >
-      <div className="w-full max-w-sm p-8 text-center">
-        <h1 className="text-2xl font-bold mb-4">JPAD</h1>
-        <p className="text-sm" style={{ color: "var(--muted)" }}>
-          {error || "SAML 로그인을 마무리하는 중입니다..."}
-        </p>
-      </div>
-    </div>
+    <SamlLoadingLayout
+      message={error || "SAML 로그인을 마무리하는 중입니다..."}
+    />
   );
 }
 
 export default function SamlCompletePage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><p>로딩 중...</p></div>}>
+    <Suspense fallback={<SamlLoadingLayout message="로딩 중..." />}>
       <SamlCompleteInner />
     </Suspense>
   );
