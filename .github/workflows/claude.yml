@@ -1,5 +1,9 @@
 name: Claude Code
 
+# Claude GitHub App이 org에 설치되어 있으면 @claude 멘션은 앱이 직접 처리합니다.
+# 이 워크플로우는 API 키가 설정된 경우에만 커스텀 자동화에 사용됩니다.
+# API 키 없이 @claude 멘션을 사용하려면 https://github.com/apps/claude 앱만 설치하면 됩니다.
+
 on:
   issue_comment:
     types: [created]
@@ -16,15 +20,11 @@ permissions:
 jobs:
   claude:
     if: |
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'issues' && contains(github.event.issue.body, '@claude'))
+      github.event_name == 'issues' && contains(github.event.issue.labels.*.name, 'claude')
     runs-on: ubuntu-latest
     steps:
       - uses: anthropics/claude-code-action@v1
         with:
-          # Max 구독: GitHub App 인증 사용 (API 키 불필요)
-          # https://github.com/apps/claude 에서 앱 설치 필요
-          use_claude_max: true
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           trigger_phrase: "@claude"
           claude_args: "--max-turns 10"

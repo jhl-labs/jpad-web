@@ -1,5 +1,8 @@
 name: Claude Code Review
 
+# PR 자동 코드 리뷰 — ANTHROPIC_API_KEY 시크릿이 설정된 경우에만 동작합니다.
+# Max 구독자는 이 워크플로우 없이도 PR에서 @claude 멘션으로 리뷰 요청 가능합니다.
+
 on:
   pull_request:
     types: [opened, synchronize]
@@ -10,20 +13,20 @@ permissions:
 
 jobs:
   review:
+    if: ${{ secrets.ANTHROPIC_API_KEY != '' }}
     runs-on: ubuntu-latest
     steps:
       - uses: anthropics/claude-code-action@v1
         with:
-          use_claude_max: true
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
             Review this pull request. Check for:
             1. TypeScript type safety (no `any`, proper error handling)
             2. Security issues (auth checks, input validation, secrets)
             3. React patterns (useEffect deps, cleanup, accessibility)
-            4. Code style consistency with the project (CSS variables, Korean UI text, English API errors)
+            4. Code style (CSS variables, Korean UI text, English API errors)
             5. Test coverage for new features
 
             Reference CLAUDE.md for project coding standards.
-            Post findings as review comments on specific lines where possible.
-            Give an overall assessment: Approve, Request Changes, or Comment.
+            Post findings as review comments on specific lines.
           claude_args: "--max-turns 5"
