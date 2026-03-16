@@ -275,8 +275,12 @@ export function CommentPanel({
 
   return (
     <div
+      role="dialog"
+      aria-label="댓글"
+      aria-modal="true"
       className="fixed right-0 top-0 h-full w-full md:w-80 max-w-full shadow-lg z-50 flex flex-col"
       style={{ background: "var(--background)", borderLeft: "1px solid var(--border)" }}
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
       {/* Header */}
       <div

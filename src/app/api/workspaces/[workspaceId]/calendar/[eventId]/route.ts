@@ -29,8 +29,11 @@ export async function GET(
     }
 
     return NextResponse.json(event);
-  } catch {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
 
@@ -103,6 +106,27 @@ export async function PATCH(
     if (typeof body.pageId === "string" || body.pageId === null)
       updateData.pageId = body.pageId;
 
+    // pageId가 워크스페이스에 속하는지 검증
+    if (typeof updateData.pageId === "string") {
+      const page = await prisma.page.findFirst({
+        where: { id: updateData.pageId as string, workspaceId, isDeleted: false },
+      });
+      if (!page) {
+        return NextResponse.json(
+          { error: "Page not found in this workspace" },
+          { status: 400 }
+        );
+      }
+    }
+
+    // startAt 유효성 검증
+    if (updateData.startAt && isNaN((updateData.startAt as Date).getTime())) {
+      return NextResponse.json(
+        { error: "Invalid start date" },
+        { status: 400 }
+      );
+    }
+
     const event = await prisma.calendarEvent.update({
       where: { id: eventId },
       data: updateData,
@@ -113,8 +137,11 @@ export async function PATCH(
     });
 
     return NextResponse.json(event);
-  } catch {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
 
@@ -156,7 +183,10 @@ export async function DELETE(
     });
 
     return NextResponse.json({ success: true });
-  } catch {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

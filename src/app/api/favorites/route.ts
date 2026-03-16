@@ -41,8 +41,11 @@ export async function GET(req: NextRequest) {
       .map((f) => f.page)
       .filter((page) => accessibleIds.has(page.id));
     return NextResponse.json(pages);
-  } catch {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
 
@@ -78,8 +81,11 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(favorite, { status: 201 });
-  } catch {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
 
@@ -97,7 +103,10 @@ export async function DELETE(req: NextRequest) {
     });
 
     return NextResponse.json({ success: true });
-  } catch {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

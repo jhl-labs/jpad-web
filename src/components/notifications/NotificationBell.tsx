@@ -159,6 +159,7 @@ export function NotificationBell({ workspaceId }: NotificationBellProps) {
       {/* Bell button */}
       <button
         onClick={() => setOpen(!open)}
+        aria-expanded={open}
         className="relative p-1.5 rounded hover:opacity-70 transition-opacity"
         title="알림"
       >

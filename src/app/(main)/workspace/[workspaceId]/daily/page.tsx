@@ -227,7 +227,7 @@ export default function DailyNotePage() {
               color: "var(--foreground)",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "var(--muted)";
+              e.currentTarget.style.background = "var(--sidebar-hover)";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = "transparent";
@@ -252,7 +252,7 @@ export default function DailyNotePage() {
               color: "var(--foreground)",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "var(--muted)";
+              e.currentTarget.style.background = "var(--sidebar-hover)";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = "transparent";

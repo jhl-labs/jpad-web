@@ -457,3 +457,53 @@ wss.on("connection", async (ws: WebSocket, req) => {
 });
 
 console.log(`y-websocket server running on ws://localhost:${PORT}`);
+
+// ── Graceful shutdown ──────────────────────────────────────────────
+async function gracefulShutdown(signal: string) {
+  console.log(`[WS] ${signal} received – shutting down gracefully…`);
+
+  // 1. 새 연결 수락 중지
+  wss.close();
+
+  // 2. 모든 문서 persist + 연결 종료
+  const shutdownPromises: Promise<void>[] = [];
+
+  for (const [docName, shared] of docs) {
+    if (shared.persistTimer) {
+      clearTimeout(shared.persistTimer);
+      shared.persistTimer = null;
+    }
+
+    const snapshot = Y.encodeStateAsUpdate(shared.ydoc);
+    shutdownPromises.push(
+      saveDocSnapshot(docName, snapshot).catch((err) => {
+        console.error(`[WS] shutdown snapshot error (${docName}):`, err);
+      })
+    );
+
+    for (const [conn] of shared.conns) {
+      conn.close(1001, "Server shutting down");
+    }
+    shared.conns.clear();
+    shared.ydoc.off("update", shared.updateHandler);
+    shared.awareness.destroy();
+    shared.ydoc.destroy();
+  }
+  docs.clear();
+
+  await Promise.allSettled(shutdownPromises);
+
+  // 3. Redis cleanup
+  try {
+    await sub.quit();
+    await pub.quit();
+  } catch (err) {
+    console.error("[WS] Redis cleanup error:", err);
+  }
+
+  console.log("[WS] Graceful shutdown complete");
+  process.exit(0);
+}
+
+process.on("SIGTERM", () => void gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => void gracefulShutdown("SIGINT"));

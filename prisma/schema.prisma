@@ -282,7 +282,7 @@ model Page {
   coverImage  String?
   accessMode  String   @default("workspace") // "workspace" | "restricted"
   position    Int      @default(0)
-  summary     String?  // AI-generated summary
+  summary     String?  @db.Text // AI-generated summary
   isDeleted   Boolean  @default(false)
   deletedAt   DateTime?
   createdAt   DateTime @default(now())
@@ -318,7 +318,7 @@ model PageEmbeddingChunk {
   id          String   @id @default(uuid())
   chunkIndex  Int
   title       String
-  content     String
+  content     String   @db.Text
   contentHash String
   embedding   Json
   dimension   Int
@@ -344,7 +344,7 @@ model SearchIndexJob {
   jobType     String   // "page_reindex" | "workspace_reindex"
   status      String   @default("pending") // "pending" | "running" | "success" | "error"
   attempts    Int      @default(0)
-  lastError   String?
+  lastError   String?  @db.Text
   payload     Json?
   summary     Json?
   startedAt   DateTime?
@@ -409,7 +409,7 @@ model Backlink {
 
 model Comment {
   id        String   @id @default(uuid())
-  content   String
+  content   String   @db.Text
   resolved  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -471,7 +471,7 @@ model Favorite {
 model AiChat {
   id        String   @id @default(uuid())
   role      String   // "user" | "assistant"
-  content   String
+  content   String   @db.Text
   pageId    String?
   workspaceId String
   userId    String

@@ -1,0 +1,8 @@
+node_modules
+.next
+.git
+.claude
+data
+test-results
+tests
+*.md

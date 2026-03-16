@@ -292,7 +292,6 @@ export function GraphView({ workspaceId, currentPageId }: GraphViewProps) {
     }
 
     function loop() {
-      readColors();
       simulate();
       draw();
       animId = requestAnimationFrame(loop);

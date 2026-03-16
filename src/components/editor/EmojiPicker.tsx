@@ -36,12 +36,16 @@ export function EmojiPicker({ onSelect, onClose }: EmojiPickerProps) {
   return (
     <div
       ref={ref}
+      role="dialog"
+      aria-label="이모지 선택"
+      aria-modal="true"
       className="absolute z-50 rounded-lg shadow-lg"
       style={{
         background: "var(--background)",
         border: "1px solid var(--border)",
         width: 320,
       }}
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
       {/* Category tabs */}
       <div

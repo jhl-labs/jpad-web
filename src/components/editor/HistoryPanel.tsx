@@ -41,8 +41,12 @@ export function HistoryPanel({
 
   return (
     <div
+      role="dialog"
+      aria-label="히스토리"
+      aria-modal="true"
       className="fixed right-0 top-0 h-full w-full md:w-80 shadow-lg z-50 flex flex-col"
       style={{ background: "var(--background)", borderLeft: "1px solid var(--border)" }}
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
       <div className="flex items-center justify-between p-3" style={{ borderBottom: "1px solid var(--border)" }}>
         <h3 className="font-semibold text-sm">히스토리</h3>

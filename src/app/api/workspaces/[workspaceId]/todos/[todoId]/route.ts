@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, checkWorkspaceAccess } from "@/lib/auth/helpers";
 import { recordAuditLog, createAuditActor, getAuditRequestContext } from "@/lib/audit";
+import { logError } from "@/lib/logger";
 import { z } from "zod";
 
 const updateTodoSchema = z.object({
@@ -49,6 +50,19 @@ export async function PATCH(
 
     const data: Record<string, unknown> = { ...parsed.data };
 
+    // assigneeId 변경 시 워크스페이스 멤버 검증
+    if ("assigneeId" in data && data.assigneeId) {
+      const assigneeMember = await prisma.workspaceMember.findFirst({
+        where: { workspaceId, userId: data.assigneeId as string },
+      });
+      if (!assigneeMember) {
+        return NextResponse.json(
+          { error: "Assignee is not a workspace member" },
+          { status: 400 }
+        );
+      }
+    }
+
     // Handle dueDate conversion
     if ("dueDate" in data) {
       data.dueDate = data.dueDate ? new Date(data.dueDate as string) : null;
@@ -80,8 +94,11 @@ export async function PATCH(
     });
 
     return NextResponse.json(todo);
-  } catch (e) {
-    console.error(e);
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    logError("todos.patch.unhandled_error", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
@@ -124,8 +141,11 @@ export async function DELETE(
     });
 
     return NextResponse.json({ success: true });
-  } catch (e) {
-    console.error(e);
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    logError("todos.delete.unhandled_error", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

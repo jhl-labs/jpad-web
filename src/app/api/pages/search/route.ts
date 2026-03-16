@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "node:fs";
 import path from "node:path";
 import { requireAuth } from "@/lib/auth/helpers";
+import { rateLimitRedis } from "@/lib/rateLimit";
 import { listAccessiblePages } from "@/lib/pageAccess";
 import {
   extractPlainTextFromMarkdown,
@@ -92,6 +93,12 @@ async function searchContent(
 export async function GET(req: NextRequest) {
   try {
     const user = await requireAuth();
+
+    const allowed = await rateLimitRedis(`search:${user.id}`, 30, 60_000);
+    if (!allowed) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     const workspaceId = req.nextUrl.searchParams.get("workspaceId");
     const q = req.nextUrl.searchParams.get("q")?.trim() || "";
 

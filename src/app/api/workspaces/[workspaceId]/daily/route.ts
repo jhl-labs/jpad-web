@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, checkWorkspaceAccess } from "@/lib/auth/helpers";
+import { logError } from "@/lib/logger";
 import { rateLimitRedis } from "@/lib/rateLimit";
 import { initRepo, savePage } from "@/lib/git/repository";
 
@@ -117,8 +118,11 @@ export async function GET(
     }
 
     return NextResponse.json(page, { status: 201 });
-  } catch (e) {
-    console.error("Daily note error:", e);
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    logError("daily.get.unhandled_error", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

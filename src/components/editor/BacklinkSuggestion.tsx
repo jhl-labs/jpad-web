@@ -87,11 +87,17 @@ export function BacklinkSuggestion({
     if (!open) return;
 
     const timer = setTimeout(async () => {
-      const res = await fetch(
-        `/api/pages/search?workspaceId=${workspaceId}&q=${encodeURIComponent(query)}`
-      );
-      if (res.ok) {
+      try {
+        const res = await fetch(
+          `/api/pages/search?workspaceId=${workspaceId}&q=${encodeURIComponent(query)}`
+        );
+        if (!res.ok) {
+          setSuggestions([]);
+          return;
+        }
         setSuggestions(await res.json());
+      } catch {
+        setSuggestions([]);
       }
     }, 150);
 

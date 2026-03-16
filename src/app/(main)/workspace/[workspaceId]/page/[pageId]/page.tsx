@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
+import { useSession } from "next-auth/react";
 import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import type { CursorContext } from "@/components/editor/CollaborativeEditor";
@@ -63,6 +64,8 @@ interface WorkspaceInfo {
 export default function PageEditorPage() {
   const { workspaceId, pageId } = useParams<{ workspaceId: string; pageId: string }>();
   const router = useRouter();
+  const { data: session } = useSession();
+  const [activeEditors, setActiveEditors] = useState<{ name: string; color: string }[]>([]);
   const [page, setPage] = useState<PageData | null>(null);
   const [content, setContent] = useState<string>("");
   const [showHistory, setShowHistory] = useState(false);
@@ -95,6 +98,15 @@ export default function PageEditorPage() {
   const editorContainerRef = useRef<HTMLDivElement>(null);
 
   const isReadOnly = page?.currentRole === "viewer";
+
+  const handleAwarenessChange = useCallback(
+    (users: { name: string; color: string }[]) => {
+      setActiveEditors(users);
+    },
+    []
+  );
+
+  const displayedEditors = useMemo(() => activeEditors.slice(0, 5), [activeEditors]);
 
   const [isFavorited, setIsFavorited] = useState(false);
   const [loadError, setLoadError] = useState(false);
@@ -307,13 +319,23 @@ export default function PageEditorPage() {
     URL.revokeObjectURL(url);
   }
 
+  function escapeHtml(str: string): string {
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
   function handleExportHtml() {
+    const safeTitle = escapeHtml(title || "문서");
     const htmlContent = `<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title || "문서"}</title>
+  <title>${safeTitle}</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem; line-height: 1.6; }
     h1 { border-bottom: 1px solid #eee; padding-bottom: 0.5rem; }
@@ -323,8 +345,8 @@ export default function PageEditorPage() {
   </style>
 </head>
 <body>
-  <h1>${title || "문서"}</h1>
-  <div>${content.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>")}</div>
+  <h1>${safeTitle}</h1>
+  <div>${content.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>")}</div>
 </body>
 </html>`;
     const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
@@ -594,6 +616,35 @@ export default function PageEditorPage() {
             )}
           </div>
 
+          {/* 현재 편집 중인 사용자 아바타 */}
+          {displayedEditors.length > 0 && (
+            <div className="flex items-center gap-1 ml-1">
+              <span className="text-[10px] hidden sm:inline" style={{ color: "var(--muted)" }}>
+                편집 중
+              </span>
+              <div className="flex -space-x-1.5">
+                {displayedEditors.map((editor, idx) => (
+                  <div
+                    key={idx}
+                    className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
+                    style={{
+                      background: editor.color,
+                      border: "2px solid var(--background)",
+                    }}
+                    title={editor.name}
+                  >
+                    {editor.name.charAt(0).toUpperCase()}
+                  </div>
+                ))}
+              </div>
+              {activeEditors.length > 5 && (
+                <span className="text-[10px]" style={{ color: "var(--muted)" }}>
+                  +{activeEditors.length - 5}
+                </span>
+              )}
+            </div>
+          )}
+
           {isReadOnly && (
             <span className="text-xs px-2 py-1 rounded" style={{ background: "var(--sidebar-hover)", color: "var(--muted)" }}>
               읽기 전용
@@ -780,6 +831,7 @@ export default function PageEditorPage() {
             readOnly={isReadOnly}
             resetVersion={editorResetVersion}
             pendingInsertMarkdown={pendingInsertMarkdown}
+            userName={session?.user?.name || "익명"}
             onSave={handleSave}
             title={title}
             onRemoteTitleChange={(remoteTitle) => {
@@ -788,6 +840,7 @@ export default function PageEditorPage() {
               }
             }}
             onCursorContextChange={(ctx) => { cursorContextRef.current = ctx; }}
+            onAwarenessChange={handleAwarenessChange}
           />
           {!isReadOnly && (
             <BacklinkSuggestion

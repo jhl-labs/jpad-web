@@ -59,12 +59,16 @@ export function CoverPicker({ pageId, workspaceId, onSelect, onClose }: CoverPic
   return (
     <div
       ref={ref}
+      role="dialog"
+      aria-label="커버 이미지 선택"
+      aria-modal="true"
       className="absolute z-50 rounded-lg shadow-lg"
       style={{
         background: "var(--background)",
         border: "1px solid var(--border)",
         width: 300,
       }}
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
       <div className="p-3">
         <p className="text-xs font-medium mb-2" style={{ color: "var(--muted)" }}>

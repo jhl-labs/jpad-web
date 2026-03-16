@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth/helpers";
+import { logError } from "@/lib/logger";
 import { createAuditActor, getAuditRequestContext, recordAuditLog } from "@/lib/audit";
 import { readPage, savePage } from "@/lib/git/repository";
 import { parseBacklinks } from "@/lib/markdown/serializer";
@@ -169,8 +170,11 @@ export async function PUT(
     triggerBestEffortSearchIndexProcessing(access.page.workspaceId);
 
     return NextResponse.json({ success: true });
-  } catch (e) {
-    console.error(e);
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    logError("content.put.unhandled_error", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

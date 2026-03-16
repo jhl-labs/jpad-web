@@ -73,8 +73,12 @@ export function TrashPanel({
 
   return (
     <div
+      role="dialog"
+      aria-label="휴지통"
+      aria-modal="true"
       className="fixed right-0 top-0 h-full w-80 shadow-lg z-50 flex flex-col"
       style={{ background: "var(--background)", borderLeft: "1px solid var(--border)" }}
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
       {/* Header */}
       <div

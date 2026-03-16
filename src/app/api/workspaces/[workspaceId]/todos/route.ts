@@ -34,6 +34,9 @@ export async function GET(
     const priority = url.searchParams.get("priority");
     const pageId = url.searchParams.get("pageId");
 
+    const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10) || 1);
+    const limit = Math.min(200, Math.max(1, parseInt(url.searchParams.get("limit") || "50", 10) || 50));
+
     const where: Record<string, unknown> = { workspaceId };
 
     if (completedParam !== null) {
@@ -49,20 +52,32 @@ export async function GET(
       where.pageId = pageId;
     }
 
-    const todos = await prisma.todo.findMany({
-      where,
-      include: {
-        assignee: { select: { id: true, name: true, email: true } },
-        createdBy: { select: { id: true, name: true, email: true } },
-        page: { select: { id: true, title: true, slug: true } },
+    const [todos, total, completedCount] = await Promise.all([
+      prisma.todo.findMany({
+        where,
+        include: {
+          assignee: { select: { id: true, name: true, email: true } },
+          createdBy: { select: { id: true, name: true, email: true } },
+          page: { select: { id: true, title: true, slug: true } },
+        },
+        orderBy: [{ completed: "asc" }, { sortOrder: "asc" }, { createdAt: "desc" }],
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.todo.count({ where }),
+      prisma.todo.count({ where: { ...where, completed: true } }),
+    ]);
+
+    return NextResponse.json({
+      todos,
+      completedCount,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
       },
-      orderBy: [{ completed: "asc" }, { sortOrder: "asc" }, { createdAt: "desc" }],
     });
-
-    const total = todos.length;
-    const completedCount = todos.filter((t) => t.completed).length;
-
-    return NextResponse.json({ todos, total, completedCount });
   } catch (error) {
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -118,6 +133,19 @@ export async function POST(
       }
     }
 
+    // pageId가 워크스페이스에 속하는지 검증
+    if (pageId) {
+      const page = await prisma.page.findFirst({
+        where: { id: pageId, workspaceId, isDeleted: false },
+      });
+      if (!page) {
+        return NextResponse.json(
+          { error: "Page not found in this workspace" },
+          { status: 400 }
+        );
+      }
+    }
+
     // Get max sortOrder
     const maxSort = await prisma.todo.aggregate({
       where: { workspaceId },
@@ -157,8 +185,11 @@ export async function POST(
     });
 
     return NextResponse.json(todo, { status: 201 });
-  } catch (e) {
-    console.error(e);
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    logError("todos.post.unhandled_error", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

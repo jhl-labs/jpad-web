@@ -69,9 +69,17 @@ function normalizeDlpMaxChars(
   return Math.min(500_000, Math.max(1_000, Math.floor(value)));
 }
 
+// 요청 범위 캐시: TTL 10초
+const settingsCache = new Map<string, { data: EffectiveWorkspaceSettings; timestamp: number }>();
+const CACHE_TTL_MS = 10_000;
+
 export async function getEffectiveWorkspaceSettings(
   workspaceId: string
 ): Promise<EffectiveWorkspaceSettings> {
+  const cached = settingsCache.get(workspaceId);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    return cached.data;
+  }
   const settings = await prisma.workspaceSettings.findUnique({
     where: { workspaceId },
   });
@@ -102,7 +110,7 @@ export async function getEffectiveWorkspaceSettings(
     ? normalizeAiTaskRoutingFromStorage(settings.aiTaskRouting, aiProfiles)
     : DEFAULT_WORKSPACE_SETTINGS.aiTaskRouting;
 
-  return {
+  const result: EffectiveWorkspaceSettings = {
     ...DEFAULT_WORKSPACE_SETTINGS,
     ...persisted,
     workspaceId,
@@ -116,4 +124,8 @@ export async function getEffectiveWorkspaceSettings(
       settings?.uploadDlpMaxExtractedCharacters
     ),
   };
+
+  settingsCache.set(workspaceId, { data: result, timestamp: Date.now() });
+
+  return result;
 }

@@ -14,6 +14,10 @@ import { WebsocketProvider } from "y-websocket";
 import { blocksToMarkdown } from "@/lib/markdown/serializer";
 import { Sparkles, FileText, Expand, Languages, SpellCheck } from "lucide-react";
 
+const SYNC_FALLBACK_MS = 3000;
+const AUTO_SAVE_DEBOUNCE_MS = 2000;
+const SAVED_STATUS_RESET_MS = 2000;
+
 export type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 export interface CursorContext {
@@ -32,10 +36,12 @@ interface CollaborativeEditorProps {
     markdown: string;
     afterBlockId?: string; // insert after this block instead of at end
   } | null;
+  userName?: string;
   onSave: (markdown: string) => Promise<void>;
   onSaveStatusChange?: (status: SaveStatus) => void;
   onRemoteTitleChange?: (title: string) => void;
   onCursorContextChange?: (context: CursorContext | null) => void;
+  onAwarenessChange?: (users: { name: string; color: string }[]) => void;
   title?: string;
 }
 
@@ -203,18 +209,22 @@ function InnerEditor({
   readOnly,
   resetVersion,
   pendingInsertMarkdown,
+  userName,
   onSave,
   onSaveStatusChange,
   onCursorContextChange,
+  onAwarenessChange,
 }: {
   collaboration: CollaborationState;
   initialContent: string;
   readOnly: boolean;
   resetVersion: number;
   pendingInsertMarkdown: CollaborativeEditorProps["pendingInsertMarkdown"];
+  userName?: string;
   onSave: (markdown: string) => Promise<void>;
   onSaveStatusChange?: (status: SaveStatus) => void;
   onCursorContextChange?: (context: CursorContext | null) => void;
+  onAwarenessChange?: (users: { name: string; color: string }[]) => void;
 }) {
   const saveTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
   const savedTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -247,7 +257,7 @@ function InnerEditor({
       provider: collaboration.provider ?? undefined,
       fragment: collaboration.doc.getXmlFragment("blocknote"),
       user: {
-        name: "사용자",
+        name: userName || "사용자",
         color: userColorRef.current,
       },
     },
@@ -297,6 +307,36 @@ function InnerEditor({
     };
   }, [collaboration]);
 
+  // Track awareness (other editors) and notify parent
+  useEffect(() => {
+    const prov = collaboration.provider;
+    if (!prov || !onAwarenessChange) return;
+
+    const awareness = prov.awareness;
+    const handleUpdate = () => {
+      const states = awareness.getStates();
+      const localId = awareness.clientID;
+      const others: { name: string; color: string }[] = [];
+      states.forEach((state, clientId) => {
+        if (clientId !== localId && state.user) {
+          others.push({
+            name: state.user.name || "익명",
+            color: state.user.color || "#888",
+          });
+        }
+      });
+      onAwarenessChange(others);
+    };
+
+    awareness.on("change", handleUpdate);
+    // initial call
+    handleUpdate();
+
+    return () => {
+      awareness.off("change", handleUpdate);
+    };
+  }, [collaboration, onAwarenessChange]);
+
   // Load initial content once Yjs sync completes
   useEffect(() => {
     if (!editor || !initialContent || initialLoaded.current) return;
@@ -341,7 +381,7 @@ function InnerEditor({
     const fallback = setTimeout(() => {
       prov.off("sync", onSync);
       loadIfEmpty();
-    }, 3000);
+    }, SYNC_FALLBACK_MS);
 
     return () => {
       clearTimeout(fallback);
@@ -387,23 +427,24 @@ function InnerEditor({
         const markdown = blocksToMarkdown(editor.document);
         await onSave(markdown);
         updateSaveStatus("saved");
-        savedTimeout.current = setTimeout(() => updateSaveStatus("idle"), 2000);
+        savedTimeout.current = setTimeout(() => updateSaveStatus("idle"), SAVED_STATUS_RESET_MS);
       } catch {
         updateSaveStatus("error");
       }
-    }, 2000);
+    }, AUTO_SAVE_DEBOUNCE_MS);
   }, [editor, onSave, readOnly, updateSaveStatus]);
 
   // Keyboard shortcut: Ctrl+J or Cmd+J to trigger AI autocomplete
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "j") {
-        e.preventDefault();
-        window.dispatchEvent(new CustomEvent("ai:autocomplete"));
-      }
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "j") {
         e.preventDefault();
         window.dispatchEvent(new CustomEvent("ai:open-panel"));
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === "j") {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent("ai:autocomplete"));
       }
     };
     document.addEventListener("keydown", handler);
@@ -709,6 +750,26 @@ function InnerEditor({
 
   return (
     <div className="relative" onContextMenu={handleContextMenu} ref={editorContainerRef}>
+      {/* Offline banner */}
+      {!connected && (
+        <div
+          className="flex items-center gap-2 rounded-md text-[13px]"
+          style={{
+            padding: "8px 12px",
+            background: "rgba(234, 179, 8, 0.12)",
+            color: "#b45309",
+            border: "1px solid rgba(234, 179, 8, 0.3)",
+            marginBottom: 8,
+          }}
+        >
+          <span
+            className="w-2 h-2 rounded-full shrink-0"
+            style={{ background: "#eab308" }}
+          />
+          인터넷 연결이 끊어졌습니다. 변경사항은 연결이 복원되면 동기화됩니다.
+        </div>
+      )}
+
       {/* Floating AI toolbar on text selection */}
       {selectedText && selectionRect && (
         <div
@@ -869,10 +930,12 @@ export function CollaborativeEditor({
   readOnly,
   resetVersion = 0,
   pendingInsertMarkdown = null,
+  userName,
   onSave,
   onSaveStatusChange,
   onRemoteTitleChange,
   onCursorContextChange,
+  onAwarenessChange,
   title,
 }: CollaborativeEditorProps) {
   const [collaboration, setCollaboration] = useState<CollaborationState | null>(
@@ -965,9 +1028,11 @@ export function CollaborativeEditor({
       readOnly={readOnly}
       resetVersion={resetVersion}
       pendingInsertMarkdown={pendingInsertMarkdown}
+      userName={userName}
       onSave={onSave}
       onSaveStatusChange={onSaveStatusChange}
       onCursorContextChange={onCursorContextChange}
+      onAwarenessChange={onAwarenessChange}
     />
   );
 }

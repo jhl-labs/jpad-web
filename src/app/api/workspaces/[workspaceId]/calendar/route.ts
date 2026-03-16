@@ -21,6 +21,7 @@ export async function GET(
     const { searchParams } = new URL(req.url);
     const start = searchParams.get("start");
     const end = searchParams.get("end");
+    const limit = Math.min(2000, Math.max(1, parseInt(searchParams.get("limit") || "500", 10) || 500));
 
     // 날짜 파라미터 유효성 검증
     if (start && isNaN(new Date(start).getTime())) {
@@ -46,6 +47,11 @@ export async function GET(
       if (end) {
         (where.startAt as Record<string, unknown>).lte = new Date(end);
       }
+    } else {
+      // 날짜 범위 없이 호출 시 최근 6개월로 기본값 설정
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      where.startAt = { gte: sixMonthsAgo };
     }
 
     const events = await prisma.calendarEvent.findMany({
@@ -55,6 +61,7 @@ export async function GET(
         page: { select: { id: true, title: true, slug: true } },
       },
       orderBy: { startAt: "asc" },
+      take: limit,
     });
 
     return NextResponse.json(events);
@@ -125,6 +132,19 @@ export async function POST(
       if (typeof color !== "string" || !/^#[0-9a-fA-F]{6}$/.test(color)) {
         return NextResponse.json(
           { error: "color must be a valid hex color (e.g. #3b82f6)" },
+          { status: 400 }
+        );
+      }
+    }
+
+    // pageId가 워크스페이스에 속하는지 검증
+    if (pageId) {
+      const page = await prisma.page.findFirst({
+        where: { id: pageId, workspaceId, isDeleted: false },
+      });
+      if (!page) {
+        return NextResponse.json(
+          { error: "Page not found in this workspace" },
           { status: 400 }
         );
       }
