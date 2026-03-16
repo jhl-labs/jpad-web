@@ -54,6 +54,9 @@ test-results/
 # plan
 PLAN.md
 
-# claude code (skills는 프로젝트에 포함)
+# claude code (프로젝트 설정은 포함, 런타임 데이터는 제외)
 .claude/*
 !.claude/skills/
+!.claude/agents/
+!.claude/rules/
+!.claude/settings.json
