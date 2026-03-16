@@ -8,6 +8,7 @@ import {
   Settings, GripVertical, Trash2, Star, Network, Copy, Link,
   FilePlus, Edit3, MoreHorizontal, StarOff, ExternalLink,
   Calendar, CheckSquare, BookOpen, Upload, ChevronsUpDown, Check,
+  MessageSquarePlus,
 } from "lucide-react";
 import { ImportModal } from "@/components/editor/ImportModal";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
@@ -636,16 +637,27 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
           </button>
         )}
 
-        {/* 설정 */}
-        <button
-          onClick={() => router.push(`/workspace/${workspace.id}/user-settings`)}
-          className="flex items-center gap-2 w-full px-2 py-1.5 rounded text-sm hover:opacity-70"
-          style={{ color: "var(--muted)" }}
-          title="설정"
-        >
-          <Settings size={14} />
-          설정
-        </button>
+        {/* 설정 & 피드백 */}
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => router.push(`/workspace/${workspace.id}/user-settings`)}
+            className="flex items-center gap-2 flex-1 px-2 py-1.5 rounded text-sm hover:opacity-70"
+            style={{ color: "var(--muted)" }}
+            title="설정"
+          >
+            <Settings size={14} />
+            설정
+          </button>
+          <button
+            onClick={() => window.dispatchEvent(new Event("feedback:open"))}
+            className="flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:opacity-70 shrink-0"
+            style={{ color: "var(--muted)" }}
+            title="피드백 보내기"
+          >
+            <MessageSquarePlus size={14} />
+            피드백
+          </button>
+        </div>
 
         {/* 사용자 프로필 + 로그아웃 */}
         <div className="flex items-center gap-2 px-2 py-1.5">
@@ -672,6 +684,19 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
           >
             <LogOut size={14} />
           </button>
+        </div>
+
+        {/* 버전 표시 */}
+        <div className="px-2 pb-1">
+          <a
+            href="https://github.com/jhl-labs/jpad-web"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: "var(--muted)", fontSize: "10px" }}
+            className="hover:underline"
+          >
+            jpad v1.0.0
+          </a>
         </div>
       </div>
 

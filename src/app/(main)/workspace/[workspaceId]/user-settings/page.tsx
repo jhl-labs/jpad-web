@@ -131,7 +131,7 @@ const dependencyCategories: DependencyCategory[] = [
   },
 ];
 
-const APP_VERSION = "0.1.0";
+const APP_VERSION = "1.0.0";
 
 // ── 유틸 ──────────────────────────────────────────────────────
 
@@ -849,19 +849,32 @@ function VersionTab() {
     setChecking(true);
     setUpdateInfo(null);
     try {
-      const res = await fetch("https://api.github.com/repos/jhl-labs/jpad-web/releases/latest");
-      if (res.ok) {
-        const data = await res.json();
-        const latestTag = (data.tag_name || "").replace(/^v/, "");
-        const isUpToDate = latestTag === APP_VERSION || !latestTag;
-        setUpdateInfo({
-          latest: latestTag || "알 수 없음",
-          isUpToDate,
-          url: data.html_url,
-        });
+      // 먼저 releases/latest 시도, 실패 시 tags API로 fallback
+      let latestTag = "";
+      let releaseUrl: string | undefined;
+
+      const relRes = await fetch("https://api.github.com/repos/jhl-labs/jpad-web/releases/latest");
+      if (relRes.ok) {
+        const data = await relRes.json();
+        latestTag = (data.tag_name || "").replace(/^v/, "");
+        releaseUrl = data.html_url;
       } else {
-        setUpdateInfo({ latest: "확인 실패", isUpToDate: true });
+        // fallback: tags API
+        const tagRes = await fetch("https://api.github.com/repos/jhl-labs/jpad-web/tags?per_page=1");
+        if (tagRes.ok) {
+          const tags = await tagRes.json();
+          if (tags.length > 0) {
+            latestTag = (tags[0].name || "").replace(/^v/, "");
+          }
+        }
       }
+
+      const isUpToDate = latestTag === APP_VERSION || !latestTag;
+      setUpdateInfo({
+        latest: latestTag || "알 수 없음",
+        isUpToDate,
+        url: releaseUrl,
+      });
     } catch {
       setUpdateInfo({ latest: "확인 실패", isUpToDate: true });
     } finally {
@@ -939,6 +952,27 @@ function VersionTab() {
               )}
             </div>
           )}
+
+          <div className="flex gap-4 mt-3">
+            <a
+              href="https://github.com/jhl-labs/jpad-web/releases"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-sm underline"
+              style={{ color: "var(--primary)" }}
+            >
+              릴리스 노트 보기 <ExternalLink size={12} />
+            </a>
+            <a
+              href="https://github.com/jhl-labs/jpad-web/blob/master/CHANGELOG.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-sm underline"
+              style={{ color: "var(--primary)" }}
+            >
+              변경 로그 보기 <ExternalLink size={12} />
+            </a>
+          </div>
         </div>
       </Section>
 

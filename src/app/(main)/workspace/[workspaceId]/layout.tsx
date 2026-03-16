@@ -7,6 +7,7 @@ import { Sidebar } from "@/components/sidebar/Sidebar";
 import { QuickSwitcher } from "@/components/ui/QuickSwitcher";
 import { TemplatePickerModal } from "@/components/templates/TemplatePickerModal";
 import { KeyboardShortcutsHelp } from "@/components/ui/KeyboardShortcutsHelp";
+import { FeedbackModal } from "@/components/ui/FeedbackModal";
 import { Menu } from "lucide-react";
 
 interface Page {
@@ -212,6 +213,7 @@ export default function WorkspaceLayout({
           createBlankPage();
         }}
       />
+      <FeedbackModal />
     </div>
   );
 }
