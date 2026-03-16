@@ -7,6 +7,7 @@ import {
   checkOrganizationAccess,
 } from "@/lib/organizations";
 import { createAuditActor, getAuditRequestContext, recordAuditLog } from "@/lib/audit";
+import { rateLimitRedis } from "@/lib/rateLimit";
 
 const updateOrganizationSchema = z.object({
   name: z.string().min(1).max(100).optional(),
@@ -99,6 +100,14 @@ export async function PATCH(
 ) {
   try {
     const user = await requireAuth();
+
+    if (!(await rateLimitRedis(`org-update:${user.id}`, 10, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
+    }
+
     const { organizationId } = await params;
     const requestContext = getAuditRequestContext(req);
     const member = await checkOrganizationAccess(user.id, organizationId, [

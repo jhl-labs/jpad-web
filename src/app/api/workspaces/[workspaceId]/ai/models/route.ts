@@ -3,6 +3,7 @@ import { checkWorkspaceAccess, requireAuth } from "@/lib/auth/helpers";
 import { resolveWorkspaceDraftAiProfile } from "@/lib/aiDraftProfile";
 import { listModelsForProfile } from "@/lib/llmProviders";
 import { logError } from "@/lib/logger";
+import { rateLimitRedis } from "@/lib/rateLimit";
 
 export async function POST(
   req: NextRequest,
@@ -12,6 +13,14 @@ export async function POST(
 
   try {
     const user = await requireAuth();
+
+    if (!(await rateLimitRedis(`ai-models:${user.id}`, 10, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
+    }
+
     const member = await checkWorkspaceAccess(user.id, workspaceId, ["owner", "admin"]);
     if (!member) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });

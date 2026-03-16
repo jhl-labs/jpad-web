@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, checkWorkspaceAccess } from "@/lib/auth/helpers";
 import { createAuditActor, getAuditRequestContext } from "@/lib/audit";
 import { logError } from "@/lib/logger";
+import { rateLimitRedis } from "@/lib/rateLimit";
 import { runTrackedSearchIndexWorker } from "@/lib/semanticIndexWorker";
 
 export async function POST(
@@ -10,6 +11,14 @@ export async function POST(
 ) {
   try {
     const user = await requireAuth();
+
+    if (!(await rateLimitRedis(`ai-process-jobs:${user.id}`, 3, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
+    }
+
     const { workspaceId } = await params;
     const requestContext = getAuditRequestContext(req);
     const body = (await req.json().catch(() => ({}))) as { limit?: number };

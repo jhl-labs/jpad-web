@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAuditActor, getAuditRequestContext } from "@/lib/audit";
 import { requirePlatformAdmin } from "@/lib/auth/helpers";
 import { logError } from "@/lib/logger";
+import { rateLimitRedis } from "@/lib/rateLimit";
 import { reblockAttachmentQuarantineById } from "@/lib/attachmentSecurity";
 
 export async function POST(
@@ -10,6 +11,14 @@ export async function POST(
 ) {
   try {
     const user = await requirePlatformAdmin();
+
+    if (!(await rateLimitRedis(`admin-reblock:${user.id}`, 5, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
+    }
+
     const { attachmentId } = await params;
     const body = await req.json().catch(() => ({}));
 

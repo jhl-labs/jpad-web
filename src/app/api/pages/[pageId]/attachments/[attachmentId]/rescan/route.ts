@@ -7,6 +7,7 @@ import {
 import { requireAuth } from "@/lib/auth/helpers";
 import { getPageAccessContext } from "@/lib/pageAccess";
 import { prisma } from "@/lib/prisma";
+import { rateLimitRedis } from "@/lib/rateLimit";
 
 export async function POST(
   req: NextRequest,
@@ -18,6 +19,14 @@ export async function POST(
 ) {
   try {
     const user = await requireAuth();
+
+    if (!(await rateLimitRedis(`attachment-rescan:${user.id}`, 10, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
+    }
+
     const { pageId, attachmentId } = await params;
     const requestContext = getAuditRequestContext(req);
 

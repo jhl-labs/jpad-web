@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth/helpers";
 import { markAsRead } from "@/lib/notifications";
 import { logError } from "@/lib/logger";
+import { rateLimitRedis } from "@/lib/rateLimit";
 
 export async function PATCH(
   _req: NextRequest,
@@ -9,6 +10,14 @@ export async function PATCH(
 ) {
   try {
     const user = await requireAuth();
+
+    if (!(await rateLimitRedis(`notification-patch:${user.id}`, 30, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
+    }
+
     const { notificationId } = await params;
 
     const result = await markAsRead(notificationId, user.id);

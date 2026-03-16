@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkWorkspaceAccess, requireAuth } from "@/lib/auth/helpers";
 import { resolveWorkspaceDraftAiProfile } from "@/lib/aiDraftProfile";
 import { logError } from "@/lib/logger";
+import { rateLimitRedis } from "@/lib/rateLimit";
 import { runTestGenerationForProfile } from "@/lib/llmProviders";
 
 export async function POST(
@@ -12,6 +13,14 @@ export async function POST(
 
   try {
     const user = await requireAuth();
+
+    if (!(await rateLimitRedis(`ai-test-gen:${user.id}`, 5, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
+    }
+
     const member = await checkWorkspaceAccess(user.id, workspaceId, ["owner", "admin"]);
     if (!member) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });

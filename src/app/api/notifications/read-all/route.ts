@@ -2,10 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth/helpers";
 import { markAllAsRead } from "@/lib/notifications";
 import { logError } from "@/lib/logger";
+import { rateLimitRedis } from "@/lib/rateLimit";
 
 export async function POST(req: NextRequest) {
   try {
     const user = await requireAuth();
+
+    if (!(await rateLimitRedis(`notifications-read-all:${user.id}`, 30, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
+    }
 
     const body = await req.json().catch(() => ({}));
     const workspaceId = body.workspaceId as string | undefined;

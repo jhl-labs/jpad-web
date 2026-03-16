@@ -6,6 +6,7 @@ import {
   rescanAttachmentById,
 } from "@/lib/attachmentSecurity";
 import { logError } from "@/lib/logger";
+import { rateLimitRedis } from "@/lib/rateLimit";
 
 export async function POST(
   req: NextRequest,
@@ -13,6 +14,14 @@ export async function POST(
 ) {
   try {
     const user = await requirePlatformAdmin();
+
+    if (!(await rateLimitRedis(`admin-rescan:${user.id}`, 5, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
+    }
+
     const { attachmentId } = await params;
 
     const result = await rescanAttachmentById(attachmentId, {

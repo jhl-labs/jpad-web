@@ -5,6 +5,7 @@ import { createAuditActor, getAuditRequestContext, recordAuditLog } from "@/lib/
 import { getPageAccessContext } from "@/lib/pageAccess";
 import { deleteFile } from "@/lib/storage";
 import { logError } from "@/lib/logger";
+import { rateLimitRedis } from "@/lib/rateLimit";
 
 export async function GET(
   _req: NextRequest,
@@ -54,6 +55,14 @@ export async function DELETE(
 ) {
   try {
     const user = await requireAuth();
+
+    if (!(await rateLimitRedis(`attachment-delete:${user.id}`, 30, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
+    }
+
     const { pageId } = await params;
     const requestContext = getAuditRequestContext(req);
     const { attachmentId } = await req.json();

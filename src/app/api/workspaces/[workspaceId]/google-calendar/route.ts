@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, checkWorkspaceAccess } from "@/lib/auth/helpers";
 import { prisma } from "@/lib/prisma";
+import { rateLimitRedis } from "@/lib/rateLimit";
 
 /**
  * GET /api/workspaces/:workspaceId/google-calendar
@@ -67,6 +68,14 @@ export async function DELETE(
   try {
     const { workspaceId } = await params;
     const user = await requireAuth();
+
+    if (!(await rateLimitRedis(`gcal-disconnect:${user.id}`, 10, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
+    }
+
     const member = await checkWorkspaceAccess(user.id, workspaceId);
     if (!member) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });

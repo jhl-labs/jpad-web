@@ -9,6 +9,7 @@ import {
   normalizeOrganizationDomain,
 } from "@/lib/organizations";
 import { createAuditActor, getAuditRequestContext, recordAuditLog } from "@/lib/audit";
+import { rateLimitRedis } from "@/lib/rateLimit";
 
 const createDomainSchema = z.object({
   domain: z.string().min(1, "도메인은 필수입니다").max(255, "도메인이 너무 깁니다"),
@@ -21,6 +22,14 @@ export async function POST(
 ) {
   try {
     const user = await requireAuth();
+
+    if (!(await rateLimitRedis(`org-domain-add:${user.id}`, 10, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
+    }
+
     const { organizationId } = await params;
     const requestContext = getAuditRequestContext(req);
     const member = await checkOrganizationAccess(user.id, organizationId, [

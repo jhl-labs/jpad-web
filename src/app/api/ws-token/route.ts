@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth/helpers";
+import { rateLimitRedis } from "@/lib/rateLimit";
 import { createHmac } from "crypto";
 import { getPageAccessContext } from "@/lib/pageAccess";
 import { logError } from "@/lib/logger";
@@ -13,6 +14,14 @@ function signToken(payload: object, secret: string): string {
 export async function POST(req: NextRequest) {
   try {
     const user = await requireAuth();
+
+    if (!(await rateLimitRedis(`ws-token:${user.id}`, 20, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
+    }
+
     const { workspaceId, pageId } = await req.json();
 
     if (!workspaceId || !pageId) {

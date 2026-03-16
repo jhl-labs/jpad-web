@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth/helpers";
 import { createAuditActor, getAuditRequestContext, recordAuditLog } from "@/lib/audit";
+import { rateLimitRedis } from "@/lib/rateLimit";
 import { slugify } from "@/lib/utils";
 
 const createOrganizationSchema = z.object({
@@ -113,6 +114,14 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const user = await requireAuth();
+
+    if (!(await rateLimitRedis(`org-create:${user.id}`, 5, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
+    }
+
     const requestContext = getAuditRequestContext(req);
     const body = await req.json();
     const parsed = createOrganizationSchema.safeParse(body);
