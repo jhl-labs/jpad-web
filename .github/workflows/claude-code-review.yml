@@ -1,0 +1,29 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Review this pull request. Check for:
+            1. TypeScript type safety (no `any`, proper error handling)
+            2. Security issues (auth checks, input validation, secrets)
+            3. React patterns (useEffect deps, cleanup, accessibility)
+            4. Code style consistency with the project (CSS variables, Korean UI text, English API errors)
+            5. Test coverage for new features
+
+            Reference CLAUDE.md for project coding standards.
+            Post findings as review comments on specific lines where possible.
+            Give an overall assessment: Approve, Request Changes, or Comment.
+          claude_args: "--max-turns 5"
