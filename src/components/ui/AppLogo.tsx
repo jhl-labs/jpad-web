@@ -26,8 +26,13 @@ export function AppLogo({
         j
       </span>
       {!compact && (
-        <span className="text-sm font-semibold lowercase tracking-[0.18em]">
-          jpad
+        <span className="flex flex-col leading-none">
+          <span className="text-sm font-semibold lowercase tracking-[0.18em]">
+            jpad
+          </span>
+          <span className="text-[8px] tracking-wider" style={{ color: "var(--muted)", opacity: 0.6 }}>
+            v{process.env.NEXT_PUBLIC_APP_VERSION || "1.0.0"}
+          </span>
         </span>
       )}
     </Link>
