@@ -7,6 +7,13 @@ export const metadata: Metadata = {
   title: "JPAD - Collaborative Documents",
   description: "Notion-like collaborative document editing",
   manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "32x32" },
+      { url: "/icons/icon.svg", type: "image/svg+xml" },
+    ],
+    apple: { url: "/icons/icon-192.png", sizes: "192x192" },
+  },
 };
 
 export const viewport: Viewport = {
