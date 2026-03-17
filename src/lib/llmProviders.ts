@@ -80,6 +80,35 @@ function resolveMaxTokens(profile: ResolvedAiProfile, requestedMaxTokens?: numbe
   return Math.max(1, Math.min(configured, Math.floor(requestedMaxTokens)));
 }
 
+function stripThinkingProcess(text: string): string {
+  if (!text) return "";
+  // <think>...</think> 태그 제거
+  let cleaned = text.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+  // "Thinking Process:" 이후의 사고 과정 패턴 제거 — 실제 출력 부분만 추출
+  // 사고 과정 뒤에 실제 답변이 있는 경우: 마지막 마크다운 블록을 추출
+  const thinkingIdx = cleaned.indexOf("Thinking Process:");
+  if (thinkingIdx === 0) {
+    // 전체가 사고 과정인 경우 — 마크다운 헤딩/리스트가 시작되는 부분을 찾음
+    const outputMarkers = ["\n## ", "\n### ", "\n- ", "\n1. ", "\n**"];
+    let outputStart = -1;
+    for (const marker of outputMarkers) {
+      const idx = cleaned.lastIndexOf(marker);
+      if (idx > 0 && (outputStart === -1 || idx < outputStart)) {
+        // 가장 앞의 마크다운 마커를 찾되, 사고 과정 뒤에 있는 것
+        const firstIdx = cleaned.indexOf(marker, cleaned.indexOf("\n\n", 100));
+        if (firstIdx > 0) outputStart = Math.min(outputStart === -1 ? firstIdx : outputStart, firstIdx);
+      }
+    }
+    if (outputStart > 0) {
+      cleaned = cleaned.slice(outputStart).trim();
+    } else {
+      // 마크다운 마커가 없으면 빈 문자열 반환 (순수 사고 과정)
+      return "";
+    }
+  }
+  return cleaned;
+}
+
 function mergeHeaders(
   base: Record<string, string>,
   custom: Record<string, string> | null | undefined
@@ -333,8 +362,9 @@ export async function completeWithProfile(
       const msg = data.choices?.[0]?.message;
       const text = normalizeOpenAiMessageContent(msg?.content);
       if (text) return text;
-      // thinking 모델: content가 비어있으면 reasoning 필드 사용
-      return msg?.reasoning || msg?.reasoning_content || "";
+      // thinking 모델: content가 비어있으면 reasoning에서 실제 답변 추출 시도
+      const reasoning = msg?.reasoning || msg?.reasoning_content || "";
+      return stripThinkingProcess(reasoning);
     }
     case "gemini": {
       if (!runtime.apiKey) {
@@ -397,6 +427,7 @@ export async function completeWithProfile(
         body: JSON.stringify({
           model: runtime.model,
           stream: false,
+          think: false,
           messages: [
             { role: "system", content: options.systemPrompt },
             { role: "user", content: options.userMessage },
@@ -417,10 +448,9 @@ export async function completeWithProfile(
       }
 
       const data = (await response.json()) as {
-        message?: { content?: string; reasoning?: string; reasoning_content?: string };
+        message?: { content?: string };
       };
-      // thinking 모델: content가 비어있으면 reasoning 필드 사용
-      return data.message?.content || data.message?.reasoning || data.message?.reasoning_content || "";
+      return data.message?.content || "";
     }
     default:
       throw new Error("Unsupported AI provider");
