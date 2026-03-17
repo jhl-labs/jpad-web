@@ -915,6 +915,7 @@ function SortablePageItem({
   canDelete,
   favoriteIds,
   onContextMenu,
+  dropTargetId,
   depth = 0,
 }: {
   page: Page;
