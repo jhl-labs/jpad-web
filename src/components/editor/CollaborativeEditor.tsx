@@ -83,8 +83,7 @@ interface CollaborationState {
 
 function triggerImageFilePicker(
   editor: BlockNoteEditor,
-  workspaceId: string,
-  pageId: string
+  uploadFn: (file: File) => Promise<string>
 ) {
   const input = document.createElement("input");
   input.type = "file";
@@ -92,12 +91,12 @@ function triggerImageFilePicker(
   input.onchange = async () => {
     const file = input.files?.[0];
     if (!file || !isImageFile(file)) return;
-    const result = await uploadImageToPage(file, workspaceId, pageId);
-    if (result?.url) {
+    const url = await uploadFn(file);
+    if (url) {
       const cursor = editor.getTextCursorPosition();
       if (cursor?.block) {
         editor.insertBlocks(
-          [{ type: "image", props: { url: result.url } as Record<string, string> }],
+          [{ type: "image" as const, props: { url } }],
           cursor.block,
           "after"
         );
@@ -109,8 +108,7 @@ function triggerImageFilePicker(
 
 function getCustomSlashMenuItems(
   editor: BlockNoteEditor,
-  workspaceId: string,
-  pageId: string
+  uploadFn: (file: File) => Promise<string>
 ) {
   const defaults = getDefaultSlashMenuItems(editor);
 
@@ -180,7 +178,7 @@ function getCustomSlashMenuItems(
       group: "기본 블록",
       aliases: ["image", "img", "사진"],
       onItemClick: () => {
-        triggerImageFilePicker(editor, workspaceId, pageId);
+        triggerImageFilePicker(editor, uploadFn);
       },
     },
     {
@@ -1014,7 +1012,7 @@ function InnerEditor({
           className="absolute inset-0 z-20 flex items-center justify-center rounded-lg pointer-events-none"
           style={{
             border: "2px dashed var(--primary)",
-            background: "rgba(59,130,246,0.06)",
+            background: "color-mix(in srgb, var(--primary) 6%, transparent)",
           }}
         >
           <div
@@ -1022,7 +1020,7 @@ function InnerEditor({
             style={{
               background: "var(--background)",
               border: "1px solid var(--border)",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+              boxShadow: "0 4px 12px color-mix(in srgb, var(--foreground) 10%, transparent)",
             }}
           >
             <ImageIcon size={24} style={{ color: "var(--primary)" }} />
@@ -1038,8 +1036,8 @@ function InnerEditor({
         <div
           className="absolute top-0 left-0 right-0 z-20 flex items-center justify-center py-2"
           style={{
-            background: "rgba(59,130,246,0.08)",
-            borderBottom: "1px solid rgba(59,130,246,0.2)",
+            background: "color-mix(in srgb, var(--primary) 8%, transparent)",
+            borderBottom: "1px solid color-mix(in srgb, var(--primary) 20%, transparent)",
           }}
         >
           <div className="flex items-center gap-2 text-xs font-medium" style={{ color: "var(--primary)" }}>
@@ -1062,7 +1060,7 @@ function InnerEditor({
         <SuggestionMenuController
           triggerCharacter="/"
           getItems={async (query) =>
-            filterSuggestionItems(getCustomSlashMenuItems(editor, workspaceId, pageId), query)
+            filterSuggestionItems(getCustomSlashMenuItems(editor, handleUploadFile), query)
           }
         />
       </BlockNoteView>

@@ -25,12 +25,13 @@ function highlightKeyword(text: string, keyword: string): React.ReactNode {
   const regex = new RegExp(`(${escaped})`, "gi");
   const parts = text.split(regex);
   if (parts.length === 1) return text;
+  const testRegex = new RegExp(`^${escaped}$`, "i");
   return parts.map((part, i) =>
-    regex.test(part) ? (
+    testRegex.test(part) ? (
       <mark
         key={i}
         style={{
-          background: "rgba(59,130,246,0.2)",
+          background: "var(--primary-highlight, rgba(var(--primary-rgb, 59,130,246), 0.2))",
           color: "inherit",
           borderRadius: 2,
           padding: "0 1px",

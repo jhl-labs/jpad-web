@@ -27,11 +27,11 @@ export async function uploadImageToPage(
   pageId: string
 ): Promise<UploadResult | null> {
   if (!isImageFile(file)) {
-    return null;
+    throw new Error("지원하지 않는 이미지 형식입니다.");
   }
 
   if (file.size > MAX_FILE_SIZE) {
-    return null;
+    throw new Error("파일 크기가 10MB를 초과합니다.");
   }
 
   try {
@@ -51,7 +51,8 @@ export async function uploadImageToPage(
 
     const data: { url: string; id: string } = await res.json();
     return { url: data.url, attachmentId: data.id };
-  } catch (_error: unknown) {
+  } catch (error: unknown) {
+    console.error("[imageUpload] 업로드 실패:", error);
     return null;
   }
 }
