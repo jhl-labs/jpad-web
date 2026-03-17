@@ -745,14 +745,30 @@ export default function PageEditorPage() {
       />
       {autocompleteError && (
         <div
-          className="mx-4 md:mx-8 lg:mx-16 mt-3 px-3 py-2 rounded text-sm"
+          className="fixed bottom-6 right-6 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium flex items-center gap-2 max-w-md animate-in"
           style={{
-            background: "rgba(239,68,68,0.08)",
-            color: "var(--danger, #ef4444)",
-            border: "1px solid rgba(239,68,68,0.18)",
+            background: "#ef4444",
+            color: "white",
+          }}
+          onClick={() => setAutocompleteError(null)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === "Enter") setAutocompleteError(null); }}
+        >
+          <span>AI: {autocompleteError}</span>
+          <span className="text-xs opacity-70">(클릭하여 닫기)</span>
+        </div>
+      )}
+      {autocompleteLoading && (
+        <div
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full shadow-lg text-sm font-medium flex items-center gap-2"
+          style={{
+            background: "var(--primary)",
+            color: "white",
           }}
         >
-          {autocompleteError}
+          <Loader2 size={14} className="animate-spin" />
+          AI 이어쓰기 생성 중...
         </div>
       )}
 
