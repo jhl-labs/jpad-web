@@ -13,6 +13,11 @@ COPY prisma ./prisma
 COPY prisma.config.ts ./
 RUN bun install --frozen-lockfile
 COPY . .
+ENV DATABASE_URL="postgresql://build:build@localhost:5432/build" \
+    NEXTAUTH_SECRET="build-secret" \
+    NEXTAUTH_URL="http://localhost:3000" \
+    APP_ENCRYPTION_KEY="build-encryption-key" \
+    REDIS_URL="redis://localhost:6379"
 RUN bunx prisma generate && bun run build
 
 FROM base AS runner
