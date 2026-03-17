@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Activity, ArrowLeft, Database, HardDriveDownload, RefreshCw, ShieldCheck } from "lucide-react";
+import { Activity, ArrowLeft, Database, HardDriveDownload, RefreshCw, Server, ShieldCheck } from "lucide-react";
 import { formatDateTimeFull } from "@/lib/utils/dateFormat";
 import { getStatusBadgeStyle } from "@/lib/utils/statusStyles";
 
@@ -543,14 +543,24 @@ export function OpsDashboard() {
             </p>
           </div>
         </div>
-        <button
-          onClick={() => fetchData()}
-          className="flex items-center gap-2 px-4 py-2 rounded text-sm text-white"
-          style={{ background: "var(--primary)" }}
-        >
-          <RefreshCw size={14} />
-          새로고침
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => router.push("/admin/infrastructure")}
+            className="flex items-center gap-2 px-4 py-2 rounded text-sm"
+            style={{ background: "var(--sidebar-bg)", border: "1px solid var(--border)" }}
+          >
+            <Server size={14} />
+            인프라 대시보드
+          </button>
+          <button
+            onClick={() => fetchData()}
+            className="flex items-center gap-2 px-4 py-2 rounded text-sm text-white"
+            style={{ background: "var(--primary)" }}
+          >
+            <RefreshCw size={14} />
+            새로고침
+          </button>
+        </div>
       </div>
 
       {error && (
