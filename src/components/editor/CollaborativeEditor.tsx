@@ -56,7 +56,7 @@ interface CollaborativeEditorProps {
 async function fetchWsToken(
   workspaceId: string,
   pageId: string
-): Promise<string | null> {
+): Promise<{ token: string; wsUrl: string } | null> {
   try {
     const res = await fetch("/api/ws-token", {
       method: "POST",
@@ -65,7 +65,7 @@ async function fetchWsToken(
     });
     if (!res.ok) return null;
     const data = await res.json();
-    return data.token;
+    return { token: data.token, wsUrl: data.wsUrl };
   } catch (_error) {
     return null;
   }
@@ -962,7 +962,7 @@ export function CollaborativeEditor({
     const roomName = `${workspaceId}:${pageId}`;
 
     async function connect() {
-      const token = await fetchWsToken(workspaceId, pageId);
+      const wsTokenResult = await fetchWsToken(workspaceId, pageId);
 
       if (cancelled) {
         doc.destroy();
@@ -970,15 +970,15 @@ export function CollaborativeEditor({
       }
 
       let wsProvider: WebsocketProvider | null = null;
-      if (token) {
+      if (wsTokenResult) {
         try {
           wsProvider = new WebsocketProvider(
-            process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:1234",
+            wsTokenResult.wsUrl,
             roomName,
             doc,
             {
               connect: true,
-              params: { token },
+              params: { token: wsTokenResult.token },
             }
           );
         } catch (_error) {

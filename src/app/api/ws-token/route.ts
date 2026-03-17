@@ -54,7 +54,9 @@ export async function POST(req: NextRequest) {
 
     const token = signToken(tokenPayload, secret);
 
-    return NextResponse.json({ token });
+    const wsUrl = process.env.WS_URL || "ws://localhost:1234";
+
+    return NextResponse.json({ token, wsUrl });
   } catch (error) {
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
