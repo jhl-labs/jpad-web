@@ -593,7 +593,7 @@ export async function* streamWithProfile(
 ): AsyncGenerator<string> {
   const maxTokens = options.maxTokens || profile.maxTokens || 2048;
 
-  // OpenAI / OpenAI-compatible / Ollama 에서 스트리밍 지원
+  // OpenAI / OpenAI-compatible 스트리밍
   if (profile.provider === "openai" || profile.provider === "openai-compatible") {
     const response = await fetch(
       buildApiUrl(profile.baseUrl, "/v1/chat/completions"),
@@ -622,9 +622,9 @@ export async function* streamWithProfile(
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
-    let accumulated = "";
-    let isThinking = false;
-    let thinkingDone = false;
+    let hasReasoning = false;
+    let reasoningAccum = "";
+    let contentAccum = "";
 
     while (true) {
       const { done, value } = await reader.read();
@@ -637,56 +637,41 @@ export async function* streamWithProfile(
       for (const line of lines) {
         if (!line.startsWith("data: ")) continue;
         const payload = line.slice(6).trim();
-        if (payload === "[DONE]") {
-          // 스트리밍 끝 — thinking만 있었다면 stripThinkingProcess로 추출
-          if (isThinking && !thinkingDone && accumulated) {
-            const cleaned = stripThinkingProcess(accumulated);
-            if (cleaned) yield cleaned;
-          }
-          return;
-        }
+        if (payload === "[DONE]") break;
         try {
           const chunk = JSON.parse(payload) as {
             choices?: Array<{ delta?: { content?: string; reasoning?: string } }>;
           };
           const delta = chunk.choices?.[0]?.delta;
-          const text = delta?.content || "";
 
-          if (!text) continue;
-
-          accumulated += text;
-
-          // thinking 패턴 감지 (첫 50자 이내에 "Thinking Process:" 등이 나오면)
-          if (!thinkingDone && accumulated.length < 60) {
-            if (/^(Thinking Process|<think>|\*\*Analyze)/i.test(accumulated.trim())) {
-              isThinking = true;
-              continue;
-            }
+          // reasoning 필드가 있으면 thinking 모델
+          if (delta?.reasoning) {
+            hasReasoning = true;
+            reasoningAccum += delta.reasoning;
           }
 
-          if (isThinking && !thinkingDone) {
-            // thinking 중이면 yield하지 않고 수집만
-            // "Final Version:", "Revised:" 등이 나타나면 thinking 종료
-            if (/\*\s*(Final Version|Revised|Final Output|Output):\s*\n/i.test(accumulated)) {
-              thinkingDone = true;
-              const cleaned = stripThinkingProcess(accumulated);
-              if (cleaned) yield cleaned;
+          // content가 실제 값이면 바로 yield
+          if (delta?.content) {
+            contentAccum += delta.content;
+            if (!hasReasoning) {
+              yield delta.content;
             }
-            continue;
           }
-
-          // 일반 텍스트 — 바로 yield
-          yield text;
         } catch {
-          // skip malformed chunks
+          // skip
         }
       }
     }
 
-    // 스트림 종료 후 thinking만 수집된 경우 추출
-    if (isThinking && !thinkingDone && accumulated) {
-      const cleaned = stripThinkingProcess(accumulated);
-      if (cleaned) yield cleaned;
+    // thinking 모델이면: content가 비어있으므로 reasoning에서 추출 후 pseudo-stream
+    if (hasReasoning) {
+      const answer = contentAccum.trim() || stripThinkingProcess(reasoningAccum);
+      if (answer) {
+        const chunkSize = 24;
+        for (let i = 0; i < answer.length; i += chunkSize) {
+          yield answer.slice(i, i + chunkSize);
+        }
+      }
     }
     return;
   }
