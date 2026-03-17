@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import type { CursorContext } from "@/components/editor/CollaborativeEditor";
-import { AI_EVENTS, SIDEBAR_EVENTS } from "@/lib/events";
+import { AI_EVENTS, SEARCH_EVENTS, SIDEBAR_EVENTS } from "@/lib/events";
 import { BacklinkPanel } from "@/components/editor/BacklinkPanel";
 import { AttachmentPanel } from "@/components/editor/AttachmentPanel";
 import { BacklinkSuggestion } from "@/components/editor/BacklinkSuggestion";
@@ -30,6 +30,7 @@ import {
   MessageCircle,
   MoreHorizontal,
   Network,
+  Search,
   Share2,
   SmilePlus,
   Sparkles,
@@ -462,25 +463,23 @@ export default function PageEditorPage() {
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {/* 기본 표시: AI 이어쓰기, AI, 즐겨찾기 (항상 노출) */}
-          {!isReadOnly && (
-            <button
-              onClick={handleAutocomplete}
-              disabled={autocompleteLoading}
-              className="flex items-center gap-1 px-2 py-1 rounded text-sm hover:opacity-70 disabled:opacity-60"
-              style={{ color: "var(--primary)" }}
-              title="문서 끝에서 이어쓰기"
-            >
-              {autocompleteLoading ? <Loader2 size={14} className="animate-spin" /> : <WandSparkles size={14} />}
-              <span className="hidden sm:inline">{autocompleteLoading ? "이어쓰기..." : "AI 이어쓰기"}</span>
-            </button>
-          )}
+          {/* AI 버튼 (이어쓰기 통합) */}
           <button
             onClick={() => setShowAi(!showAi)}
             className="flex items-center gap-1 px-2 py-1 rounded text-sm hover:opacity-70"
-            style={{ color: "var(--primary)" }}
+            style={{ color: showAi ? "var(--primary)" : "var(--muted)" }}
           >
             <Sparkles size={14} /> AI
+          </button>
+          {/* 검색 버튼 */}
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent(SEARCH_EVENTS.OPEN))}
+            className="flex items-center gap-1 px-2 py-1 rounded text-sm hover:opacity-70"
+            style={{ color: "var(--muted)" }}
+            title="검색 (Ctrl+K)"
+          >
+            <Search size={14} />
+            <span className="hidden sm:inline">검색</span>
           </button>
           <button
             onClick={handleToggleFavorite}

@@ -9,7 +9,7 @@ import { TemplatePickerModal } from "@/components/templates/TemplatePickerModal"
 import { KeyboardShortcutsHelp } from "@/components/ui/KeyboardShortcutsHelp";
 import { FeedbackModal } from "@/components/ui/FeedbackModal";
 import { Menu } from "lucide-react";
-import { ZEN_EVENTS } from "@/lib/events";
+import { ZEN_EVENTS, SEARCH_EVENTS } from "@/lib/events";
 
 interface Page {
   id: string;
@@ -92,6 +92,13 @@ export default function WorkspaceLayout({
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // 검색 이벤트 수신
+  useEffect(() => {
+    function handleSearchOpen() { setSearchOpen(true); }
+    window.addEventListener(SEARCH_EVENTS.OPEN, handleSearchOpen);
+    return () => window.removeEventListener(SEARCH_EVENTS.OPEN, handleSearchOpen);
   }, []);
 
   // Zen Mode 이벤트 수신

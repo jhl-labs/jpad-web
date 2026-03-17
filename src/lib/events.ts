@@ -10,6 +10,10 @@ export const SIDEBAR_EVENTS = {
   REFRESH: "sidebar:refresh",
 } as const;
 
+export const SEARCH_EVENTS = {
+  OPEN: "search:open",
+} as const;
+
 export const ZEN_EVENTS = {
   TOGGLE: "zen:toggle",
   EXIT: "zen:exit",
