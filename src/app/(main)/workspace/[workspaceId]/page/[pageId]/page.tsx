@@ -207,6 +207,7 @@ export default function PageEditorPage() {
           body: JSON.stringify({ pageId }),
         });
       }
+      window.dispatchEvent(new Event(SIDEBAR_EVENTS.REFRESH));
     } catch (error) {
       setIsFavorited(!newState); // revert on error
     }
