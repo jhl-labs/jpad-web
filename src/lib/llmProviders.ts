@@ -327,10 +327,14 @@ export async function completeWithProfile(
 
       const data = (await response.json()) as {
         choices?: Array<{
-          message?: { content?: unknown };
+          message?: { content?: unknown; reasoning?: string; reasoning_content?: string };
         }>;
       };
-      return normalizeOpenAiMessageContent(data.choices?.[0]?.message?.content);
+      const msg = data.choices?.[0]?.message;
+      const text = normalizeOpenAiMessageContent(msg?.content);
+      if (text) return text;
+      // thinking 모델: content가 비어있으면 reasoning 필드 사용
+      return msg?.reasoning || msg?.reasoning_content || "";
     }
     case "gemini": {
       if (!runtime.apiKey) {
@@ -413,9 +417,10 @@ export async function completeWithProfile(
       }
 
       const data = (await response.json()) as {
-        message?: { content?: string };
+        message?: { content?: string; reasoning?: string; reasoning_content?: string };
       };
-      return data.message?.content || "";
+      // thinking 모델: content가 비어있으면 reasoning 필드 사용
+      return data.message?.content || data.message?.reasoning || data.message?.reasoning_content || "";
     }
     default:
       throw new Error("Unsupported AI provider");
