@@ -1298,6 +1298,34 @@ export function WorkspaceAiSettingsTab({
                             }}
                           />
                         </Field>
+                        <Field label="커스텀 헤더 (JSON)">
+                          <textarea
+                            value={profile.customHeaders ? JSON.stringify(profile.customHeaders, null, 2) : ""}
+                            placeholder={'{\n  "X-Custom-Header": "value"\n}'}
+                            onChange={(e) => {
+                              const val = e.target.value.trim();
+                              if (!val) {
+                                updateProfile(profile.id, { customHeaders: null });
+                                return;
+                              }
+                              try {
+                                const parsed = JSON.parse(val) as Record<string, string>;
+                                if (typeof parsed === "object" && !Array.isArray(parsed)) {
+                                  updateProfile(profile.id, { customHeaders: parsed });
+                                }
+                              } catch {
+                                // 유효한 JSON이 될 때까지 대기
+                              }
+                            }}
+                            rows={3}
+                            className="w-full rounded px-3 py-2 text-sm font-mono"
+                            style={{
+                              background: "var(--background)",
+                              border: "1px solid var(--border)",
+                              resize: "vertical",
+                            }}
+                          />
+                        </Field>
                       </div>
                     </details>
 

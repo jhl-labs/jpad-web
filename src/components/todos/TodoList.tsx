@@ -490,7 +490,8 @@ function TodoItem({
 
   function handleDateChange(dateStr: string) {
     setShowDatePicker(false);
-    onUpdate({ dueDate: dateStr || null });
+    const isoDate = dateStr ? new Date(dateStr + "T00:00:00Z").toISOString() : null;
+    onUpdate({ dueDate: isoDate });
   }
 
   return (

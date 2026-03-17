@@ -37,6 +37,7 @@ export interface WorkspaceAiProfile {
   repeatPenalty: number | null;
   seed: number | null;
   stop: string[];
+  customHeaders: Record<string, string> | null;
 }
 
 export type WorkspaceAiTaskRouting = Record<AiTaskType, string | null>;
@@ -70,6 +71,7 @@ export function buildDefaultAiProfile(
     repeatPenalty: overrides.repeatPenalty ?? null,
     seed: overrides.seed ?? null,
     stop: overrides.stop ?? [],
+    customHeaders: overrides.customHeaders ?? null,
   };
 }
 

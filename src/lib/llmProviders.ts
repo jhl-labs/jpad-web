@@ -80,6 +80,14 @@ function resolveMaxTokens(profile: ResolvedAiProfile, requestedMaxTokens?: numbe
   return Math.max(1, Math.min(configured, Math.floor(requestedMaxTokens)));
 }
 
+function mergeHeaders(
+  base: Record<string, string>,
+  custom: Record<string, string> | null | undefined
+): Record<string, string> {
+  if (!custom || Object.keys(custom).length === 0) return base;
+  return { ...base, ...custom };
+}
+
 function normalizeOpenAiMessageContent(value: unknown): string {
   if (typeof value === "string") return value;
   if (!Array.isArray(value)) return "";
@@ -132,11 +140,11 @@ export async function listModelsForProfile(profile: WorkspaceAiProfile) {
       }
 
       const response = await fetchWithTimeout(buildApiUrl(runtime.baseUrl, "/v1/models"), {
-        headers: {
+        headers: mergeHeaders({
           "content-type": "application/json",
           "x-api-key": runtime.apiKey,
           "anthropic-version": "2023-06-01",
-        },
+        }, runtime.customHeaders),
       });
       if (!response.ok) {
         throw new Error(await parseErrorResponse(response));
@@ -156,10 +164,10 @@ export async function listModelsForProfile(profile: WorkspaceAiProfile) {
       }
 
       const response = await fetchWithTimeout(buildApiUrl(runtime.baseUrl, "/v1/models"), {
-        headers: {
+        headers: mergeHeaders({
           "content-type": "application/json",
           authorization: `Bearer ${runtime.apiKey}`,
-        },
+        }, runtime.customHeaders),
       });
       if (!response.ok) {
         throw new Error(await parseErrorResponse(response));
@@ -180,7 +188,7 @@ export async function listModelsForProfile(profile: WorkspaceAiProfile) {
       const response = await fetchWithTimeout(
         `${buildApiUrl(runtime.baseUrl, "/v1beta/models")}?key=${encodeURIComponent(runtime.apiKey)}`,
         {
-          headers: { "content-type": "application/json" },
+          headers: mergeHeaders({ "content-type": "application/json" }, runtime.customHeaders),
         }
       );
       if (!response.ok) {
@@ -203,13 +211,13 @@ export async function listModelsForProfile(profile: WorkspaceAiProfile) {
         .filter(Boolean);
     }
     case "ollama": {
-      const headers: HeadersInit = { "content-type": "application/json" };
+      const ollamaListHeaders: Record<string, string> = { "content-type": "application/json" };
       if (runtime.apiKey) {
-        headers.authorization = `Bearer ${runtime.apiKey}`;
+        ollamaListHeaders.authorization = `Bearer ${runtime.apiKey}`;
       }
 
       const response = await fetchWithTimeout(buildApiUrl(runtime.baseUrl, "/api/tags"), {
-        headers,
+        headers: mergeHeaders(ollamaListHeaders, runtime.customHeaders),
       });
       if (!response.ok) {
         throw new Error(await parseErrorResponse(response));
@@ -255,11 +263,11 @@ export async function completeWithProfile(
 
       const response = await fetchWithTimeout(buildApiUrl(runtime.baseUrl, "/v1/messages"), {
         method: "POST",
-        headers: {
+        headers: mergeHeaders({
           "content-type": "application/json",
           "x-api-key": runtime.apiKey,
           "anthropic-version": "2023-06-01",
-        },
+        }, runtime.customHeaders),
         body: JSON.stringify({
           model: runtime.model,
           system: options.systemPrompt,
@@ -293,10 +301,10 @@ export async function completeWithProfile(
         buildApiUrl(runtime.baseUrl, "/v1/chat/completions"),
         {
           method: "POST",
-          headers: {
+          headers: mergeHeaders({
             "content-type": "application/json",
             authorization: `Bearer ${runtime.apiKey}`,
-          },
+          }, runtime.customHeaders),
           body: JSON.stringify({
             model: runtime.model,
             temperature: runtime.temperature ?? undefined,
@@ -338,7 +346,7 @@ export async function completeWithProfile(
         )}?key=${encodeURIComponent(runtime.apiKey)}`,
         {
           method: "POST",
-          headers: { "content-type": "application/json" },
+          headers: mergeHeaders({ "content-type": "application/json" }, runtime.customHeaders),
           body: JSON.stringify({
             systemInstruction: {
               parts: [{ text: options.systemPrompt }],
@@ -374,14 +382,14 @@ export async function completeWithProfile(
         .join("");
     }
     case "ollama": {
-      const headers: HeadersInit = { "content-type": "application/json" };
+      const ollamaChatHeaders: Record<string, string> = { "content-type": "application/json" };
       if (runtime.apiKey) {
-        headers.authorization = `Bearer ${runtime.apiKey}`;
+        ollamaChatHeaders.authorization = `Bearer ${runtime.apiKey}`;
       }
 
       const response = await fetchWithTimeout(buildApiUrl(runtime.baseUrl, "/api/chat"), {
         method: "POST",
-        headers,
+        headers: mergeHeaders(ollamaChatHeaders, runtime.customHeaders),
         body: JSON.stringify({
           model: runtime.model,
           stream: false,
@@ -442,10 +450,10 @@ export async function embedTextWithProfile(
         buildApiUrl(runtime.baseUrl, "/v1/embeddings"),
         {
           method: "POST",
-          headers: {
+          headers: mergeHeaders({
             "content-type": "application/json",
             authorization: `Bearer ${runtime.apiKey}`,
-          },
+          }, runtime.customHeaders),
           body: JSON.stringify({
             model: runtime.model,
             input: text,
@@ -476,7 +484,7 @@ export async function embedTextWithProfile(
         )}?key=${encodeURIComponent(runtime.apiKey)}`,
         {
           method: "POST",
-          headers: { "content-type": "application/json" },
+          headers: mergeHeaders({ "content-type": "application/json" }, runtime.customHeaders),
           body: JSON.stringify({
             model: `models/${normalizeGeminiModelName(runtime.model)}`,
             content: {
@@ -496,14 +504,14 @@ export async function embedTextWithProfile(
       return normalizeEmbedding(data.embedding?.values);
     }
     case "ollama": {
-      const headers: HeadersInit = { "content-type": "application/json" };
+      const ollamaEmbedHeaders: Record<string, string> = { "content-type": "application/json" };
       if (runtime.apiKey) {
-        headers.authorization = `Bearer ${runtime.apiKey}`;
+        ollamaEmbedHeaders.authorization = `Bearer ${runtime.apiKey}`;
       }
 
       const response = await fetchWithTimeout(buildApiUrl(runtime.baseUrl, "/api/embeddings"), {
         method: "POST",
-        headers,
+        headers: mergeHeaders(ollamaEmbedHeaders, runtime.customHeaders),
         body: JSON.stringify({
           model: runtime.model,
           prompt: text,
