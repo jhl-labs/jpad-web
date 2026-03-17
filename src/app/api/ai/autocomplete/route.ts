@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth/helpers";
-import { AiError, aiStreamText, resolveAiWorkspaceContext } from "@/lib/ai";
+import { AiError, aiComplete, resolveAiWorkspaceContext } from "@/lib/ai";
 import { readPage } from "@/lib/git/repository";
 import { logError } from "@/lib/logger";
 import { rateLimitRedis } from "@/lib/rateLimit";
@@ -52,77 +52,46 @@ export async function POST(req: NextRequest) {
     const excerpt = text.slice(-MAX_SOURCE_LENGTH);
     const userMessage = `다음 문서의 끝에서 이어서 작성하세요 (1~2 단락만):\n\n${excerpt}`;
 
+    // 비스트리밍으로 깔끔한 응답을 받고 pseudo-streaming으로 전달
+    // (Ollama cloud 모델은 스트리밍 시 reasoning 필드에 쓰레기 데이터 포함)
+    const result = await aiComplete(
+      context.workspaceId,
+      SYSTEM_PROMPT,
+      userMessage,
+      1500,
+      "autocomplete"
+    );
+
+    const cleanText = (result || "").trim();
+    if (!cleanText) {
+      return NextResponse.json(
+        { error: "Empty response from AI" },
+        { status: 500 }
+      );
+    }
+
+    // SSE pseudo-streaming: 깔끔한 텍스트를 작은 청크로 나눠 전달
     const encoder = new TextEncoder();
     const readable = new ReadableStream({
-      async start(controller) {
-        try {
-          let accumulated = "";
-          let isThinking = false;
+      start(controller) {
+        const chunkSize = 12;
+        let i = 0;
 
-          for await (const chunk of aiStreamText(
-            context.workspaceId,
-            SYSTEM_PROMPT,
-            userMessage,
-            1500,
-            "autocomplete"
-          )) {
-            accumulated += chunk;
-
-            // 초기 50자 이내에 thinking 패턴 감지
-            if (accumulated.length < 60 && !isThinking) {
-              if (/^(Thinking Process|<think>|\*\*Analyze|The user)/i.test(accumulated.trim())) {
-                isThinking = true;
-                continue;
-              }
-            }
-
-            if (isThinking) {
-              // thinking 중 — 수집만, 전송 안 함
-              continue;
-            }
-
-            controller.enqueue(
-              encoder.encode(`data: ${JSON.stringify({ text: chunk })}\n\n`)
-            );
+        function sendNext() {
+          if (i >= cleanText.length) {
+            controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+            controller.close();
+            return;
           }
-
-          // thinking 모델이었으면 전체에서 답변 추출 후 전송
-          if (isThinking && accumulated) {
-            // 동적 import 대신 간단한 추출
-            const markers = [/\*\s*(Revised|Final Version|Final Output):\s*\n/i];
-            let answer = "";
-            for (const marker of markers) {
-              const match = accumulated.search(marker);
-              if (match >= 0) {
-                const m = accumulated.slice(match).match(marker);
-                if (m) {
-                  answer = accumulated.slice(match + m[0].length).trim();
-                  break;
-                }
-              }
-            }
-            // CJK 블록 fallback
-            if (!answer) {
-              const cjkBlocks = accumulated.match(/[\uAC00-\uD7AF\u3040-\u30FF\u4E00-\u9FFF].{50,}/g);
-              if (cjkBlocks) {
-                answer = cjkBlocks.reduce((a, b) => a.length >= b.length ? a : b);
-                const idx = accumulated.lastIndexOf(answer);
-                if (idx > 0) answer = accumulated.slice(idx).trim();
-              }
-            }
-            if (answer) {
-              controller.enqueue(
-                encoder.encode(`data: ${JSON.stringify({ text: answer })}\n\n`)
-              );
-            }
-          }
-
-          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-          controller.close();
-        } catch (error) {
-          logError("ai.autocomplete.stream_error", error);
-          controller.error(error);
+          const chunk = cleanText.slice(i, i + chunkSize);
+          i += chunkSize;
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ text: chunk })}\n\n`)
+          );
+          // 타이핑 효과를 위한 약간의 지연 (setImmediate 대신)
+          setTimeout(sendNext, 30);
         }
+        sendNext();
       },
     });
 
