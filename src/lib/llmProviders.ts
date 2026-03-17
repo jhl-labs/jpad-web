@@ -87,10 +87,12 @@ function stripThinkingProcess(text: string): string {
 
   // "Final Version:", "Final Output:", "Output:" 등의 마커 뒤의 실제 답변 추출
   const finalMarkers = [
+    /\*\s*Revised:\s*\n/i,
     /\*\s*Final Version:\s*\n/i,
     /\*\s*Final Output:\s*\n/i,
     /\*\s*Output:\s*\n/i,
     /Final Answer:\s*\n/i,
+    /Revised Version:\s*\n/i,
     /\n---\s*\n/,
   ];
   for (const marker of finalMarkers) {

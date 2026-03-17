@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
         "이어쓰기 부분만 출력하세요. 짧고 간결하게.",
       ].join(" "),
       `다음 문서의 끝에서 이어서 작성하세요 (1~2 단락만):\n\n${excerpt}`,
-      200,
+      1500,
       "autocomplete"
     );
 
