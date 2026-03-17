@@ -391,25 +391,57 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
 
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null);
+
+  const handleDragOver = useCallback(
+    (event: { active: { id: string | number }; over: { id: string | number } | null }) => {
+      const overId = event.over?.id?.toString() ?? null;
+      const activeId = event.active.id.toString();
+      if (overId && overId !== activeId) {
+        setDropTargetId(overId);
+      } else {
+        setDropTargetId(null);
+      }
+    },
+    []
+  );
+
   const handleDragEnd = useCallback(
     async (event: DragEndEvent) => {
+      setDropTargetId(null);
       const { active, over } = event;
       if (!canManagePages) return;
       if (!over || active.id === over.id) return;
 
-      const activeIdx = rootPages.findIndex((p) => p.id === active.id);
-      const overIdx = rootPages.findIndex((p) => p.id === over.id);
-      if (activeIdx === -1 || overIdx === -1) return;
+      const activeId = active.id.toString();
+      const overId = over.id.toString();
+      const activePage = pages.find((p) => p.id === activeId);
+      const overPage = pages.find((p) => p.id === overId);
+      if (!activePage || !overPage) return;
 
-      await fetch(`/api/pages/${active.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ position: rootPages[overIdx].position }),
-      });
+      // 같은 부모의 같은 레벨이면 순서 변경, 아니면 하위로 이동
+      if (activePage.parentId === overPage.parentId) {
+        await fetch(`/api/pages/${activeId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ position: overPage.position }),
+        });
+      } else {
+        // 다른 페이지의 하위로 이동
+        await fetch(`/api/pages/${activeId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ parentId: overId }),
+        });
+      }
       onRefresh();
     },
-    [rootPages, onRefresh, canManagePages]
+    [pages, onRefresh, canManagePages]
   );
+
+  const handleDragCancel = useCallback(() => {
+    setDropTargetId(null);
+  }, []);
 
   function handleContextMenu(e: React.MouseEvent, page: Page) {
     e.preventDefault();
@@ -635,8 +667,14 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
             )}
           </div>
 
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={rootPages.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragOver={handleDragOver}
+          onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
+        >
+          <SortableContext items={pages.map((p) => p.id)} strategy={verticalListSortingStrategy}>
             {rootPages.map((page) => (
               <SortablePageItem
                 key={page.id}
@@ -650,6 +688,7 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
                 canDelete={canDelete}
                 favoriteIds={favoriteIds}
                 onContextMenu={handleContextMenu}
+                dropTargetId={dropTargetId}
               />
             ))}
           </SortableContext>
@@ -814,6 +853,7 @@ function SortablePageItem({
   canDelete: boolean;
   favoriteIds: Set<string>;
   onContextMenu: (e: React.MouseEvent, page: Page) => void;
+  dropTargetId?: string | null;
   depth?: number;
 }) {
   const {
@@ -837,6 +877,7 @@ function SortablePageItem({
     .filter((p) => p.parentId === page.id)
     .sort((a, b) => a.position - b.position);
   const isSelected = page.id === selectedId;
+  const isDropTarget = dropTargetId === page.id;
 
   return (
     <div ref={setNodeRef} style={style}>
@@ -848,7 +889,11 @@ function SortablePageItem({
         className="flex items-center group rounded px-1 py-0.5 cursor-pointer text-sm"
         style={{
           paddingLeft: `${depth * 12 + 4}px`,
-          background: isSelected ? "var(--sidebar-hover)" : undefined,
+          background: isDropTarget ? "color-mix(in srgb, var(--primary) 15%, transparent)"
+            : isSelected ? "var(--sidebar-hover)" : undefined,
+          outline: isDropTarget ? "2px dashed var(--primary)" : undefined,
+          outlineOffset: "-2px",
+          borderRadius: "4px",
         }}
         onMouseEnter={(e) => {
           if (!isSelected) e.currentTarget.style.background = "var(--sidebar-hover)";
@@ -887,19 +932,19 @@ function SortablePageItem({
           <span className="w-3 shrink-0" />
         )}
 
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setExpanded(!expanded);
-          }}
-          className="p-0.5 shrink-0"
-        >
-          {children.length > 0 ? (
-            expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />
-          ) : (
-            <span className="w-3" />
-          )}
-        </button>
+        {children.length > 0 ? (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setExpanded(!expanded);
+            }}
+            className="p-0.5 shrink-0"
+          >
+            {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+          </button>
+        ) : (
+          <span className="w-0 shrink-0" />
+        )}
         {page.icon ? (
           <span className="shrink-0 mr-1.5 text-sm">{page.icon}</span>
         ) : (
@@ -953,6 +998,7 @@ function SortablePageItem({
             canDelete={canDelete}
             favoriteIds={favoriteIds}
             onContextMenu={onContextMenu}
+            dropTargetId={dropTargetId}
             depth={depth + 1}
           />
         ))}
