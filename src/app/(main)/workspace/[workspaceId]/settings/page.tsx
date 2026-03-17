@@ -86,7 +86,7 @@ const ROLE_ICONS: Record<string, React.ReactNode> = {
   viewer: <Eye size={14} />,
 };
 
-type Tab = "general" | "members" | "ai" | "git" | "audit";
+type Tab = "general" | "members" | "git" | "audit";
 
 export default function WorkspaceSettingsPage() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
@@ -397,7 +397,6 @@ export default function WorkspaceSettingsPage() {
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: "general", label: "일반", icon: <Settings size={16} /> },
     { id: "members", label: "멤버 관리", icon: <Users size={16} /> },
-    { id: "ai", label: "AI / 고급 설정", icon: <Sparkles size={16} /> },
     { id: "git", label: "Git 동기화", icon: <GitBranch size={16} /> },
     { id: "audit", label: "감사 로그", icon: <Activity size={16} /> },
   ];
@@ -727,15 +726,6 @@ export default function WorkspaceSettingsPage() {
             </div>
           </Section>
         </div>
-      )}
-
-      {/* AI / Advanced Settings Tab */}
-      {tab === "ai" && (
-        <WorkspaceAiSettingsTab
-          workspaceId={workspaceId}
-          isOwner={isOwner}
-          showToast={showToast}
-        />
       )}
 
       {/* Git Sync Tab */}

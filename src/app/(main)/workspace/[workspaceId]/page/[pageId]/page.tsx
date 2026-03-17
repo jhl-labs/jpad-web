@@ -114,6 +114,7 @@ export default function PageEditorPage() {
 
   const [isFavorited, setIsFavorited] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  const [commentCount, setCommentCount] = useState(0);
 
   const fetchPage = useCallback(async () => {
     try {
@@ -145,6 +146,20 @@ export default function PageEditorPage() {
         const { content: c } = await contentRes.json();
         setContent(c);
       }
+
+      // 댓글 카운트 조회
+      fetch(`/api/pages/${pageId}/comments`)
+        .then((r) => r.ok ? r.json() : [])
+        .then((comments) => {
+          if (Array.isArray(comments)) {
+            const total = comments.reduce(
+              (sum: number, c: { replies?: unknown[] }) => sum + 1 + (c.replies?.length || 0),
+              0
+            );
+            setCommentCount(total);
+          }
+        })
+        .catch(() => {});
     } catch (error) {
       setLoadError(true);
     }
@@ -502,9 +517,17 @@ export default function PageEditorPage() {
           <button
             onClick={() => setShowComments(!showComments)}
             className="hidden md:flex items-center gap-1 px-2 py-1 rounded text-sm hover:opacity-70"
-            style={{ color: "var(--muted)" }}
+            style={{ color: showComments ? "var(--primary)" : "var(--muted)" }}
           >
             <MessageCircle size={14} /> 댓글
+            {commentCount > 0 && (
+              <span
+                className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
+                style={{ background: "var(--primary)", color: "white" }}
+              >
+                {commentCount}
+              </span>
+            )}
           </button>
           <button
             onClick={() => setShowHistory(!showHistory)}
@@ -597,6 +620,14 @@ export default function PageEditorPage() {
                   style={{ color: "var(--foreground)" }}
                 >
                   <MessageCircle size={14} /> 댓글
+                  {commentCount > 0 && (
+                    <span
+                      className="text-[10px] px-1.5 py-0.5 rounded-full font-medium ml-auto"
+                      style={{ background: "var(--primary)", color: "white" }}
+                    >
+                      {commentCount}
+                    </span>
+                  )}
                 </button>
                 <button
                   onClick={() => { setShowHistory(!showHistory); setShowMoreMenu(false); }}

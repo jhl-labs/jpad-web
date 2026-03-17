@@ -42,7 +42,8 @@ export async function savePage(
   message?: string
 ) {
   return withLock(workspaceId + ":" + slug, async () => {
-    const dir = getRepoPath(workspaceId);
+    // 저장소가 없으면 자동 초기화
+    const dir = await initRepo(workspaceId);
     const filepath = `${slug}.md`;
     const fullPath = path.join(dir, filepath);
 

@@ -11,6 +11,7 @@ import {
   Bell,
   Info,
   FileCode,
+  Sparkles,
   Sun,
   Moon,
   Monitor,
@@ -26,10 +27,11 @@ import {
   EyeOff,
 } from "lucide-react";
 import { ImportModal } from "@/components/editor/ImportModal";
+import { WorkspaceAiSettingsTab } from "@/components/workspace/WorkspaceAiSettingsTab";
 
 // ── 타입 ──────────────────────────────────────────────────────
 
-type TabId = "profile" | "theme" | "data" | "notifications" | "version" | "opensource";
+type TabId = "profile" | "theme" | "data" | "notifications" | "ai" | "version" | "opensource";
 
 interface TabDef {
   id: TabId;
@@ -203,10 +205,28 @@ export default function UserSettingsPage() {
   const router = useRouter();
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const [activeTab, setActiveTab] = useState<TabId>("profile");
+  const [workspaceRole, setWorkspaceRole] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch(`/api/workspaces/${workspaceId}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => { if (data) setWorkspaceRole(data.currentRole); })
+      .catch(() => {});
+  }, [workspaceId]);
+
+  function showToast(msg: string) {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  }
+
+  const isOwner = workspaceRole === "owner";
+  const isAdmin = workspaceRole === "owner" || workspaceRole === "admin";
 
   const tabs: TabDef[] = [
     { id: "profile", label: "프로필", icon: <User size={16} /> },
     { id: "theme", label: "테마 & 외관", icon: <Palette size={16} /> },
+    { id: "ai", label: "AI / 고급 설정", icon: <Sparkles size={16} /> },
     { id: "data", label: "데이터 관리", icon: <Database size={16} /> },
     { id: "notifications", label: "알림 설정", icon: <Bell size={16} /> },
     { id: "version", label: "버전 & 업데이트", icon: <Info size={16} /> },
@@ -268,12 +288,34 @@ export default function UserSettingsPage() {
         <div className="flex-1 px-6 py-6 max-w-3xl">
           {activeTab === "profile" && <ProfileTab />}
           {activeTab === "theme" && <ThemeTab />}
+          {activeTab === "ai" && isAdmin && (
+            <WorkspaceAiSettingsTab
+              workspaceId={workspaceId}
+              isOwner={isOwner}
+              showToast={showToast}
+            />
+          )}
+          {activeTab === "ai" && !isAdmin && (
+            <div className="py-12 text-center" style={{ color: "var(--muted)" }}>
+              AI 설정은 워크스페이스 관리자만 변경할 수 있습니다.
+            </div>
+          )}
           {activeTab === "data" && <DataTab workspaceId={workspaceId} />}
           {activeTab === "notifications" && <NotificationsTab />}
           {activeTab === "version" && <VersionTab />}
           {activeTab === "opensource" && <OpenSourceTab />}
         </div>
       </div>
+
+      {/* Toast */}
+      {toast && (
+        <div
+          className="fixed bottom-6 right-6 z-50 px-4 py-2 rounded-lg shadow-lg text-sm font-medium"
+          style={{ background: "var(--primary)", color: "white" }}
+        >
+          {toast}
+        </div>
+      )}
     </div>
   );
 }
