@@ -25,12 +25,13 @@ function highlightKeyword(text: string, keyword: string): React.ReactNode {
   const regex = new RegExp(`(${escaped})`, "gi");
   const parts = text.split(regex);
   if (parts.length === 1) return text;
+  const testRegex = new RegExp(`^${escaped}$`, "i");
   return parts.map((part, i) =>
-    regex.test(part) ? (
+    testRegex.test(part) ? (
       <mark
         key={i}
         style={{
-          background: "rgba(59,130,246,0.2)",
+          background: "var(--primary-highlight, rgba(var(--primary-rgb, 59,130,246), 0.2))",
           color: "inherit",
           borderRadius: 2,
           padding: "0 1px",
@@ -215,9 +216,18 @@ export function SearchModal({ workspaceId, isOpen, onClose }: SearchModalProps) 
                 {result.snippet && (
                   <p
                     className="text-xs mt-1 line-clamp-2"
-                    style={{ color: "var(--muted)" }}
+                    style={{
+                      color: "var(--muted)",
+                      ...(result.matchType === "semantic"
+                        ? {
+                            background: "rgba(59,130,246,0.06)",
+                            borderRadius: 3,
+                            padding: "2px 4px",
+                          }
+                        : {}),
+                    }}
                   >
-                    {result.snippet}
+                    {highlightKeyword(result.snippet, query)}
                   </p>
                 )}
               </div>
