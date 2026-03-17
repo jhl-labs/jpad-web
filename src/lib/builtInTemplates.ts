@@ -24,9 +24,7 @@ export function getBuiltInTemplates(): BuiltInTemplate[] {
       icon: "\ud83d\udccb",
       category: "meeting",
       isBuiltIn: true,
-      content: `# 회의록
-
-## 기본 정보
+      content: `## 기본 정보
 - **날짜**: ${today}
 - **시간**:
 - **장소**:
@@ -70,9 +68,7 @@ export function getBuiltInTemplates(): BuiltInTemplate[] {
       icon: "\ud83d\udcca",
       category: "project",
       isBuiltIn: true,
-      content: `# 프로젝트 계획
-
-## 개요
+      content: `## 개요
 - **프로젝트명**:
 - **시작일**: ${today}
 - **종료 예정일**:
@@ -127,9 +123,7 @@ export function getBuiltInTemplates(): BuiltInTemplate[] {
       icon: "\ud83d\udcdd",
       category: "journal",
       isBuiltIn: true,
-      content: `# 일일 노트 - ${today}
-
-## 오늘의 할 일
+      content: `## 오늘의 할 일
 - [ ]
 - [ ]
 - [ ]
@@ -159,9 +153,7 @@ export function getBuiltInTemplates(): BuiltInTemplate[] {
       icon: "\ud83d\udcd6",
       category: "journal",
       isBuiltIn: true,
-      content: `# 주간 회고
-
-## 기간
+      content: `## 기간
 - **시작**:
 - **종료**:
 
@@ -207,9 +199,7 @@ export function getBuiltInTemplates(): BuiltInTemplate[] {
       icon: "\ud83d\udc1b",
       category: "custom",
       isBuiltIn: true,
-      content: `# 버그 리포트
-
-## 요약
+      content: `## 요약
 - **제목**:
 - **심각도**: \ud83d\udfe1 낮음 / \ud83d\udfe0 보통 / \ud83d\udd34 높음 / \ud83d\udfe3 치명적
 - **보고자**:
@@ -259,9 +249,7 @@ export function getBuiltInTemplates(): BuiltInTemplate[] {
       icon: "\ud83d\udca1",
       category: "custom",
       isBuiltIn: true,
-      content: `# 제안서
-
-## 배경
+      content: `## 배경
 -
 
 ---
@@ -316,9 +304,7 @@ export function getBuiltInTemplates(): BuiltInTemplate[] {
       icon: "🔄",
       category: "meeting",
       isBuiltIn: true,
-      content: `# 스프린트 회고
-
-## 스프린트 정보
+      content: `## 스프린트 정보
 - **스프린트**: Sprint #
 - **기간**: ${today} ~
 - **팀**:
@@ -378,9 +364,7 @@ export function getBuiltInTemplates(): BuiltInTemplate[] {
       icon: "🤝",
       category: "meeting",
       isBuiltIn: true,
-      content: `# 1:1 미팅
-
-## 기본 정보
+      content: `## 기본 정보
 - **날짜**: ${today}
 - **참석자**: (매니저) ↔ (팀원)
 - **이전 미팅일**:
@@ -442,9 +426,7 @@ export function getBuiltInTemplates(): BuiltInTemplate[] {
       icon: "📐",
       category: "project",
       isBuiltIn: true,
-      content: `# 기능 명세서 (PRD)
-
-## 개요
+      content: `## 개요
 - **기능명**:
 - **작성자**:
 - **작성일**: ${today}
@@ -538,9 +520,7 @@ export function getBuiltInTemplates(): BuiltInTemplate[] {
       icon: "🚀",
       category: "custom",
       isBuiltIn: true,
-      content: `# 온보딩 가이드
-
-## 환영합니다! 👋
+      content: `## 환영합니다! 👋
 > 이 문서는 새로 합류한 팀원을 위한 온보딩 가이드입니다.
 
 - **합류일**: ${today}
@@ -602,9 +582,7 @@ export function getBuiltInTemplates(): BuiltInTemplate[] {
       icon: "⚖️",
       category: "custom",
       isBuiltIn: true,
-      content: `# 의사결정 기록
-
-## 결정 사항
+      content: `## 결정 사항
 - **제목**:
 - **결정일**: ${today}
 - **결정자**:
@@ -675,9 +653,7 @@ export function getBuiltInTemplates(): BuiltInTemplate[] {
       icon: "🔥",
       category: "custom",
       isBuiltIn: true,
-      content: `# 포스트모템
-
-## 요약
+      content: `## 요약
 - **사건명**:
 - **발생일시**: ${today}
 - **복구일시**:
