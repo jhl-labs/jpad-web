@@ -653,76 +653,80 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
       </div>
 
       {/* Footer */}
-      <div className="p-2" style={{ borderTop: "1px solid var(--border)" }}>
-        {canManagePages && (
-          <button
-            onClick={() => setShowImport(true)}
-            className="flex items-center gap-2 w-full px-2 py-1.5 rounded text-sm hover:opacity-70"
-            style={{ color: "var(--muted)" }}
-          >
-            <Upload size={14} />
-            가져오기
-          </button>
-        )}
-        {canManageTrash && (
-          <button
-            onClick={() => setShowTrash(true)}
-            className="flex items-center gap-2 w-full px-2 py-1.5 rounded text-sm hover:opacity-70"
-            style={{ color: "var(--muted)" }}
-          >
-            <Trash2 size={14} />
-            휴지통
-            {trashCount > 0 && (
-              <span
-                className="text-xs px-1.5 py-0.5 rounded-full ml-auto"
-                style={{ background: "var(--sidebar-hover)", color: "var(--foreground)" }}
-              >
-                {trashCount}
-              </span>
-            )}
-          </button>
-        )}
+      <div className="p-2 space-y-0.5" style={{ borderTop: "1px solid var(--border)" }}>
+        {/* 도구 영역 */}
+        <div className="flex items-center gap-0.5">
+          {canManagePages && (
+            <button
+              onClick={() => setShowImport(true)}
+              className="flex items-center gap-1.5 flex-1 px-2 py-1.5 rounded text-sm hover:opacity-70"
+              style={{ color: "var(--muted)" }}
+              title="가져오기"
+            >
+              <Upload size={14} />
+              <span className="truncate">가져오기</span>
+            </button>
+          )}
+          {canManageTrash && (
+            <button
+              onClick={() => setShowTrash(true)}
+              className="flex items-center gap-1.5 flex-1 px-2 py-1.5 rounded text-sm hover:opacity-70"
+              style={{ color: "var(--muted)" }}
+              title="휴지통"
+            >
+              <Trash2 size={14} />
+              <span className="truncate">휴지통</span>
+              {trashCount > 0 && (
+                <span
+                  className="text-[10px] px-1 py-0.5 rounded-full ml-auto"
+                  style={{ background: "var(--sidebar-hover)", color: "var(--foreground)" }}
+                >
+                  {trashCount}
+                </span>
+              )}
+            </button>
+          )}
+        </div>
 
-        {/* 알림 & 설정 & 피드백 */}
-        <div className="flex items-center gap-1">
+        {/* 유틸 영역 */}
+        <div className="flex items-center gap-0.5">
           <NotificationBell workspaceId={workspace.id} />
           <button
             onClick={() => router.push(`/workspace/${workspace.id}/user-settings`)}
-            className="flex items-center gap-2 flex-1 px-2 py-1.5 rounded text-sm hover:opacity-70"
+            className="flex items-center gap-1.5 flex-1 px-2 py-1.5 rounded text-sm hover:opacity-70"
             style={{ color: "var(--muted)" }}
             title="설정"
           >
             <Settings size={14} />
-            설정
+            <span className="truncate">설정</span>
           </button>
           <button
             onClick={() => window.dispatchEvent(new Event("feedback:open"))}
-            className="flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:opacity-70 shrink-0"
+            className="p-1.5 rounded hover:opacity-70 shrink-0"
             style={{ color: "var(--muted)" }}
             title="피드백 보내기"
           >
             <MessageSquarePlus size={14} />
-            피드백
           </button>
         </div>
 
-        {/* 사용자 프로필 + 로그아웃 */}
-        <div className="flex items-center gap-2 px-2 py-1.5">
-          {/* 아바타 */}
+        {/* 프로필 영역 */}
+        <div
+          className="flex items-center gap-2 px-2 py-1.5 rounded"
+          style={{ background: "var(--sidebar-hover)" }}
+        >
           <div
             className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
             style={{ background: "var(--primary)", color: "white" }}
           >
             {(session?.user?.name || session?.user?.email || "?").charAt(0).toUpperCase()}
           </div>
-          {/* 이름 */}
           <span
             className="flex-1 text-sm truncate"
             style={{ color: "var(--foreground)" }}
           >
             {session?.user?.name || session?.user?.email || "사용자"}
           </span>
-          {/* 로그아웃 버튼 */}
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
             className="p-1 rounded hover:opacity-70 shrink-0"

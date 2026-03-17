@@ -145,21 +145,23 @@ export default function WorkspaceLayout({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ workspaceId, parentId, title }),
     });
-    if (res.ok) {
-      const page = await res.json();
-      // Save the template content to the page
-      if (content) {
-        await fetch(`/api/pages/${page.id}/content`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content }),
-        });
-      }
-      await fetchPages();
-      await fetchFavorites();
-      window.dispatchEvent(new Event(SIDEBAR_EVENTS.REFRESH));
-      router.push(`/workspace/${workspaceId}/page/${page.id}`);
+    if (!res.ok) return;
+
+    const page = await res.json();
+
+    // 사이드바에 즉시 반영 (낙관적 업데이트)
+    setPages((prev) => [...prev, page]);
+
+    // 콘텐츠 저장 완료 후 페이지 이동 (저장 전 이동하면 빈 페이지)
+    if (content) {
+      await fetch(`/api/pages/${page.id}/content`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
     }
+
+    router.push(`/workspace/${workspaceId}/page/${page.id}`);
   }
 
   async function createBlankPage() {
@@ -169,12 +171,16 @@ export default function WorkspaceLayout({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ workspaceId, parentId }),
     });
-    if (res.ok) {
-      const page = await res.json();
-      await fetchPages();
-      window.dispatchEvent(new Event(SIDEBAR_EVENTS.REFRESH));
-      router.push(`/workspace/${workspaceId}/page/${page.id}`);
-    }
+    if (!res.ok) return;
+
+    const page = await res.json();
+
+    // 사이드바에 즉시 반영
+    setPages((prev) => [...prev, page]);
+    router.push(`/workspace/${workspaceId}/page/${page.id}`);
+
+    // 서버에서 최신 목록 동기화
+    fetchPages();
   }
 
   async function handleDeletePage(pageId: string, title: string) {
