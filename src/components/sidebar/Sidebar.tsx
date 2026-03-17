@@ -665,65 +665,47 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
 
       {/* Footer */}
       <div className="p-2 space-y-0.5" style={{ borderTop: "1px solid var(--border)" }}>
-        {/* 도구 영역 */}
-        <div className="flex items-center gap-0.5">
-          {canManagePages && (
-            <button
-              onClick={() => setShowImport(true)}
-              className="flex items-center gap-1.5 flex-1 px-2 py-1.5 rounded text-sm hover:opacity-70"
-              style={{ color: "var(--muted)" }}
-              title="가져오기"
-            >
-              <Upload size={14} />
-              <span className="truncate">가져오기</span>
-            </button>
-          )}
-          {canManageTrash && (
-            <button
-              onClick={() => setShowTrash(true)}
-              className="flex items-center gap-1.5 flex-1 px-2 py-1.5 rounded text-sm hover:opacity-70"
-              style={{ color: "var(--muted)" }}
-              title="휴지통"
-            >
-              <Trash2 size={14} />
-              <span className="truncate">휴지통</span>
-              {trashCount > 0 && (
-                <span
-                  className="text-[10px] px-1 py-0.5 rounded-full ml-auto"
-                  style={{ background: "var(--sidebar-hover)", color: "var(--foreground)" }}
-                >
-                  {trashCount}
-                </span>
-              )}
-            </button>
-          )}
-        </div>
-
-        {/* 유틸 영역 */}
-        <div className="flex items-center gap-0.5">
-          <NotificationBell workspaceId={workspace.id} />
+        {/* 도구: 가져오기 / 휴지통 / 설정 */}
+        {canManagePages && (
           <button
-            onClick={() => router.push(`/workspace/${workspace.id}/user-settings`)}
-            className="flex items-center gap-1.5 flex-1 px-2 py-1.5 rounded text-sm hover:opacity-70"
+            onClick={() => setShowImport(true)}
+            className="flex items-center gap-2 w-full px-2 py-1.5 rounded text-sm hover:opacity-70"
             style={{ color: "var(--muted)" }}
-            title="설정"
           >
-            <Settings size={14} />
-            <span className="truncate">설정</span>
+            <Upload size={14} />
+            가져오기
           </button>
+        )}
+        {canManageTrash && (
           <button
-            onClick={() => window.dispatchEvent(new Event("feedback:open"))}
-            className="p-1.5 rounded hover:opacity-70 shrink-0"
+            onClick={() => setShowTrash(true)}
+            className="flex items-center gap-2 w-full px-2 py-1.5 rounded text-sm hover:opacity-70"
             style={{ color: "var(--muted)" }}
-            title="피드백 보내기"
           >
-            <MessageSquarePlus size={14} />
+            <Trash2 size={14} />
+            휴지통
+            {trashCount > 0 && (
+              <span
+                className="text-[10px] px-1 py-0.5 rounded-full ml-auto"
+                style={{ background: "var(--sidebar-hover)", color: "var(--foreground)" }}
+              >
+                {trashCount}
+              </span>
+            )}
           </button>
-        </div>
+        )}
+        <button
+          onClick={() => router.push(`/workspace/${workspace.id}/user-settings`)}
+          className="flex items-center gap-2 w-full px-2 py-1.5 rounded text-sm hover:opacity-70"
+          style={{ color: "var(--muted)" }}
+        >
+          <Settings size={14} />
+          설정
+        </button>
 
-        {/* 프로필 영역 */}
+        {/* 프로필: 아바타 + 이름 + 로그아웃 + 피드백 */}
         <div
-          className="flex items-center gap-2 px-2 py-1.5 rounded"
+          className="flex items-center gap-2 px-2 py-1.5 rounded mt-1"
           style={{ background: "var(--sidebar-hover)" }}
         >
           <div
@@ -746,8 +728,15 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
           >
             <LogOut size={14} />
           </button>
+          <button
+            onClick={() => window.dispatchEvent(new Event("feedback:open"))}
+            className="p-1 rounded hover:opacity-70 shrink-0"
+            style={{ color: "var(--muted)" }}
+            title="피드백 / 이슈 등록"
+          >
+            <MessageSquarePlus size={14} />
+          </button>
         </div>
-
       </div>
 
       {showTrash && (

@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import type { CursorContext } from "@/components/editor/CollaborativeEditor";
 import { AI_EVENTS, SEARCH_EVENTS, SIDEBAR_EVENTS } from "@/lib/events";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { BacklinkPanel } from "@/components/editor/BacklinkPanel";
 import { AttachmentPanel } from "@/components/editor/AttachmentPanel";
 import { BacklinkSuggestion } from "@/components/editor/BacklinkSuggestion";
@@ -529,10 +530,13 @@ export default function PageEditorPage() {
               </span>
             )}
           </button>
+          <div className="hidden md:block">
+            <NotificationBell workspaceId={workspaceId} />
+          </div>
           <button
             onClick={() => setShowHistory(!showHistory)}
             className="hidden md:flex items-center gap-1 px-2 py-1 rounded text-sm hover:opacity-70"
-            style={{ color: "var(--muted)" }}
+            style={{ color: showHistory ? "var(--primary)" : "var(--muted)" }}
           >
             <Clock size={14} /> 히스토리
           </button>
