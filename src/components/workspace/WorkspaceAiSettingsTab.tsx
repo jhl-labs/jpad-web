@@ -226,6 +226,65 @@ function createProfile(index: number) {
   });
 }
 
+function CustomHeadersInput({
+  value,
+  onChange,
+}: {
+  value: Record<string, string> | null;
+  onChange: (headers: Record<string, string> | null) => void;
+}) {
+  const [text, setText] = useState(value ? JSON.stringify(value, null, 2) : "");
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    setText(value ? JSON.stringify(value, null, 2) : "");
+  }, [value]);
+
+  return (
+    <div>
+      <textarea
+        value={text}
+        placeholder={'{\n  "X-Custom-Header": "value"\n}'}
+        onChange={(e) => {
+          setText(e.target.value);
+          setError(false);
+        }}
+        onBlur={() => {
+          const trimmed = text.trim();
+          if (!trimmed) {
+            onChange(null);
+            setError(false);
+            return;
+          }
+          try {
+            const parsed = JSON.parse(trimmed) as Record<string, string>;
+            if (typeof parsed === "object" && !Array.isArray(parsed)) {
+              onChange(parsed);
+              setError(false);
+            } else {
+              setError(true);
+            }
+          } catch {
+            setError(true);
+          }
+        }}
+        rows={3}
+        className="w-full rounded px-3 py-2 text-sm font-mono"
+        style={{
+          background: "var(--background)",
+          border: `1px solid ${error ? "#ef4444" : "var(--border)"}`,
+          resize: "vertical",
+        }}
+      />
+      {error && (
+        <p className="text-xs mt-1" style={{ color: "#ef4444" }}>
+          유효한 JSON 형식이 아닙니다
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function WorkspaceAiSettingsTab({
   workspaceId,
   isOwner,
@@ -1299,31 +1358,9 @@ export function WorkspaceAiSettingsTab({
                           />
                         </Field>
                         <Field label="커스텀 헤더 (JSON)">
-                          <textarea
-                            value={profile.customHeaders ? JSON.stringify(profile.customHeaders, null, 2) : ""}
-                            placeholder={'{\n  "X-Custom-Header": "value"\n}'}
-                            onChange={(e) => {
-                              const val = e.target.value.trim();
-                              if (!val) {
-                                updateProfile(profile.id, { customHeaders: null });
-                                return;
-                              }
-                              try {
-                                const parsed = JSON.parse(val) as Record<string, string>;
-                                if (typeof parsed === "object" && !Array.isArray(parsed)) {
-                                  updateProfile(profile.id, { customHeaders: parsed });
-                                }
-                              } catch {
-                                // 유효한 JSON이 될 때까지 대기
-                              }
-                            }}
-                            rows={3}
-                            className="w-full rounded px-3 py-2 text-sm font-mono"
-                            style={{
-                              background: "var(--background)",
-                              border: "1px solid var(--border)",
-                              resize: "vertical",
-                            }}
+                          <CustomHeadersInput
+                            value={profile.customHeaders}
+                            onChange={(headers) => updateProfile(profile.id, { customHeaders: headers })}
                           />
                         </Field>
                       </div>
