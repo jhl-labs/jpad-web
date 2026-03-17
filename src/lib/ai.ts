@@ -1,6 +1,6 @@
 import { AiTaskType } from "@/lib/aiConfig";
 import { checkWorkspaceAccess } from "@/lib/auth/helpers";
-import { completeWithProfile, streamWithProfile } from "@/lib/llmProviders";
+import { completeWithProfile, streamWithProfile, resolveAiProfileRuntime } from "@/lib/llmProviders";
 import { getPageAccessContext } from "@/lib/pageAccess";
 import { resolveAiProfileForTask } from "@/lib/aiSettings";
 import { getEffectiveWorkspaceSettings } from "@/lib/workspaceSettings";
@@ -121,7 +121,9 @@ export async function* aiStreamText(
 ) {
   const runtime = await getWorkspaceAiRuntime(workspaceId, task, maxTokens);
 
-  for await (const chunk of streamWithProfile(runtime.profile, {
+  const resolved = resolveAiProfileRuntime(runtime.profile);
+
+  for await (const chunk of streamWithProfile(resolved, {
     systemPrompt,
     userMessage,
     maxTokens: runtime.maxTokens,
