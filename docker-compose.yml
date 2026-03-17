@@ -1,6 +1,6 @@
 services:
   jpad:
-    build: .
+    image: ghcr.io/jhl-labs/jpad-web:latest
     ports:
       - "3000:3000"
       - "21234:1234"
