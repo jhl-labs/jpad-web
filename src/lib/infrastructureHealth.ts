@@ -160,8 +160,8 @@ async function checkRedis(): Promise<ComponentHealth> {
       if (match) {
         version = match[1];
       }
-    } catch {
-      // version is optional
+    } catch (err) {
+      logError("infra.health.version_check", err);
     }
 
     return {
@@ -329,8 +329,8 @@ async function checkClamav(): Promise<ComponentHealth> {
     try {
       const versionResponse = await clamavTcpCommand(clamavHost, port, "zVERSION");
       version = versionResponse.split("/")[0]?.trim() || versionResponse;
-    } catch {
-      // version is optional
+    } catch (err) {
+      logError("infra.health.version_check", err);
     }
 
     return {
@@ -407,8 +407,8 @@ async function checkQdrant(): Promise<ComponentHealth> {
     try {
       const body = (await response.json()) as { version?: string; title?: string };
       version = body.version ?? null;
-    } catch {
-      // version is optional
+    } catch (err) {
+      logError("infra.health.version_check", err);
     }
 
     return {
@@ -614,8 +614,8 @@ export async function getStorageStats(): Promise<StorageStats> {
                 const countBody = (await countRes.json()) as { result?: { count?: number } };
                 totalPoints += countBody.result?.count ?? 0;
               }
-            } catch {
-              // skip individual collection errors
+            } catch (err) {
+              logError("infra.storage.qdrant_collection", err);
             }
           }
           qdrantTotalPoints = totalPoints;

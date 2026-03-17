@@ -227,11 +227,11 @@ export function InfrastructureDashboard() {
         fetch("/api/admin/infrastructure/storage-stats"),
       ]);
 
-      if (healthRes.status === 401) {
+      if (healthRes.status === 401 || storageRes.status === 401) {
         router.push("/login");
         return;
       }
-      if (healthRes.status === 403) {
+      if (healthRes.status === 403 || storageRes.status === 403) {
         router.push("/workspace");
         return;
       }
