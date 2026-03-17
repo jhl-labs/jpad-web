@@ -20,8 +20,10 @@ import {
   Edit3,
   Eye,
   RefreshCw,
+  GitBranch,
 } from "lucide-react";
 import { WorkspaceAiSettingsTab } from "@/components/workspace/WorkspaceAiSettingsTab";
+import { WorkspaceGitSyncTab } from "@/components/workspace/WorkspaceGitSyncTab";
 import { formatDateTimeFull } from "@/lib/utils/dateFormat";
 import { ROLE_LABELS, ROLE_COLORS, AUDIT_ACTION_LABELS, AUDIT_ACTION_OPTIONS } from "@/lib/constants/workspace";
 import { Section, Field } from "@/components/ui/FormLayout";
@@ -84,7 +86,7 @@ const ROLE_ICONS: Record<string, React.ReactNode> = {
   viewer: <Eye size={14} />,
 };
 
-type Tab = "general" | "members" | "ai" | "audit";
+type Tab = "general" | "members" | "ai" | "git" | "audit";
 
 export default function WorkspaceSettingsPage() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
@@ -396,6 +398,7 @@ export default function WorkspaceSettingsPage() {
     { id: "general", label: "일반", icon: <Settings size={16} /> },
     { id: "members", label: "멤버 관리", icon: <Users size={16} /> },
     { id: "ai", label: "AI / 고급 설정", icon: <Sparkles size={16} /> },
+    { id: "git", label: "Git 동기화", icon: <GitBranch size={16} /> },
     { id: "audit", label: "감사 로그", icon: <Activity size={16} /> },
   ];
 
@@ -729,6 +732,15 @@ export default function WorkspaceSettingsPage() {
       {/* AI / Advanced Settings Tab */}
       {tab === "ai" && (
         <WorkspaceAiSettingsTab
+          workspaceId={workspaceId}
+          isOwner={isOwner}
+          showToast={showToast}
+        />
+      )}
+
+      {/* Git Sync Tab */}
+      {tab === "git" && (
+        <WorkspaceGitSyncTab
           workspaceId={workspaceId}
           isOwner={isOwner}
           showToast={showToast}

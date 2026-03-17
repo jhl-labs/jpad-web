@@ -2,6 +2,7 @@ import git from "isomorphic-git";
 import fs from "node:fs";
 import path from "node:path";
 import { withLock } from "./lock";
+import { triggerAutoSync } from "./remote";
 
 const REPOS_DIR = path.join(process.cwd(), "data", "repos");
 
@@ -56,6 +57,9 @@ export async function savePage(
       message: message || `Update ${slug}`,
       author: { name: authorName, email: "user@jpad.local" },
     });
+
+    // Fire-and-forget auto-sync to remote
+    void triggerAutoSync(workspaceId).catch(() => {});
 
     return sha;
   });
