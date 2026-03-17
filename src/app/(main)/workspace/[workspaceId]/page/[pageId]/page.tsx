@@ -536,10 +536,11 @@ export default function PageEditorPage() {
           </div>
           <button
             onClick={() => setShowHistory(!showHistory)}
-            className="hidden md:flex items-center gap-1 px-2 py-1 rounded text-sm hover:opacity-70"
+            className="hidden md:flex items-center px-2 py-1 rounded text-sm hover:opacity-70"
             style={{ color: showHistory ? "var(--primary)" : "var(--muted)" }}
+            title="히스토리"
           >
-            <Clock size={14} /> 히스토리
+            <Clock size={14} />
           </button>
           <button
             onClick={() => router.push(`/workspace/${workspaceId}/graph`)}
@@ -552,10 +553,11 @@ export default function PageEditorPage() {
           <div className="relative hidden md:block">
             <button
               onClick={() => setShowExportMenu(!showExportMenu)}
-              className="flex items-center gap-1 px-2 py-1 rounded text-sm hover:opacity-70"
+              className="flex items-center px-2 py-1 rounded text-sm hover:opacity-70"
               style={{ color: "var(--muted)" }}
+              title="내보내기"
             >
-              <Download size={14} /> 내보내기
+              <Download size={14} />
             </button>
             {showExportMenu && (
               <div
@@ -590,10 +592,11 @@ export default function PageEditorPage() {
           {!isReadOnly && (
             <button
               onClick={() => setShowShare(true)}
-              className="hidden md:flex items-center gap-1 px-2 py-1 rounded text-sm hover:opacity-70"
+              className="hidden md:flex items-center px-2 py-1 rounded text-sm hover:opacity-70"
               style={{ color: "var(--muted)" }}
+              title="공유"
             >
-              <Share2 size={14} /> 공유
+              <Share2 size={14} />
             </button>
           )}
 
