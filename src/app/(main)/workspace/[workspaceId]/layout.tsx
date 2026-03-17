@@ -9,7 +9,7 @@ import { TemplatePickerModal } from "@/components/templates/TemplatePickerModal"
 import { KeyboardShortcutsHelp } from "@/components/ui/KeyboardShortcutsHelp";
 import { FeedbackModal } from "@/components/ui/FeedbackModal";
 import { Menu } from "lucide-react";
-import { ZEN_EVENTS, SEARCH_EVENTS } from "@/lib/events";
+import { ZEN_EVENTS, SEARCH_EVENTS, SIDEBAR_EVENTS } from "@/lib/events";
 
 interface Page {
   id: string;
@@ -156,6 +156,8 @@ export default function WorkspaceLayout({
         });
       }
       await fetchPages();
+      await fetchFavorites();
+      window.dispatchEvent(new Event(SIDEBAR_EVENTS.REFRESH));
       router.push(`/workspace/${workspaceId}/page/${page.id}`);
     }
   }
@@ -170,6 +172,7 @@ export default function WorkspaceLayout({
     if (res.ok) {
       const page = await res.json();
       await fetchPages();
+      window.dispatchEvent(new Event(SIDEBAR_EVENTS.REFRESH));
       router.push(`/workspace/${workspaceId}/page/${page.id}`);
     }
   }
