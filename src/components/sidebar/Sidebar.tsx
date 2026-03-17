@@ -748,18 +748,6 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
           </button>
         </div>
 
-        {/* 버전 표시 */}
-        <div className="px-2 pb-1">
-          <a
-            href="https://github.com/jhl-labs/jpad-web"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: "var(--muted)", fontSize: "10px" }}
-            className="hover:underline"
-          >
-            jpad v1.0.0
-          </a>
-        </div>
       </div>
 
       {showTrash && (
