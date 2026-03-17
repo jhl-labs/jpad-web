@@ -35,10 +35,13 @@ function buildApiUrl(baseUrl: string, path: string) {
   return `${cleanBase}${cleanPath}`;
 }
 
+const DEFAULT_TIMEOUT_MS = 15_000;
+const CHAT_TIMEOUT_MS = 120_000;
+
 async function fetchWithTimeout(
   input: string,
   init: RequestInit,
-  timeoutMs = 15000
+  timeoutMs = DEFAULT_TIMEOUT_MS
 ) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -323,7 +326,7 @@ export async function completeWithProfile(
           stop_sequences: runtime.stop.length > 0 ? runtime.stop : undefined,
           messages: [{ role: "user", content: options.userMessage }],
         }),
-      });
+      }, CHAT_TIMEOUT_MS);
       if (!response.ok) {
         throw new Error(await parseErrorResponse(response));
       }
@@ -364,7 +367,8 @@ export async function completeWithProfile(
               { role: "user", content: options.userMessage },
             ],
           }),
-        }
+        },
+        CHAT_TIMEOUT_MS
       );
       if (!response.ok) {
         throw new Error(await parseErrorResponse(response));
@@ -416,7 +420,8 @@ export async function completeWithProfile(
               seed: runtime.seed ?? undefined,
             },
           }),
-        }
+        },
+        CHAT_TIMEOUT_MS
       );
       if (!response.ok) {
         throw new Error(await parseErrorResponse(response));
@@ -458,7 +463,7 @@ export async function completeWithProfile(
             seed: runtime.seed ?? undefined,
           },
         }),
-      });
+      }, CHAT_TIMEOUT_MS);
       if (!response.ok) {
         throw new Error(await parseErrorResponse(response));
       }
