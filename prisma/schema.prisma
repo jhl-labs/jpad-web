@@ -214,6 +214,7 @@ model Workspace {
   googleCalendarConnections GoogleCalendarConnection[]
   notifications Notification[]
   pageTemplates PageTemplate[]
+  gitSyncLogs   GitSyncLog[]
 
   @@index([slug])
   @@index([organizationId])
@@ -688,10 +689,35 @@ model WorkspaceSettings {
   googleCalendarClientId     String?
   googleCalendarClientSecret String? // encrypted
 
+  // Git remote sync settings
+  gitRemoteUrl        String?
+  gitRemoteToken      String?   // encrypted via encryptSecret()
+  gitRemoteBranch     String?   @default("main")
+  gitSyncMode         String?   // "push_only" | "pull_only" | "bidirectional"
+  gitSyncEnabled      Boolean   @default(false)
+  gitAutoSyncOnSave   Boolean   @default(true)
+  gitWebhookSecret    String?   // encrypted
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model GitSyncLog {
+  id            String    @id @default(uuid())
+  workspaceId   String
+  direction     String    // "push" | "pull"
+  status        String    @default("running")
+  trigger       String    // "auto_save" | "manual" | "webhook"
+  errorMessage  String?   @db.Text
+  filesChanged  Int       @default(0)
+  startedAt     DateTime  @default(now())
+  finishedAt    DateTime?
+
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, startedAt])
 }
 
 model CalendarEvent {
