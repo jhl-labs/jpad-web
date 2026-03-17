@@ -262,6 +262,22 @@ function PageContextMenu({
 
 // ── Sidebar ───────────────────────────────────────────────────
 
+const SIDEBAR_MIN_WIDTH = 200;
+const SIDEBAR_MAX_WIDTH = 400;
+const SIDEBAR_DEFAULT_WIDTH = 240;
+const SIDEBAR_STORAGE_KEY = "jpad:sidebar-width";
+
+function getSavedWidth(): number {
+  try {
+    const saved = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+    if (saved) {
+      const w = parseInt(saved, 10);
+      if (w >= SIDEBAR_MIN_WIDTH && w <= SIDEBAR_MAX_WIDTH) return w;
+    }
+  } catch { /* ignore */ }
+  return SIDEBAR_DEFAULT_WIDTH;
+}
+
 export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDeletePage, onRefresh, isOpen, onToggle }: SidebarProps) {
   const router = useRouter();
   const { pageId } = useParams<{ pageId?: string }>();
@@ -273,6 +289,40 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
   const [wsDropdownOpen, setWsDropdownOpen] = useState(false);
   const [workspaces, setWorkspaces] = useState<{ id: string; name: string }[]>([]);
   const wsDropdownRef = useRef<HTMLDivElement>(null);
+  const [sidebarWidth, setSidebarWidth] = useState(getSavedWidth);
+  const isResizingRef = useRef(false);
+  const sidebarRef = useRef<HTMLElement>(null);
+
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isResizingRef.current = true;
+    const startX = e.clientX;
+    const startWidth = sidebarWidth;
+
+    function onMouseMove(ev: MouseEvent) {
+      if (!isResizingRef.current) return;
+      const newWidth = Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, startWidth + (ev.clientX - startX)));
+      setSidebarWidth(newWidth);
+    }
+
+    function onMouseUp() {
+      isResizingRef.current = false;
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      // 최종 값 저장
+      setSidebarWidth((w) => {
+        try { localStorage.setItem(SIDEBAR_STORAGE_KEY, String(w)); } catch { /* ignore */ }
+        return w;
+      });
+    }
+
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+  }, [sidebarWidth]);
 
   // Workspace dropdown: fetch workspaces when opened, cache results
   const wsListFetchedRef = useRef(false);
@@ -375,13 +425,20 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
 
   return (
     <aside
+      ref={sidebarRef}
       className={`
         h-full flex flex-col overflow-hidden shrink-0
-        transition-all duration-200 ease-in-out
-        ${isOpen ? "w-60" : "w-0"}
+        ${isOpen ? "" : "!w-0"}
         fixed md:relative z-50 md:z-auto
       `}
-      style={{ background: "var(--sidebar-bg)", borderRight: isOpen ? "1px solid var(--border)" : "none" }}
+      style={{
+        width: isOpen ? sidebarWidth : 0,
+        minWidth: isOpen ? SIDEBAR_MIN_WIDTH : 0,
+        maxWidth: SIDEBAR_MAX_WIDTH,
+        background: "var(--sidebar-bg)",
+        borderRight: isOpen ? "1px solid var(--border)" : "none",
+        transition: isResizingRef.current ? "none" : "width 200ms ease-in-out",
+      }}
     >
       {/* 모바일 오버레이 */}
       {isOpen && (
@@ -396,7 +453,6 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
         <div className="mb-2 flex items-center justify-between gap-2">
           <AppLogo />
           <div className="flex items-center gap-1">
-            <NotificationBell workspaceId={workspace.id} />
             {(workspace.currentRole === "owner" || workspace.currentRole === "admin") && (
               <button
                 onClick={() => router.push(`/workspace/${workspace.id}/settings`)}
@@ -627,8 +683,9 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
           </button>
         )}
 
-        {/* 설정 & 피드백 */}
+        {/* 알림 & 설정 & 피드백 */}
         <div className="flex items-center gap-1">
+          <NotificationBell workspaceId={workspace.id} />
           <button
             onClick={() => router.push(`/workspace/${workspace.id}/user-settings`)}
             className="flex items-center gap-2 flex-1 px-2 py-1.5 rounded text-sm hover:opacity-70"
@@ -721,6 +778,20 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
           onRefresh={onRefresh}
           onClose={() => setContextMenu(null)}
         />
+      )}
+
+      {/* Resize handle */}
+      {isOpen && (
+        <div
+          onMouseDown={handleResizeStart}
+          className="absolute top-0 right-0 w-1 h-full cursor-col-resize z-10 group"
+          style={{ background: "transparent" }}
+        >
+          <div
+            className="w-full h-full opacity-0 group-hover:opacity-100 transition-opacity"
+            style={{ background: "var(--primary)" }}
+          />
+        </div>
       )}
     </aside>
   );
