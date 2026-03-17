@@ -282,7 +282,6 @@ export default function PageEditorPage() {
     setAutocompleteError(null);
 
     const cursor = cursorContextRef.current;
-    // Use text up to cursor if available, otherwise full document, otherwise let server read from pageId
     const textForAi = (cursor?.textBefore || content || "").trim();
 
     try {
@@ -296,21 +295,51 @@ export default function PageEditorPage() {
         }),
       });
 
-      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "자동완성에 실패했습니다");
       }
 
-      const markdown = typeof data.result === "string" ? data.result.trim() : "";
-      if (!markdown) {
-        throw new Error("비어 있는 응답이 반환되었습니다");
+      // SSE 스트리밍 읽기
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("스트리밍을 지원하지 않습니다");
+
+      const decoder = new TextDecoder();
+      let accumulated = "";
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const payload = line.slice(6);
+          if (payload === "[DONE]") break;
+          try {
+            const parsed = JSON.parse(payload) as { text?: string };
+            if (parsed.text) {
+              accumulated += parsed.text;
+              // 점진적으로 에디터에 삽입
+              setPendingInsertMarkdown({
+                key: Date.now(),
+                markdown: accumulated,
+                afterBlockId: cursor?.blockId,
+              });
+            }
+          } catch {
+            // JSON 파싱 실패 무시
+          }
+        }
       }
 
-      setPendingInsertMarkdown({
-        key: Date.now(),
-        markdown,
-        afterBlockId: cursor?.blockId,
-      });
+      if (!accumulated.trim()) {
+        throw new Error("비어 있는 응답이 반환되었습니다");
+      }
     } catch (error) {
       setAutocompleteError(
         error instanceof Error ? error.message : "자동완성에 실패했습니다"
