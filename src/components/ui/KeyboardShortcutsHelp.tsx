@@ -5,8 +5,8 @@ import { X, Keyboard } from "lucide-react";
 
 const shortcuts = [
   { keys: ["Ctrl", "K"], description: "Quick Switcher (검색)" },
-  { keys: ["Ctrl", "J"], description: "AI 이어쓰기" },
-  { keys: ["Ctrl", "Shift", "J"], description: "AI 패널 열기" },
+  { keys: ["Ctrl", "."], description: "AI 이어쓰기" },
+  { keys: ["Ctrl", "Shift", "."], description: "AI 패널 열기" },
   { keys: ["/"], description: "슬래시 메뉴" },
   { keys: ["Ctrl", "Z"], description: "실행취소" },
   { keys: ["Ctrl", "S"], description: "저장 (수동)" },

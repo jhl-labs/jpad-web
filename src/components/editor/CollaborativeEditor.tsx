@@ -513,15 +513,16 @@ function InnerEditor({
     };
   }, []);
 
-  // Keyboard shortcut: Ctrl+J or Cmd+J to trigger AI autocomplete
+  // Keyboard shortcut: Ctrl+. or Cmd+. to trigger AI autocomplete
+  // Ctrl+Shift+. or Cmd+Shift+. to open AI panel
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "j") {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === ".") {
         e.preventDefault();
         window.dispatchEvent(new CustomEvent(AI_EVENTS.OPEN_PANEL));
         return;
       }
-      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === "j") {
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === ".") {
         e.preventDefault();
         window.dispatchEvent(new CustomEvent(AI_EVENTS.AUTOCOMPLETE));
       }
@@ -800,7 +801,7 @@ function InnerEditor({
       items: [
         {
           label: "AI 이어쓰기",
-          shortcut: "Ctrl+J",
+          shortcut: "Ctrl+.",
           action: () => window.dispatchEvent(new CustomEvent(AI_EVENTS.AUTOCOMPLETE)),
         },
         {

@@ -294,7 +294,7 @@ export function OnboardingChecklist({
                 { keys: "Ctrl + K", desc: "빠른 검색 / 페이지 전환" },
                 { keys: "Ctrl + N", desc: "새 페이지 만들기" },
                 { keys: "Ctrl + S", desc: "저장" },
-                { keys: "Ctrl + Shift + J", desc: "AI 패널 열기" },
+                { keys: "Ctrl + Shift + .", desc: "AI 패널 열기" },
                 { keys: "Ctrl + B", desc: "굵게" },
                 { keys: "Ctrl + I", desc: "기울임" },
                 { keys: "Ctrl + /", desc: "슬래시 명령어" },
