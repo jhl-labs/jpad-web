@@ -49,6 +49,59 @@ interface SidebarProps {
   onToggle: () => void;
 }
 
+// ── Blank Area Context Menu ───────────────────────────────────
+
+function BlankAreaContextMenu({
+  x, y, onCreatePage, onImport, onClose,
+}: {
+  x: number;
+  y: number;
+  onCreatePage: () => void;
+  onImport: () => void;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    function handleClick() { onClose(); }
+    function handleEsc(e: KeyboardEvent) { if (e.key === "Escape") onClose(); }
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleEsc);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleEsc);
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed z-[100] rounded-lg shadow-xl py-1 min-w-[160px]"
+      style={{
+        left: x,
+        top: y,
+        background: "var(--background)",
+        border: "1px solid var(--border)",
+      }}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
+      <button
+        onClick={onCreatePage}
+        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-left"
+        onMouseEnter={(e) => { e.currentTarget.style.background = "var(--sidebar-hover)"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+      >
+        <Plus size={14} /> 새 페이지
+      </button>
+      <button
+        onClick={onImport}
+        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-left"
+        onMouseEnter={(e) => { e.currentTarget.style.background = "var(--sidebar-hover)"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+      >
+        <Upload size={14} /> 가져오기
+      </button>
+    </div>
+  );
+}
+
 // ── Context Menu ──────────────────────────────────────────────
 
 interface ContextMenuState {
@@ -286,6 +339,7 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
   const [showImport, setShowImport] = useState(false);
   const [trashCount, setTrashCount] = useState(0);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+  const [blankContextMenu, setBlankContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [wsDropdownOpen, setWsDropdownOpen] = useState(false);
   const [workspaces, setWorkspaces] = useState<{ id: string; name: string }[]>([]);
   const wsDropdownRef = useRef<HTMLDivElement>(null);
@@ -563,7 +617,16 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
       </div>
 
       {/* Navigation + Page tree */}
-      <div className="flex-1 overflow-auto">
+      <div
+        className="flex-1 overflow-auto"
+        onContextMenu={(e) => {
+          // 페이지 아이템의 컨텍스트 메뉴가 아닌 경우 (빈 공간)
+          if (canManagePages && !(e.target as HTMLElement).closest("[role='treeitem']")) {
+            e.preventDefault();
+            setBlankContextMenu({ x: e.clientX, y: e.clientY });
+          }
+        }}
+      >
         {/* 네비게이션 메뉴 */}
         <div className="px-2 pt-2 pb-1">
           {[
@@ -808,6 +871,17 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
           onDeletePage={onDeletePage}
           onRefresh={onRefresh}
           onClose={() => setContextMenu(null)}
+        />
+      )}
+
+      {/* Blank area context menu */}
+      {blankContextMenu && (
+        <BlankAreaContextMenu
+          x={blankContextMenu.x}
+          y={blankContextMenu.y}
+          onCreatePage={() => { onCreatePage(); setBlankContextMenu(null); }}
+          onImport={() => { setShowImport(true); setBlankContextMenu(null); }}
+          onClose={() => setBlankContextMenu(null)}
         />
       )}
 
