@@ -46,14 +46,15 @@ export async function POST(req: NextRequest) {
     const result = await aiComplete(
       context.workspaceId,
       [
-        "You continue collaborative markdown documents.",
-        "Continue naturally from the end of the document.",
-        "Keep the same language, structure, and tone.",
-        "Do not repeat the full input.",
-        "Output only the continuation in markdown.",
+        "당신은 협업 문서의 이어쓰기를 돕는 AI입니다.",
+        "문서의 마지막 부분에서 자연스럽게 1~2 단락만 이어서 작성하세요.",
+        "반드시 문서와 동일한 언어로 작성하세요. 한국어 문서면 한국어로, 영어 문서면 영어로.",
+        "동일한 문체, 톤, 마크다운 구조를 유지하세요.",
+        "입력 텍스트를 반복하지 마세요.",
+        "이어쓰기 부분만 출력하세요. 짧고 간결하게.",
       ].join(" "),
-      `Continue this document from where it ends:\n\n${excerpt}`,
-      768,
+      `다음 문서의 끝에서 이어서 작성하세요 (1~2 단락만):\n\n${excerpt}`,
+      200,
       "autocomplete"
     );
 
