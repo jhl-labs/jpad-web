@@ -1,6 +1,6 @@
 import { AiTaskType } from "@/lib/aiConfig";
 import { checkWorkspaceAccess } from "@/lib/auth/helpers";
-import { completeWithProfile } from "@/lib/llmProviders";
+import { completeWithProfile, streamWithProfile } from "@/lib/llmProviders";
 import { getPageAccessContext } from "@/lib/pageAccess";
 import { resolveAiProfileForTask } from "@/lib/aiSettings";
 import { getEffectiveWorkspaceSettings } from "@/lib/workspaceSettings";
@@ -119,19 +119,14 @@ export async function* aiStreamText(
   maxTokens = 2048,
   task: AiTaskType = "general"
 ) {
-  const text = await aiComplete(
-    workspaceId,
+  const runtime = await getWorkspaceAiRuntime(workspaceId, task, maxTokens);
+
+  for await (const chunk of streamWithProfile(runtime.profile, {
     systemPrompt,
     userMessage,
-    maxTokens,
-    task
-  );
-
-  if (!text) return;
-
-  const chunkSize = 96;
-  for (let index = 0; index < text.length; index += chunkSize) {
-    yield text.slice(index, index + chunkSize);
+    maxTokens: runtime.maxTokens,
+  })) {
+    yield chunk;
   }
 }
 

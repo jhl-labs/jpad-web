@@ -587,6 +587,133 @@ export async function embedTextWithProfile(
   }
 }
 
+export async function* streamWithProfile(
+  profile: ResolvedAiProfile,
+  options: { systemPrompt: string; userMessage: string; maxTokens?: number }
+): AsyncGenerator<string> {
+  const maxTokens = options.maxTokens || profile.maxTokens || 2048;
+
+  // OpenAI / OpenAI-compatible / Ollama 에서 스트리밍 지원
+  if (profile.provider === "openai" || profile.provider === "openai-compatible") {
+    const response = await fetch(
+      buildApiUrl(profile.baseUrl, "/v1/chat/completions"),
+      {
+        method: "POST",
+        headers: mergeHeaders({
+          "content-type": "application/json",
+          authorization: `Bearer ${profile.apiKey}`,
+        }, profile.customHeaders),
+        body: JSON.stringify({
+          model: profile.model,
+          stream: true,
+          temperature: profile.temperature ?? undefined,
+          max_tokens: maxTokens,
+          messages: [
+            { role: "system", content: options.systemPrompt },
+            { role: "user", content: options.userMessage },
+          ],
+        }),
+      }
+    );
+
+    if (!response.ok) throw new Error(await parseErrorResponse(response));
+    if (!response.body) throw new Error("No response body");
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        const payload = line.slice(6).trim();
+        if (payload === "[DONE]") return;
+        try {
+          const chunk = JSON.parse(payload) as {
+            choices?: Array<{ delta?: { content?: string; reasoning?: string } }>;
+          };
+          const delta = chunk.choices?.[0]?.delta;
+          const text = delta?.content || delta?.reasoning || "";
+          if (text) yield text;
+        } catch {
+          // skip malformed chunks
+        }
+      }
+    }
+    return;
+  }
+
+  if (profile.provider === "ollama") {
+    const ollamaHeaders: Record<string, string> = { "content-type": "application/json" };
+    if (profile.apiKey) ollamaHeaders.authorization = `Bearer ${profile.apiKey}`;
+
+    const response = await fetch(
+      buildApiUrl(profile.baseUrl, "/api/chat"),
+      {
+        method: "POST",
+        headers: mergeHeaders(ollamaHeaders, profile.customHeaders),
+        body: JSON.stringify({
+          model: profile.model,
+          stream: true,
+          think: false,
+          messages: [
+            { role: "system", content: options.systemPrompt },
+            { role: "user", content: options.userMessage },
+          ],
+          options: {
+            temperature: profile.temperature ?? undefined,
+            num_predict: maxTokens,
+          },
+        }),
+      }
+    );
+
+    if (!response.ok) throw new Error(await parseErrorResponse(response));
+    if (!response.body) throw new Error("No response body");
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          const chunk = JSON.parse(line) as { message?: { content?: string }; done?: boolean };
+          if (chunk.done) return;
+          if (chunk.message?.content) yield chunk.message.content;
+        } catch {
+          // skip
+        }
+      }
+    }
+    return;
+  }
+
+  // Fallback: 비스트리밍 — 전체 텍스트를 한번에 받아서 청크로 반환
+  const text = await completeWithProfile(profile, options);
+  if (text) {
+    const chunkSize = 48;
+    for (let i = 0; i < text.length; i += chunkSize) {
+      yield text.slice(i, i + chunkSize);
+    }
+  }
+}
+
 export async function runTestGenerationForProfile(
   profile: WorkspaceAiProfile,
   prompt = "Reply with exactly OK."
