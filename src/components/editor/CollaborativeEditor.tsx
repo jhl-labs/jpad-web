@@ -12,8 +12,9 @@ import type { BlockNoteEditor } from "@blocknote/core";
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import { blocksToMarkdown } from "@/lib/markdown/serializer";
-import { Sparkles, FileText, Expand, Languages, SpellCheck } from "lucide-react";
+import { Sparkles, FileText, Expand, Languages, SpellCheck, Image as ImageIcon } from "lucide-react";
 import { AI_EVENTS } from "@/lib/events";
+import { uploadImageToPage, isImageFile } from "./imageUpload";
 
 const SYNC_FALLBACK_MS = 3000;
 const AUTO_SAVE_DEBOUNCE_MS = 2000;
@@ -80,7 +81,37 @@ interface CollaborationState {
 // Slash menu: AI commands + useful block shortcuts
 // ---------------------------------------------------------------------------
 
-function getCustomSlashMenuItems(editor: BlockNoteEditor) {
+function triggerImageFilePicker(
+  editor: BlockNoteEditor,
+  workspaceId: string,
+  pageId: string
+) {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "image/jpeg,image/png,image/gif,image/webp,image/svg+xml";
+  input.onchange = async () => {
+    const file = input.files?.[0];
+    if (!file || !isImageFile(file)) return;
+    const result = await uploadImageToPage(file, workspaceId, pageId);
+    if (result?.url) {
+      const cursor = editor.getTextCursorPosition();
+      if (cursor?.block) {
+        editor.insertBlocks(
+          [{ type: "image", props: { url: result.url } as Record<string, string> }],
+          cursor.block,
+          "after"
+        );
+      }
+    }
+  };
+  input.click();
+}
+
+function getCustomSlashMenuItems(
+  editor: BlockNoteEditor,
+  workspaceId: string,
+  pageId: string
+) {
   const defaults = getDefaultSlashMenuItems(editor);
 
   const aiItems = [
@@ -143,6 +174,15 @@ function getCustomSlashMenuItems(editor: BlockNoteEditor) {
   ];
 
   const utilItems = [
+    {
+      title: "이미지",
+      subtext: "이미지 파일을 업로드합니다",
+      group: "기본 블록",
+      aliases: ["image", "img", "사진"],
+      onItemClick: () => {
+        triggerImageFilePicker(editor, workspaceId, pageId);
+      },
+    },
     {
       title: "구분선",
       subtext: "가로 구분선을 삽입합니다",
@@ -216,6 +256,8 @@ function getCustomSlashMenuItems(editor: BlockNoteEditor) {
  */
 function InnerEditor({
   collaboration,
+  workspaceId,
+  pageId,
   initialContent,
   readOnly,
   resetVersion,
@@ -227,6 +269,8 @@ function InnerEditor({
   onAwarenessChange,
 }: {
   collaboration: CollaborationState;
+  workspaceId: string;
+  pageId: string;
   initialContent: string;
   readOnly: boolean;
   resetVersion: number;
@@ -255,6 +299,9 @@ function InnerEditor({
       .padStart(6, "0")
   );
 
+  const [imageUploading, setImageUploading] = useState(false);
+  const [dragOverEditor, setDragOverEditor] = useState(false);
+
   const updateSaveStatus = useCallback(
     (status: SaveStatus) => {
       setSaveStatus(status);
@@ -263,7 +310,22 @@ function InnerEditor({
     [onSaveStatusChange]
   );
 
+  const handleUploadFile = useCallback(
+    async (file: File) => {
+      if (!isImageFile(file)) return "";
+      setImageUploading(true);
+      try {
+        const result = await uploadImageToPage(file, workspaceId, pageId);
+        return result?.url || "";
+      } finally {
+        setImageUploading(false);
+      }
+    },
+    [workspaceId, pageId]
+  );
+
   const editor = useCreateBlockNote({
+    uploadFile: handleUploadFile,
     collaboration: {
       provider: collaboration.provider ?? undefined,
       fragment: collaboration.doc.getXmlFragment("blocknote"),
@@ -762,8 +824,35 @@ function InnerEditor({
     },
   ], [editor]);
 
+  const handleEditorDragOver = useCallback((e: React.DragEvent) => {
+    if (readOnly) return;
+    const hasFiles = e.dataTransfer.types.includes("Files");
+    if (hasFiles) {
+      e.preventDefault();
+      setDragOverEditor(true);
+    }
+  }, [readOnly]);
+
+  const handleEditorDragLeave = useCallback((e: React.DragEvent) => {
+    // Only hide if leaving the container (not entering a child)
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+    setDragOverEditor(false);
+  }, []);
+
+  const handleEditorDrop = useCallback(() => {
+    setDragOverEditor(false);
+    // BlockNote's uploadFile handles the actual upload via its built-in drop handler
+  }, []);
+
   return (
-    <div className="relative" onContextMenu={handleContextMenu} ref={editorContainerRef}>
+    <div
+      className="relative"
+      onContextMenu={handleContextMenu}
+      onDragOver={handleEditorDragOver}
+      onDragLeave={handleEditorDragLeave}
+      onDrop={handleEditorDrop}
+      ref={editorContainerRef}
+    >
       {/* Offline banner */}
       {!connected && (
         <div
@@ -919,6 +1008,50 @@ function InnerEditor({
           {connected ? "동기화" : "오프라인"}
         </span>
       </div>
+      {/* Drag & drop overlay */}
+      {dragOverEditor && (
+        <div
+          className="absolute inset-0 z-20 flex items-center justify-center rounded-lg pointer-events-none"
+          style={{
+            border: "2px dashed var(--primary)",
+            background: "rgba(59,130,246,0.06)",
+          }}
+        >
+          <div
+            className="flex flex-col items-center gap-2 px-6 py-4 rounded-lg"
+            style={{
+              background: "var(--background)",
+              border: "1px solid var(--border)",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+            }}
+          >
+            <ImageIcon size={24} style={{ color: "var(--primary)" }} />
+            <span className="text-sm font-medium" style={{ color: "var(--foreground)" }}>
+              이미지를 드롭하세요
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Upload progress indicator */}
+      {imageUploading && (
+        <div
+          className="absolute top-0 left-0 right-0 z-20 flex items-center justify-center py-2"
+          style={{
+            background: "rgba(59,130,246,0.08)",
+            borderBottom: "1px solid rgba(59,130,246,0.2)",
+          }}
+        >
+          <div className="flex items-center gap-2 text-xs font-medium" style={{ color: "var(--primary)" }}>
+            <span
+              className="w-3 h-3 rounded-full animate-pulse"
+              style={{ background: "var(--primary)" }}
+            />
+            이미지 업로드 중...
+          </div>
+        </div>
+      )}
+
       <BlockNoteView
         editor={editor}
         editable={!readOnly}
@@ -929,7 +1062,7 @@ function InnerEditor({
         <SuggestionMenuController
           triggerCharacter="/"
           getItems={async (query) =>
-            filterSuggestionItems(getCustomSlashMenuItems(editor), query)
+            filterSuggestionItems(getCustomSlashMenuItems(editor, workspaceId, pageId), query)
           }
         />
       </BlockNoteView>
@@ -1038,6 +1171,8 @@ export function CollaborativeEditor({
     <InnerEditor
       key={`${workspaceId}:${pageId}`}
       collaboration={collaboration}
+      workspaceId={workspaceId}
+      pageId={pageId}
       initialContent={initialContent}
       readOnly={readOnly}
       resetVersion={resetVersion}

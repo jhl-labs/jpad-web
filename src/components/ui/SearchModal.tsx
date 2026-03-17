@@ -215,9 +215,18 @@ export function SearchModal({ workspaceId, isOpen, onClose }: SearchModalProps) 
                 {result.snippet && (
                   <p
                     className="text-xs mt-1 line-clamp-2"
-                    style={{ color: "var(--muted)" }}
+                    style={{
+                      color: "var(--muted)",
+                      ...(result.matchType === "semantic"
+                        ? {
+                            background: "rgba(59,130,246,0.06)",
+                            borderRadius: 3,
+                            padding: "2px 4px",
+                          }
+                        : {}),
+                    }}
                   >
-                    {result.snippet}
+                    {highlightKeyword(result.snippet, query)}
                   </p>
                 )}
               </div>
