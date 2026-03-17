@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { withLock } from "./lock";
 import { triggerAutoSync } from "./remote";
+import { logError } from "@/lib/logger";
 
 const REPOS_DIR = path.join(process.cwd(), "data", "repos");
 
@@ -59,7 +60,9 @@ export async function savePage(
     });
 
     // Fire-and-forget auto-sync to remote
-    void triggerAutoSync(workspaceId).catch(() => {});
+    void triggerAutoSync(workspaceId).catch((e) =>
+      logError("git.auto_sync.trigger_error", e, { workspaceId })
+    );
 
     return sha;
   });

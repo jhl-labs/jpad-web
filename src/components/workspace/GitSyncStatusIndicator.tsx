@@ -37,8 +37,8 @@ export function GitSyncStatusIndicator({ workspaceId }: Props) {
       } else if (latest.status === "error") {
         setState("error");
       }
-    } catch (_error: unknown) {
-      // Silently fail
+    } catch (err) {
+      console.warn("[GitSyncStatus] fetch failed:", err);
     }
   }, [workspaceId]);
 
@@ -49,8 +49,8 @@ export function GitSyncStatusIndicator({ workspaceId }: Props) {
 
       const data = await res.json();
       setEnabled(data.gitSyncEnabled && !!data.gitRemoteUrl);
-    } catch (_error: unknown) {
-      // Silently fail
+    } catch (err) {
+      console.warn("[GitSyncStatus] fetch failed:", err);
     }
   }, [workspaceId]);
 

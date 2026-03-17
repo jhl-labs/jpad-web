@@ -10,7 +10,11 @@ import { logError } from "@/lib/logger";
 const REPOS_DIR = path.join(process.cwd(), "data", "repos");
 
 function getRepoPath(workspaceId: string) {
-  return path.join(REPOS_DIR, workspaceId);
+  const resolved = path.resolve(REPOS_DIR, workspaceId);
+  if (!resolved.startsWith(REPOS_DIR)) {
+    throw new Error("Invalid workspaceId");
+  }
+  return resolved;
 }
 
 interface GitSyncSettings {
@@ -167,8 +171,8 @@ export async function pullFromRemote(
       });
       // walk returns results but we only need the side-effect count
       void trees;
-    } catch (_error: unknown) {
-      // If tree walk fails, just report 0
+    } catch (err) {
+      logError("git.sync.tree_walk_failed", err, { workspaceId });
     }
 
     return { filesChanged };
