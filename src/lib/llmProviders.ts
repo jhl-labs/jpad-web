@@ -84,28 +84,42 @@ function stripThinkingProcess(text: string): string {
   if (!text) return "";
   // <think>...</think> 태그 제거
   let cleaned = text.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
-  // "Thinking Process:" 이후의 사고 과정 패턴 제거 — 실제 출력 부분만 추출
-  // 사고 과정 뒤에 실제 답변이 있는 경우: 마지막 마크다운 블록을 추출
-  const thinkingIdx = cleaned.indexOf("Thinking Process:");
-  if (thinkingIdx === 0) {
-    // 전체가 사고 과정인 경우 — 마크다운 헤딩/리스트가 시작되는 부분을 찾음
-    const outputMarkers = ["\n## ", "\n### ", "\n- ", "\n1. ", "\n**"];
-    let outputStart = -1;
-    for (const marker of outputMarkers) {
-      const idx = cleaned.lastIndexOf(marker);
-      if (idx > 0 && (outputStart === -1 || idx < outputStart)) {
-        // 가장 앞의 마크다운 마커를 찾되, 사고 과정 뒤에 있는 것
-        const firstIdx = cleaned.indexOf(marker, cleaned.indexOf("\n\n", 100));
-        if (firstIdx > 0) outputStart = Math.min(outputStart === -1 ? firstIdx : outputStart, firstIdx);
+
+  // "Final Version:", "Final Output:", "Output:" 등의 마커 뒤의 실제 답변 추출
+  const finalMarkers = [
+    /\*\s*Final Version:\s*\n/i,
+    /\*\s*Final Output:\s*\n/i,
+    /\*\s*Output:\s*\n/i,
+    /Final Answer:\s*\n/i,
+    /\n---\s*\n/,
+  ];
+  for (const marker of finalMarkers) {
+    const match = cleaned.search(marker);
+    if (match >= 0) {
+      const markerMatch = cleaned.slice(match).match(marker);
+      if (markerMatch) {
+        const afterMarker = cleaned.slice(match + markerMatch[0].length).trim();
+        if (afterMarker.length > 20) return afterMarker;
       }
     }
-    if (outputStart > 0) {
-      cleaned = cleaned.slice(outputStart).trim();
-    } else {
-      // 마크다운 마커가 없으면 빈 문자열 반환 (순수 사고 과정)
-      return "";
-    }
   }
+
+  // "Thinking Process:" 로 시작하면 — 한국어/CJK 텍스트 블록을 찾아 추출
+  if (/^Thinking Process:/i.test(cleaned)) {
+    // 연속된 한국어/CJK 문장이 포함된 마지막 블록 추출
+    const cjkBlocks = cleaned.match(/[\uAC00-\uD7AF\u3040-\u30FF\u4E00-\u9FFF].{50,}/g);
+    if (cjkBlocks && cjkBlocks.length > 0) {
+      // 가장 긴 CJK 블록을 사용
+      const longest = cjkBlocks.reduce((a, b) => a.length >= b.length ? a : b);
+      // 해당 블록의 시작 위치부터 끝까지 추출
+      const blockStart = cleaned.lastIndexOf(longest);
+      if (blockStart > 0) {
+        return cleaned.slice(blockStart).trim();
+      }
+    }
+    return "";
+  }
+
   return cleaned;
 }
 
