@@ -54,8 +54,11 @@ services:
     volumes:
       - miniodata:/data
 
+  # 선택적 서비스 — 필요 시 --profile 옵션으로 활성화
+  # docker compose --profile clamav --profile qdrant up -d
   clamav:
     image: clamav/clamav:stable
+    profiles: [clamav]
     ports:
       - "3310:3310"
     volumes:
@@ -63,6 +66,7 @@ services:
 
   qdrant:
     image: qdrant/qdrant:v1.13.6
+    profiles: [qdrant]
     ports:
       - "6333:6333"
       - "6334:6334"
@@ -71,6 +75,7 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.1.4
+    profiles: [keycloak]
     command: start-dev --import-realm
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
