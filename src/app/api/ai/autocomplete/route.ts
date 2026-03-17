@@ -56,6 +56,9 @@ export async function POST(req: NextRequest) {
     const readable = new ReadableStream({
       async start(controller) {
         try {
+          let accumulated = "";
+          let isThinking = false;
+
           for await (const chunk of aiStreamText(
             context.workspaceId,
             SYSTEM_PROMPT,
@@ -63,10 +66,57 @@ export async function POST(req: NextRequest) {
             1500,
             "autocomplete"
           )) {
+            accumulated += chunk;
+
+            // 초기 50자 이내에 thinking 패턴 감지
+            if (accumulated.length < 60 && !isThinking) {
+              if (/^(Thinking Process|<think>|\*\*Analyze|The user)/i.test(accumulated.trim())) {
+                isThinking = true;
+                continue;
+              }
+            }
+
+            if (isThinking) {
+              // thinking 중 — 수집만, 전송 안 함
+              continue;
+            }
+
             controller.enqueue(
               encoder.encode(`data: ${JSON.stringify({ text: chunk })}\n\n`)
             );
           }
+
+          // thinking 모델이었으면 전체에서 답변 추출 후 전송
+          if (isThinking && accumulated) {
+            // 동적 import 대신 간단한 추출
+            const markers = [/\*\s*(Revised|Final Version|Final Output):\s*\n/i];
+            let answer = "";
+            for (const marker of markers) {
+              const match = accumulated.search(marker);
+              if (match >= 0) {
+                const m = accumulated.slice(match).match(marker);
+                if (m) {
+                  answer = accumulated.slice(match + m[0].length).trim();
+                  break;
+                }
+              }
+            }
+            // CJK 블록 fallback
+            if (!answer) {
+              const cjkBlocks = accumulated.match(/[\uAC00-\uD7AF\u3040-\u30FF\u4E00-\u9FFF].{50,}/g);
+              if (cjkBlocks) {
+                answer = cjkBlocks.reduce((a, b) => a.length >= b.length ? a : b);
+                const idx = accumulated.lastIndexOf(answer);
+                if (idx > 0) answer = accumulated.slice(idx).trim();
+              }
+            }
+            if (answer) {
+              controller.enqueue(
+                encoder.encode(`data: ${JSON.stringify({ text: answer })}\n\n`)
+              );
+            }
+          }
+
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
           controller.close();
         } catch (error) {

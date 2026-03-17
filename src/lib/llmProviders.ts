@@ -595,8 +595,7 @@ export async function* streamWithProfile(
 
   // OpenAI / OpenAI-compatible 스트리밍
   if (profile.provider === "openai" || profile.provider === "openai-compatible") {
-    // 먼저 스트리밍 시작하여 thinking 모델인지 감지
-    const streamRes = await fetch(
+    const response = await fetch(
       buildApiUrl(profile.baseUrl, "/v1/chat/completions"),
       {
         method: "POST",
@@ -617,78 +616,12 @@ export async function* streamWithProfile(
       }
     );
 
-    if (!streamRes.ok) throw new Error(await parseErrorResponse(streamRes));
-    if (!streamRes.body) throw new Error("No response body");
+    if (!response.ok) throw new Error(await parseErrorResponse(response));
+    if (!response.body) throw new Error("No response body");
 
-    // 첫 몇 청크를 읽어 reasoning 필드가 있는지 확인
-    const reader = streamRes.body.getReader();
+    const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
-    let hasReasoning = false;
-    let firstChunksChecked = false;
-
-    // 첫 청크 읽기
-    const { done: firstDone, value: firstValue } = await reader.read();
-    if (!firstDone && firstValue) {
-      buffer = decoder.decode(firstValue, { stream: true });
-      if (buffer.includes('"reasoning"')) {
-        hasReasoning = true;
-      }
-      firstChunksChecked = true;
-    }
-
-    if (hasReasoning) {
-      // Thinking 모델 감지 → 스트림 중단, 비스트리밍으로 재요청
-      await reader.cancel();
-
-      const text = await completeWithProfile(profile, options);
-      if (text) {
-        const chunkSize = 24;
-        for (let i = 0; i < text.length; i += chunkSize) {
-          yield text.slice(i, i + chunkSize);
-        }
-      }
-      return;
-    }
-
-    // 일반 모델 — 정상 스트리밍 계속
-    // 먼저 첫 번째 버퍼에서 content 추출
-    const processBuffer = (buf: string): string => {
-      let remaining = "";
-      const lines = buf.split("\n");
-      remaining = lines.pop() || "";
-      for (const line of lines) {
-        if (!line.startsWith("data: ")) continue;
-        const payload = line.slice(6).trim();
-        if (payload === "[DONE]") continue;
-        try {
-          const chunk = JSON.parse(payload) as {
-            choices?: Array<{ delta?: { content?: string } }>;
-          };
-          const c = chunk.choices?.[0]?.delta?.content;
-          if (c) remaining += c; // reuse remaining as content accumulator
-        } catch { /* skip */ }
-      }
-      return remaining;
-    };
-
-    // 첫 버퍼 처리
-    if (firstChunksChecked && buffer) {
-      const lines = buffer.split("\n");
-      buffer = lines.pop() || "";
-      for (const line of lines) {
-        if (!line.startsWith("data: ")) continue;
-        const payload = line.slice(6).trim();
-        if (payload === "[DONE]") return;
-        try {
-          const chunk = JSON.parse(payload) as {
-            choices?: Array<{ delta?: { content?: string } }>;
-          };
-          const c = chunk.choices?.[0]?.delta?.content;
-          if (c) yield c;
-        } catch { /* skip */ }
-      }
-    }
 
     while (true) {
       const { done, value } = await reader.read();
@@ -704,10 +637,12 @@ export async function* streamWithProfile(
         if (payload === "[DONE]") return;
         try {
           const chunk = JSON.parse(payload) as {
-            choices?: Array<{ delta?: { content?: string } }>;
+            choices?: Array<{ delta?: { content?: string; reasoning?: string } }>;
           };
-          const c = chunk.choices?.[0]?.delta?.content;
-          if (c) yield c;
+          const delta = chunk.choices?.[0]?.delta;
+          // content가 있으면 우선 사용, 없으면 reasoning 사용
+          const text = delta?.content || delta?.reasoning || "";
+          if (text) yield text;
         } catch { /* skip */ }
       }
     }
