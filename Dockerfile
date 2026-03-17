@@ -3,10 +3,14 @@ WORKDIR /app
 
 FROM base AS deps
 COPY package.json bun.lock ./
+COPY prisma ./prisma
+COPY prisma.config.ts ./
 RUN bun install --frozen-lockfile --production
 
 FROM base AS build
 COPY package.json bun.lock ./
+COPY prisma ./prisma
+COPY prisma.config.ts ./
 RUN bun install --frozen-lockfile
 COPY . .
 RUN bunx prisma generate && bun run build
