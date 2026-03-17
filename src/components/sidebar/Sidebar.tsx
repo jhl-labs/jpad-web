@@ -530,13 +530,39 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
         </div>
       </div>
 
-      {/* Page tree */}
-      <div className="flex-1 overflow-auto p-2">
+      {/* Navigation + Page tree */}
+      <div className="flex-1 overflow-auto">
+        {/* 네비게이션 메뉴 */}
+        <div className="px-2 pt-2 pb-1">
+          {[
+            { href: "daily", icon: <BookOpen size={14} />, label: "오늘의 노트" },
+            { href: "graph", icon: <Network size={14} />, label: "지식 그래프" },
+            { href: "calendar", icon: <Calendar size={14} />, label: "캘린더" },
+            { href: "todos", icon: <CheckSquare size={14} />, label: "할 일" },
+          ].map((nav) => (
+            <button
+              key={nav.href}
+              onClick={() => router.push(`/workspace/${workspace.id}/${nav.href}`)}
+              className="flex items-center gap-2 w-full px-2 py-1.5 rounded text-sm"
+              style={{
+                color: "var(--foreground)",
+                opacity: 0.7,
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "var(--sidebar-hover)"; e.currentTarget.style.opacity = "1"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.opacity = "0.7"; }}
+            >
+              {nav.icon} {nav.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="mx-2 my-1" style={{ borderTop: "1px solid var(--border)" }} />
+
         {/* 즐겨찾기 */}
         {favorites.length > 0 && (
-          <div className="mb-3">
+          <div className="px-2 mb-1">
             <div className="flex items-center mb-1 px-1">
-              <span className="text-xs font-medium uppercase" style={{ color: "var(--muted)" }}>
+              <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>
                 즐겨찾기
               </span>
             </div>
@@ -592,38 +618,22 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
           </div>
         )}
 
-        <div className="flex items-center justify-between mb-1 px-1">
-          <span className="text-xs font-medium uppercase" style={{ color: "var(--muted)" }}>
-            페이지
-          </span>
-          {canManagePages && (
-            <button
-              onClick={() => onCreatePage()}
-              className="p-0.5 rounded hover:opacity-70"
-              title="새 페이지"
-            >
-              <Plus size={14} />
-            </button>
-          )}
-        </div>
-
-        {[
-          { href: "daily", icon: <BookOpen size={14} />, label: "오늘의 노트" },
-          { href: "graph", icon: <Network size={14} />, label: "지식 그래프" },
-          { href: "calendar", icon: <Calendar size={14} />, label: "캘린더" },
-          { href: "todos", icon: <CheckSquare size={14} />, label: "할 일" },
-        ].map((nav) => (
-          <button
-            key={nav.href}
-            onClick={() => router.push(`/workspace/${workspace.id}/${nav.href}`)}
-            className="flex items-center gap-2 w-full px-2 py-1 rounded text-sm hover:opacity-70 mb-1"
-            style={{ color: "var(--muted)" }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "var(--sidebar-hover)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-          >
-            {nav.icon} {nav.label}
-          </button>
-        ))}
+        {/* 페이지 트리 */}
+        <div className="px-2 pb-2">
+          <div className="flex items-center justify-between mb-1 px-1">
+            <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>
+              페이지
+            </span>
+            {canManagePages && (
+              <button
+                onClick={() => onCreatePage()}
+                className="p-0.5 rounded hover:opacity-70"
+                title="새 페이지"
+              >
+                <Plus size={14} />
+              </button>
+            )}
+          </div>
 
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={rootPages.map((p) => p.id)} strategy={verticalListSortingStrategy}>
@@ -650,6 +660,7 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
             페이지가 없습니다
           </p>
         )}
+        </div>
       </div>
 
       {/* Footer */}
