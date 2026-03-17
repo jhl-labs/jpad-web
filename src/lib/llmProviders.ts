@@ -622,6 +622,9 @@ export async function* streamWithProfile(
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
+    let accumulated = "";
+    let isThinking = false;
+    let thinkingDone = false;
 
     while (true) {
       const { done, value } = await reader.read();
@@ -634,18 +637,56 @@ export async function* streamWithProfile(
       for (const line of lines) {
         if (!line.startsWith("data: ")) continue;
         const payload = line.slice(6).trim();
-        if (payload === "[DONE]") return;
+        if (payload === "[DONE]") {
+          // 스트리밍 끝 — thinking만 있었다면 stripThinkingProcess로 추출
+          if (isThinking && !thinkingDone && accumulated) {
+            const cleaned = stripThinkingProcess(accumulated);
+            if (cleaned) yield cleaned;
+          }
+          return;
+        }
         try {
           const chunk = JSON.parse(payload) as {
             choices?: Array<{ delta?: { content?: string; reasoning?: string } }>;
           };
           const delta = chunk.choices?.[0]?.delta;
-          const text = delta?.content || delta?.reasoning || "";
-          if (text) yield text;
+          const text = delta?.content || "";
+
+          if (!text) continue;
+
+          accumulated += text;
+
+          // thinking 패턴 감지 (첫 50자 이내에 "Thinking Process:" 등이 나오면)
+          if (!thinkingDone && accumulated.length < 60) {
+            if (/^(Thinking Process|<think>|\*\*Analyze)/i.test(accumulated.trim())) {
+              isThinking = true;
+              continue;
+            }
+          }
+
+          if (isThinking && !thinkingDone) {
+            // thinking 중이면 yield하지 않고 수집만
+            // "Final Version:", "Revised:" 등이 나타나면 thinking 종료
+            if (/\*\s*(Final Version|Revised|Final Output|Output):\s*\n/i.test(accumulated)) {
+              thinkingDone = true;
+              const cleaned = stripThinkingProcess(accumulated);
+              if (cleaned) yield cleaned;
+            }
+            continue;
+          }
+
+          // 일반 텍스트 — 바로 yield
+          yield text;
         } catch {
           // skip malformed chunks
         }
       }
+    }
+
+    // 스트림 종료 후 thinking만 수집된 경우 추출
+    if (isThinking && !thinkingDone && accumulated) {
+      const cleaned = stripThinkingProcess(accumulated);
+      if (cleaned) yield cleaned;
     }
     return;
   }
