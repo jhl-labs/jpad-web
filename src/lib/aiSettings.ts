@@ -27,6 +27,7 @@ const profileSchema = z.object({
   repeatPenalty: z.number().min(0).max(5).nullable().optional(),
   seed: z.number().int().min(0).max(2147483647).nullable().optional(),
   stop: z.array(z.string().min(1).max(100)).max(8).optional(),
+  customHeaders: z.record(z.string(), z.string()).nullable().optional(),
 });
 
 const routingSchema = z.object({
@@ -56,6 +57,17 @@ function normalizeStopSequences(value: string[] | undefined) {
     .slice(0, 8);
 }
 
+function normalizeCustomHeaders(value: Record<string, string> | null | undefined): Record<string, string> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const result: Record<string, string> = {};
+  for (const [k, v] of Object.entries(value)) {
+    if (typeof k === "string" && typeof v === "string" && k.trim()) {
+      result[k.trim().slice(0, 200)] = String(v).slice(0, 2000);
+    }
+  }
+  return Object.keys(result).length > 0 ? result : null;
+}
+
 function normalizeProfile(profile: z.infer<typeof profileSchema>): WorkspaceAiProfile {
   return {
     id: normalizeString(profile.id, 120),
@@ -74,6 +86,7 @@ function normalizeProfile(profile: z.infer<typeof profileSchema>): WorkspaceAiPr
     repeatPenalty: profile.repeatPenalty ?? null,
     seed: profile.seed ?? null,
     stop: normalizeStopSequences(profile.stop),
+    customHeaders: normalizeCustomHeaders(profile.customHeaders),
   };
 }
 
