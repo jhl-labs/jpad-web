@@ -339,18 +339,16 @@ export default function PageEditorPage() {
 
   async function handleToggleLock() {
     if (!page) return;
-    const newLockState = !page.isLocked;
+    const shouldLock = !page.isLocked;
     try {
       const res = await fetch(`/api/pages/${pageId}/lock`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lock: newLockState }),
+        method: shouldLock ? "POST" : "DELETE",
       });
       if (res.ok) {
-        const data = await res.json() as { isLocked: boolean; lockedById: string | null; lockedByName?: string | null; lockedAt: string | null };
+        const data = await res.json() as { isLocked: boolean; lockedById?: string | null; lockedByName?: string | null; lockedAt?: string | null };
         setPage((prev) =>
           prev
-            ? { ...prev, isLocked: data.isLocked, lockedById: data.lockedById, lockedByName: data.lockedByName ?? null, lockedAt: data.lockedAt }
+            ? { ...prev, isLocked: data.isLocked, lockedById: data.lockedById ?? null, lockedByName: data.lockedByName ?? null, lockedAt: data.lockedAt ?? null }
             : prev
         );
       }
@@ -714,7 +712,7 @@ export default function PageEditorPage() {
             />
           )}
         </div>
-        <div className="flex items-center gap-2 shrink-0 overflow-x-auto">
+        <div className="flex items-center gap-2 shrink-0 overflow-visible">
           {/* AI 버튼 (이어쓰기 통합) */}
           <button
             onClick={() => setShowAi(!showAi)}
