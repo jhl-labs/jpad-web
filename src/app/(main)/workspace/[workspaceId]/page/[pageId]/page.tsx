@@ -32,6 +32,7 @@ import {
   MessageCircle,
   MoreHorizontal,
   Network,
+  Printer,
   Search,
   Share2,
   SmilePlus,
@@ -522,6 +523,10 @@ export default function PageEditorPage() {
     URL.revokeObjectURL(url);
   }
 
+  function handleExportPdf() {
+    window.print();
+  }
+
   // Listen for AI slash command events from editor
   useEffect(() => {
     const onAutocomplete = () => handleAutocomplete();
@@ -583,6 +588,7 @@ export default function PageEditorPage() {
     <div className="h-full flex flex-col">
       {/* Toolbar */}
       <div
+        data-no-print
         className="flex items-center justify-between gap-2 px-4 py-2 shrink-0"
         style={{ borderBottom: "1px solid var(--border)" }}
       >
@@ -708,6 +714,15 @@ export default function PageEditorPage() {
                 >
                   <FileText size={14} style={{ color: "var(--muted)" }} />
                   HTML (.html)
+                </button>
+                <button
+                  onClick={handleExportPdf}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-left transition-colors"
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "var(--sidebar-hover)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                >
+                  <Printer size={14} style={{ color: "var(--muted)" }} />
+                  PDF (인쇄)
                 </button>
               </div>
             )}
