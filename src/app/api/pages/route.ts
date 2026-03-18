@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, checkWorkspaceAccess } from "@/lib/auth/helpers";
 import { createAuditActor, getAuditRequestContext, recordAuditLog } from "@/lib/audit";
 import { initRepo, savePage } from "@/lib/git/repository";
-import { logError } from "@/lib/logger";
+import { handleApiError } from "@/lib/apiErrorHandler";
 import { getPageAccessContext, listAccessiblePages } from "@/lib/pageAccess";
 import {
   enqueuePageReindexJob,
@@ -67,10 +67,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (error) {
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return handleApiError(error, "pages.list");
   }
 }
 
@@ -234,7 +231,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(page, { status: 201 });
   } catch (e) {
-    logError("page.create_failed", e);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return handleApiError(e, "page.create");
   }
 }

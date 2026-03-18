@@ -231,6 +231,13 @@ export function LoginPageClient({
           </p>
         )}
 
+        {credentialsEnabled && (
+          <p className="text-xs text-center mt-3" style={{ color: "var(--muted)" }}>
+            비밀번호를 잊으셨나요?{" "}
+            <span style={{ color: "var(--primary)" }}>관리자에게 문의하세요.</span>
+          </p>
+        )}
+
         {allowSelfSignup ? (
           <p className="mt-4 text-center text-sm" style={{ color: "var(--muted)" }}>
             계정이 없으신가요?{" "}

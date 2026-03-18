@@ -14,7 +14,22 @@ import {
   User,
   FileText,
   Loader2,
+  GripVertical,
 } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface TodoUser {
   id: string;
@@ -205,6 +220,44 @@ export function TodoList({ workspaceId }: TodoListProps) {
     if (e.key === "Enter" && !e.nativeEvent.isComposing) {
       e.preventDefault();
       addTodo();
+    }
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = sortedTodos.findIndex((t) => t.id === active.id);
+    const newIndex = sortedTodos.findIndex((t) => t.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    // Optimistic reorder
+    const reordered = [...sortedTodos];
+    const [moved] = reordered.splice(oldIndex, 1);
+    reordered.splice(newIndex, 0, moved);
+
+    // Update sortOrder for all items
+    const updated = reordered.map((t, i) => ({ ...t, sortOrder: i }));
+    setTodos(updated);
+
+    // Persist the moved item's new sortOrder
+    try {
+      const res = await fetch(
+        `/api/workspaces/${workspaceId}/todos/${String(active.id)}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sortOrder: newIndex }),
+        }
+      );
+      if (!res.ok) throw new Error("Failed to update sort order");
+    } catch (e) {
+      console.error("Failed to update sort order:", e);
+      fetchTodos();
     }
   };
 
@@ -404,33 +457,68 @@ export function TodoList({ workspaceId }: TodoListProps) {
       </div>
 
       {/* Todo List */}
-      <div className="flex flex-col gap-1" role="list">
-        {sortedTodos.length === 0 && (
-          <div
-            className="text-center py-12 text-sm"
-            style={{ color: "var(--muted)" }}
-          >
-            {filterCompleted === "completed"
-              ? "완료된 할 일이 없습니다"
-              : filterCompleted === "active"
-                ? "진행중인 할 일이 없습니다"
-                : "할 일이 없습니다. 위 입력란에서 새 할 일을 추가해보세요."}
-          </div>
-        )}
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={sortedTodos.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+          <div className="flex flex-col gap-1" role="list">
+            {sortedTodos.length === 0 && (
+              <div
+                className="text-center py-12 text-sm"
+                style={{ color: "var(--muted)" }}
+              >
+                {filterCompleted === "completed"
+                  ? "완료된 할 일이 없습니다"
+                  : filterCompleted === "active"
+                    ? "진행중인 할 일이 없습니다"
+                    : "할 일이 없습니다. 위 입력란에서 새 할 일을 추가해보세요."}
+              </div>
+            )}
 
-        {sortedTodos.map((todo) => (
-          <TodoItem
-            key={todo.id}
-            todo={todo}
-            members={members}
-            onToggle={() => toggleTodo(todo)}
-            onDelete={() => deleteTodo(todo.id)}
-            onUpdate={(updates) => updateTodo(todo.id, updates)}
-            isOverdue={isOverdue(todo.dueDate)}
-            formatDate={formatDate}
-          />
-        ))}
-      </div>
+            {sortedTodos.map((todo) => (
+              <SortableTodoItem
+                key={todo.id}
+                todo={todo}
+                members={members}
+                onToggle={() => toggleTodo(todo)}
+                onDelete={() => deleteTodo(todo.id)}
+                onUpdate={(updates) => updateTodo(todo.id, updates)}
+                isOverdue={isOverdue(todo.dueDate)}
+                formatDate={formatDate}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
+    </div>
+  );
+}
+
+function SortableTodoItem(props: {
+  todo: Todo;
+  members: WorkspaceMember[];
+  onToggle: () => void;
+  onDelete: () => void;
+  onUpdate: (updates: Partial<Pick<Todo, "title" | "dueDate">> & { assigneeId?: string | null }) => void;
+  isOverdue: boolean;
+  formatDate: (d: string) => string;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: props.todo.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : undefined,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <TodoItem {...props} dragHandleProps={{ ...attributes, ...listeners }} />
     </div>
   );
 }
@@ -443,6 +531,7 @@ function TodoItem({
   onUpdate,
   isOverdue: overdue,
   formatDate,
+  dragHandleProps,
 }: {
   todo: Todo;
   members: WorkspaceMember[];
@@ -451,6 +540,7 @@ function TodoItem({
   onUpdate: (updates: Partial<Pick<Todo, "title" | "dueDate">> & { assigneeId?: string | null }) => void;
   isOverdue: boolean;
   formatDate: (d: string) => string;
+  dragHandleProps?: Record<string, unknown>;
 }) {
   const [hovered, setHovered] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -510,6 +600,17 @@ function TodoItem({
         opacity: todo.completed ? 0.55 : 1,
       }}
     >
+      {/* Drag handle */}
+      <button
+        type="button"
+        className="border-none bg-transparent cursor-grab p-0 mt-0.5 shrink-0 touch-none"
+        style={{ color: "var(--muted)" }}
+        aria-label="드래그하여 순서 변경"
+        {...dragHandleProps}
+      >
+        <GripVertical size={16} />
+      </button>
+
       {/* Checkbox */}
       <button
         role="checkbox"
