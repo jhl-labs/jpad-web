@@ -54,7 +54,14 @@ export async function POST(req: NextRequest) {
 
     const token = signToken(tokenPayload, secret);
 
-    const wsUrl = process.env.WS_URL || "ws://localhost:1234";
+    // WS_URL 환경변수가 설정되면 사용, 아니면 요청 origin 기반 자동 생성
+    let wsUrl = process.env.WS_URL || "";
+    if (!wsUrl) {
+      const origin = req.headers.get("origin") || req.headers.get("host") || "localhost:3000";
+      const hostname = origin.replace(/^https?:\/\//, "").replace(/:\d+$/, "");
+      const wsPort = process.env.WS_PORT || "1234";
+      wsUrl = `ws://${hostname}:${wsPort}`;
+    }
 
     return NextResponse.json({ token, wsUrl });
   } catch (error) {
