@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, checkWorkspaceAccess } from "@/lib/auth/helpers";
 import { createAuditActor, getAuditRequestContext, recordAuditLog } from "@/lib/audit";
 import { rateLimitRedis } from "@/lib/rateLimit";
-import { logError } from "@/lib/logger";
+import { handleApiError } from "@/lib/apiErrorHandler";
 
 export async function GET(
   req: NextRequest,
@@ -66,11 +66,7 @@ export async function GET(
 
     return NextResponse.json(events);
   } catch (error) {
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    logError("calendar.get.unhandled_error", error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return handleApiError(error, "calendar.get.unhandled_error");
   }
 }
 
@@ -199,10 +195,6 @@ export async function POST(
 
     return NextResponse.json(event, { status: 201 });
   } catch (error) {
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    logError("calendar.post.unhandled_error", error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return handleApiError(error, "calendar.post.unhandled_error");
   }
 }

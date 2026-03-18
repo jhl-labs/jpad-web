@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, checkWorkspaceAccess } from "@/lib/auth/helpers";
 import { createAuditActor, getAuditRequestContext, recordAuditLog } from "@/lib/audit";
 import { rateLimitRedis } from "@/lib/rateLimit";
-import { logError } from "@/lib/logger";
+import { handleApiError } from "@/lib/apiErrorHandler";
 import { z } from "zod";
 
 const createTodoSchema = z.object({
@@ -83,11 +83,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    logError("todos.get.unhandled_error", error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return handleApiError(error, "todos.get.unhandled_error");
   }
 }
 
@@ -190,10 +186,6 @@ export async function POST(
 
     return NextResponse.json(todo, { status: 201 });
   } catch (error) {
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    logError("todos.post.unhandled_error", error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return handleApiError(error, "todos.post.unhandled_error");
   }
 }

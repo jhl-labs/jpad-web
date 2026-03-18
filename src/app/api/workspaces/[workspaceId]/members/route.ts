@@ -5,6 +5,7 @@ import { createAuditActor, getAuditRequestContext, recordAuditLog } from "@/lib/
 import { rateLimitRedis } from "@/lib/rateLimit";
 import { getEffectiveWorkspaceSettings } from "@/lib/workspaceSettings";
 import { normalizeEmailAddress } from "@/lib/auth/config";
+import { handleApiError } from "@/lib/apiErrorHandler";
 
 export async function POST(
   req: NextRequest,
@@ -119,10 +120,7 @@ export async function POST(
 
     return NextResponse.json(membership);
   } catch (error) {
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return handleApiError(error, "members.post.unhandled_error");
   }
 }
 
@@ -200,9 +198,6 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return handleApiError(error, "members.delete.unhandled_error");
   }
 }

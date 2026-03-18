@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth/helpers";
-import { logError } from "@/lib/logger";
 import { createAuditActor, getAuditRequestContext, recordAuditLog } from "@/lib/audit";
 import { getPageAccessContext } from "@/lib/pageAccess";
 import { rateLimitRedis } from "@/lib/rateLimit";
+import { handleApiError } from "@/lib/apiErrorHandler";
 
 export async function GET(
   req: NextRequest,
@@ -71,11 +71,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    logError("comments.get.unhandled_error", error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return handleApiError(error, "comments.get.unhandled_error");
   }
 }
 
@@ -158,10 +154,6 @@ export async function POST(
 
     return NextResponse.json(comment, { status: 201 });
   } catch (error) {
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    logError("comments.post.unhandled_error", error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return handleApiError(error, "comments.post.unhandled_error");
   }
 }
