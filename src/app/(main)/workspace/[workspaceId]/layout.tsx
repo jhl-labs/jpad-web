@@ -59,7 +59,7 @@ export default function WorkspaceLayout({
       fetch(`/api/workspaces/${workspaceId}`)
         .then((r) => r.json())
         .then(setWorkspace)
-        .catch(() => {});
+        .catch((error: unknown) => { console.warn("[WorkspaceLayout] workspace fetch failed:", error); });
       fetchPages();
       fetchFavorites();
     }

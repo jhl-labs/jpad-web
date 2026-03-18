@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth/helpers";
 import { readPage } from "@/lib/git/repository";
 import { getPageAccessContext } from "@/lib/pageAccess";
+import { createAuditActor, getAuditRequestContext, recordAuditLog } from "@/lib/audit";
 import { logError } from "@/lib/logger";
 
 export async function GET(
@@ -11,6 +12,7 @@ export async function GET(
   try {
     const user = await requireAuth();
     const { pageId } = await params;
+    const requestContext = getAuditRequestContext(_req);
 
     const access = await getPageAccessContext(user.id, pageId);
     if (!access) {
@@ -35,6 +37,16 @@ export async function GET(
 
     const markdown = frontmatter + body;
     const filename = `${access.page.title}.md`;
+
+    await recordAuditLog({
+      action: "page.exported",
+      actor: createAuditActor(user, access.member?.role ?? null),
+      workspaceId: access.page.workspaceId,
+      pageId: pageId,
+      targetId: pageId,
+      targetType: "page",
+      context: requestContext,
+    });
 
     return new NextResponse(markdown, {
       headers: {

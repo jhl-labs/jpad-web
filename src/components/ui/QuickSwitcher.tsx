@@ -55,7 +55,8 @@ function getRecentPages(workspaceId: string): SearchResult[] {
     const raw = localStorage.getItem(`${RECENT_KEY}:${workspaceId}`);
     if (!raw) return [];
     return JSON.parse(raw) as SearchResult[];
-  } catch (_error) {
+  } catch (error) {
+    console.warn("[QuickSwitcher] localStorage read failed:", error);
     return [];
   }
 }
@@ -67,8 +68,8 @@ export function trackRecentPage(workspaceId: string, page: { id: string; title: 
     const entry: SearchResult = { ...page, snippet: null, matchType: "recent" };
     const updated = [entry, ...filtered].slice(0, MAX_RECENT);
     localStorage.setItem(`${RECENT_KEY}:${workspaceId}`, JSON.stringify(updated));
-  } catch (_error) {
-    // ignore
+  } catch (error) {
+    console.warn("[QuickSwitcher] localStorage write failed:", error);
   }
 }
 
@@ -211,8 +212,8 @@ export function QuickSwitcher({ workspaceId, isOpen, onClose }: QuickSwitcherPro
             setResults(data);
             setSelectedIndex(0);
           }
-        } catch (_error) {
-          // ignore
+        } catch (error) {
+          console.warn("[QuickSwitcher] search failed:", error);
         } finally {
           setLoading(false);
         }

@@ -13,6 +13,8 @@ services:
     environment:
       DATABASE_URL: postgresql://jpad:jpad_dev_password@postgres:5432/jpad
       REDIS_URL: redis://redis:6379
+      WS_URL: ws://202.202.202.117:21234
+      NEXTAUTH_URL: http://202.202.202.117:3000
     volumes:
       - jpad-data:/app/data
 
