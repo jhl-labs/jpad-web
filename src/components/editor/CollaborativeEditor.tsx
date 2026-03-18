@@ -709,6 +709,34 @@ function InnerEditor({
     };
   }, [editor, handleChange, pendingInsertMarkdown, readOnly]);
 
+  // Handle backlink insertion via ProseMirror transaction
+  useEffect(() => {
+    if (!editor || readOnly) return;
+
+    const handleBacklinkInsert = (e: Event) => {
+      const { markup } = (e as CustomEvent).detail as { markup: string };
+      // Access underlying ProseMirror view via TipTap
+      const tiptap = (editor as unknown as { _tiptapEditor: { view: { state: { doc: { textBetween: (from: number, to: number) => string }; selection: { from: number }; tr: { insertText: (text: string, from: number, to: number) => unknown } }; dispatch: (tr: unknown) => void } } })._tiptapEditor;
+      if (!tiptap) return;
+
+      const { state } = tiptap.view;
+      const cursorPos = state.selection.from;
+      const searchStart = Math.max(0, cursorPos - 200);
+      const textBefore = state.doc.textBetween(searchStart, cursorPos);
+      const bracketIdx = textBefore.lastIndexOf("[[");
+
+      if (bracketIdx !== -1) {
+        const replaceFrom = searchStart + bracketIdx;
+        const tr = state.tr.insertText(markup, replaceFrom, cursorPos);
+        tiptap.view.dispatch(tr);
+        handleChange();
+      }
+    };
+
+    document.addEventListener("backlink:insert", handleBacklinkInsert, true);
+    return () => document.removeEventListener("backlink:insert", handleBacklinkInsert, true);
+  }, [editor, readOnly, handleChange]);
+
   // Dark mode detection: data-theme attribute + system preference fallback
   useEffect(() => {
     const mql = window.matchMedia("(prefers-color-scheme: dark)");

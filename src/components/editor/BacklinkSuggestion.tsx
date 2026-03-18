@@ -114,34 +114,17 @@ export function BacklinkSuggestion({
   const insertSuggestion = useCallback((suggestion: PageSuggestion) => {
     const markup = formatBacklink(suggestion.slug, suggestion.title);
     setOpen(false);
+
+    // Dispatch custom event for InnerEditor to handle via ProseMirror transaction
+    editorElement?.dispatchEvent(
+      new CustomEvent("backlink:insert", {
+        detail: { markup },
+        bubbles: true,
+      })
+    );
+
     onInsert(markup);
-
-    // Replace the [[ + query with stable [[slug|title]] markup in the editor.
-    const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) return;
-
-    const range = selection.getRangeAt(0);
-    const textNode = range.startContainer;
-    if (textNode.nodeType !== Node.TEXT_NODE) return;
-
-    const text = textNode.textContent || "";
-    const cursorPos = range.startOffset;
-    const beforeCursor = text.slice(0, cursorPos);
-    const bracketIdx = beforeCursor.lastIndexOf("[[");
-
-    if (bracketIdx !== -1) {
-      const newText =
-        text.slice(0, bracketIdx) + markup + text.slice(cursorPos);
-      textNode.textContent = newText;
-
-      // Move cursor after inserted markup.
-      const newPos = bracketIdx + markup.length;
-      range.setStart(textNode, Math.min(newPos, newText.length));
-      range.setEnd(textNode, Math.min(newPos, newText.length));
-      selection.removeAllRanges();
-      selection.addRange(range);
-    }
-  }, [onInsert]);
+  }, [editorElement, onInsert]);
 
   // Keyboard navigation
   const handleKeyDown = useCallback(
