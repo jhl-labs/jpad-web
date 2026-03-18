@@ -1,4 +1,5 @@
 import { redis } from "./redis";
+import { logError } from "./logger";
 
 const RATE_LIMIT_MAP_MAX_SIZE = 10000;
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
@@ -49,11 +50,15 @@ export function extractClientIp(headers: HeaderBag): string {
   const forwardedFor = readHeader(headers, "x-forwarded-for");
   const realIp = readHeader(headers, "x-real-ip");
 
-  return (
-    forwardedFor?.split(",")[0]?.trim() ||
-    realIp?.trim() ||
-    "unknown"
-  );
+  if (forwardedFor) {
+    const ips = forwardedFor.split(",").map(ip => ip.trim()).filter(Boolean);
+    const proxyCount = parseInt(process.env.TRUSTED_PROXY_COUNT || "1", 10);
+    // Take the IP at position length - proxyCount (the one added by the trusted proxy)
+    const idx = Math.max(0, ips.length - proxyCount);
+    return ips[idx] || "unknown";
+  }
+
+  return realIp?.trim() || "unknown";
 }
 
 export function rateLimit(key: string, limit: number, windowMs: number): boolean {
@@ -107,14 +112,14 @@ export async function rateLimitRedis(key: string, limit: number, windowMs: numbe
     if (pexpireResult?.[0] || pexpireResult?.[1] === 0) {
       try {
         await redis.del(redisKey);
-      } catch (_error) {
-        // best-effort 삭제
+      } catch (delError) {
+        logError("rateLimit.redis.del.best_effort_failed", delError);
       }
     }
 
     return count <= limit;
-  } catch (_error) {
-    // Fallback to in-memory
+  } catch (redisError) {
+    logError("rateLimit.redis.fallback_to_memory", redisError);
     return rateLimit(key, limit, windowMs);
   }
 }

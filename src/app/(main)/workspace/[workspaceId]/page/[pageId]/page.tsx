@@ -163,8 +163,9 @@ export default function PageEditorPage() {
             setCommentCount(total);
           }
         })
-        .catch(() => {});
+        .catch((error: unknown) => { console.warn("[PageEditor] comment count fetch failed:", error); });
     } catch (error) {
+      console.warn("[PageEditor] page fetch failed:", error);
       setLoadError(true);
     }
   }, [pageId]);
@@ -175,18 +176,18 @@ export default function PageEditorPage() {
     fetch(`/api/pages?workspaceId=${workspaceId}`)
       .then((r) => r.json())
       .then((pages: BreadcrumbPage[]) => setAllPages(pages))
-      .catch(() => {});
+      .catch((error: unknown) => { console.warn("[PageEditor] pages list fetch failed:", error); });
     fetch(`/api/workspaces/${workspaceId}`)
       .then((r) => r.json())
       .then((ws: WorkspaceInfo) => setWorkspaceInfo(ws))
-      .catch(() => {});
+      .catch((error: unknown) => { console.warn("[PageEditor] workspace info fetch failed:", error); });
     // 즐겨찾기 상태 확인
     fetch(`/api/favorites?workspaceId=${workspaceId}`)
       .then((r) => r.json())
       .then((favs: { id: string }[]) => {
         setIsFavorited(favs.some((f) => f.id === pageId));
       })
-      .catch(() => {});
+      .catch((error: unknown) => { console.warn("[PageEditor] favorites fetch failed:", error); });
 
     return () => {
       if (titleTimeout.current) clearTimeout(titleTimeout.current);
@@ -213,6 +214,7 @@ export default function PageEditorPage() {
       }
       window.dispatchEvent(new Event(SIDEBAR_EVENTS.REFRESH));
     } catch (error) {
+      console.warn("[PageEditor] toggle favorite failed:", error);
       setIsFavorited(!newState); // revert on error
     }
   }

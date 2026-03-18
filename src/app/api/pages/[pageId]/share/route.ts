@@ -7,6 +7,7 @@ import { isShareLinkActive } from "@/lib/publicAccess";
 import { prisma } from "@/lib/prisma";
 import { rateLimitRedis } from "@/lib/rateLimit";
 import { getEffectiveWorkspaceSettings } from "@/lib/workspaceSettings";
+import { logError } from "@/lib/logger";
 
 function buildResponse(
   shareLink: {
@@ -66,6 +67,7 @@ export async function GET(
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    logError("pages.share.get.error", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
@@ -140,6 +142,7 @@ export async function POST(
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    logError("pages.share.post.error", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
@@ -180,6 +183,7 @@ export async function DELETE(
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    logError("pages.share.delete.error", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

@@ -235,7 +235,7 @@ function PageContextMenu({
 
   function handleCopyLink() {
     const url = `${window.location.origin}/workspace/${workspaceId}/page/${menu.pageId}`;
-    navigator.clipboard.writeText(url).catch(() => {});
+    navigator.clipboard.writeText(url).catch((error: unknown) => { console.warn("[Sidebar] clipboard write failed:", error); });
     onClose();
   }
 
@@ -327,7 +327,7 @@ function getSavedWidth(): number {
       const w = parseInt(saved, 10);
       if (w >= SIDEBAR_MIN_WIDTH && w <= SIDEBAR_MAX_WIDTH) return w;
     }
-  } catch { /* ignore */ }
+  } catch (error) { console.warn("[Sidebar] localStorage read failed:", error); }
   return SIDEBAR_DEFAULT_WIDTH;
 }
 
@@ -367,7 +367,7 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
       document.body.style.userSelect = "";
       // 최종 값 저장
       setSidebarWidth((w) => {
-        try { localStorage.setItem(SIDEBAR_STORAGE_KEY, String(w)); } catch { /* ignore */ }
+        try { localStorage.setItem(SIDEBAR_STORAGE_KEY, String(w)); } catch (error) { console.warn("[Sidebar] localStorage write failed:", error); }
         return w;
       });
     }
@@ -391,8 +391,8 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
           setWorkspaces(data);
           wsListFetchedRef.current = true;
         }
-      } catch (_error) {
-        // ignore
+      } catch (error) {
+        console.warn("[Sidebar] workspace list fetch failed:", error);
       }
     })();
   }, [wsDropdownOpen, workspaces.length]);
@@ -428,8 +428,8 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
         const data = await res.json();
         setTrashCount(data.length);
       }
-    } catch (_error) {
-      // ignore
+    } catch (error) {
+      console.warn("[Sidebar] trash count fetch failed:", error);
     }
   }, [workspace.id, canManageTrash]);
 

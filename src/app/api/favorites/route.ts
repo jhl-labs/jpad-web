@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, checkWorkspaceAccess } from "@/lib/auth/helpers";
 import { listAccessiblePageIds, getPageAccessContext } from "@/lib/pageAccess";
+import { createAuditActor, getAuditRequestContext, recordAuditLog } from "@/lib/audit";
 import { logError } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
@@ -54,6 +55,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const user = await requireAuth();
+    const requestContext = getAuditRequestContext(req);
     const { pageId } = await req.json();
 
     if (!pageId) {
@@ -82,6 +84,16 @@ export async function POST(req: NextRequest) {
       update: {},
     });
 
+    await recordAuditLog({
+      action: "favorite.added",
+      actor: createAuditActor(user, access.member?.role ?? null),
+      workspaceId: access.page.workspaceId,
+      pageId: pageId,
+      targetId: pageId,
+      targetType: "page",
+      context: requestContext,
+    });
+
     return NextResponse.json(favorite, { status: 201 });
   } catch (error) {
     if (error instanceof Error && error.message === "Unauthorized") {
@@ -95,15 +107,34 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const user = await requireAuth();
+    const requestContext = getAuditRequestContext(req);
     const { pageId } = await req.json();
 
     if (!pageId) {
       return NextResponse.json({ error: "pageId required" }, { status: 400 });
     }
 
+    const page = await prisma.page.findUnique({
+      where: { id: pageId },
+      select: { id: true, workspaceId: true },
+    });
+
     await prisma.favorite.deleteMany({
       where: { userId: user.id, pageId },
     });
+
+    if (page) {
+      const access = await getPageAccessContext(user.id, pageId);
+      await recordAuditLog({
+        action: "favorite.removed",
+        actor: createAuditActor(user, access?.member?.role ?? null),
+        workspaceId: page.workspaceId,
+        pageId: pageId,
+        targetId: pageId,
+        targetType: "page",
+        context: requestContext,
+      });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
