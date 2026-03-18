@@ -21,21 +21,29 @@ export function WordCount({ content }: WordCountProps) {
       .split(/\s+/)
       .filter((w) => w.length > 0).length;
 
-    // 평균 읽기 속도: 한국어 기준 분당 약 500자, 영어 기준 약 200단어
-    // 한국어 비중이 높으므로 글자 수 기준 500자/분 사용
-    const readingMinutes = Math.max(1, Math.ceil(chars / 500));
+    // 한국어 문자 수 (CJK Unified Ideographs + Hangul)
+    const koreanChars = (text.match(/[\uAC00-\uD7AF\u3130-\u318F\u1100-\u11FF]/g) || []).length;
+    const englishWords = text
+      .replace(/[\uAC00-\uD7AF\u3130-\u318F\u1100-\u11FF]/g, "")
+      .split(/\s+/)
+      .filter((w) => w.length > 0).length;
+
+    // 한국어: 500자/분, 영어: 200단어/분
+    const koreanMinutes = koreanChars / 500;
+    const englishMinutes = englishWords / 200;
+    const readingMinutes = Math.max(1, Math.ceil(koreanMinutes + englishMinutes));
 
     return { chars, words, readingMinutes };
   }, [content]);
 
   return (
     <div
-      className="flex items-center gap-4 px-4 py-2 text-xs"
+      className="flex items-center px-4 py-2 text-xs"
       style={{ color: "var(--muted)", borderTop: "1px solid var(--border)" }}
     >
-      <span>{stats.chars.toLocaleString()}자</span>
-      <span>{stats.words.toLocaleString()}단어</span>
-      <span>약 {stats.readingMinutes}분 읽기</span>
+      <span>
+        {stats.chars.toLocaleString()}자 &middot; {stats.words.toLocaleString()}단어 &middot; 약 {stats.readingMinutes}분
+      </span>
     </div>
   );
 }
