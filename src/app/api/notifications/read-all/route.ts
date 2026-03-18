@@ -3,6 +3,7 @@ import { requireAuth } from "@/lib/auth/helpers";
 import { markAllAsRead } from "@/lib/notifications";
 import { logError } from "@/lib/logger";
 import { rateLimitRedis } from "@/lib/rateLimit";
+import { createAuditActor, getAuditRequestContext, recordAuditLog } from "@/lib/audit";
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,6 +20,18 @@ export async function POST(req: NextRequest) {
     const workspaceId = body.workspaceId as string | undefined;
 
     const result = await markAllAsRead(user.id, workspaceId);
+
+    const requestContext = getAuditRequestContext(req);
+    await recordAuditLog({
+      action: "notifications.read_all",
+      actor: createAuditActor(user),
+      targetType: "notification",
+      metadata: {
+        count: result.count,
+        ...(workspaceId ? { workspaceId } : {}),
+      },
+      context: requestContext,
+    });
 
     return NextResponse.json({ success: true, count: result.count });
   } catch (error) {

@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { checkWorkspaceAccess, requireAuth } from "@/lib/auth/helpers";
 import { logError } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
+import { rateLimitRedis } from "@/lib/rateLimit";
 
 function escapeCsv(value: unknown) {
   if (value === null || value === undefined) return "";
@@ -29,6 +30,10 @@ export async function GET(
     ]);
     if (!member) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    if (!(await rateLimitRedis(`audit-export:${user.id}`, 5, 60_000))) {
+      return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
     }
 
     const formatParam = req.nextUrl.searchParams.get("format");
