@@ -203,14 +203,47 @@ function getCustomSlashMenuItems(
       },
     },
     {
-      title: "콜아웃",
-      subtext: "강조 박스를 삽입합니다",
+      title: "알림 박스",
+      subtext: "강조 메시지를 삽입합니다",
       group: "기본 블록",
+      aliases: ["callout", "alert", "알림", "콜아웃"],
       onItemClick: () => {
         const cursor = editor.getTextCursorPosition();
         if (cursor?.block) {
           editor.insertBlocks(
-            [{ type: "paragraph", content: [{ type: "text", text: "💡 ", styles: {} }] }],
+            [{ type: "paragraph", content: [{ type: "text", text: "\u{1F4A1} ", styles: {} }, { type: "text", text: "여기에 알림 내용을 입력하세요", styles: { bold: true } }] }],
+            cursor.block,
+            "after"
+          );
+        }
+      },
+    },
+    {
+      title: "인용",
+      subtext: "인용 블록을 삽입합니다",
+      group: "기본 블록",
+      aliases: ["quote", "blockquote", "인용문"],
+      onItemClick: () => {
+        const cursor = editor.getTextCursorPosition();
+        if (cursor?.block) {
+          editor.insertBlocks(
+            [{ type: "paragraph", content: [{ type: "text", text: "> 인용 내용을 입력하세요", styles: { italic: true } }] }],
+            cursor.block,
+            "after"
+          );
+        }
+      },
+    },
+    {
+      title: "코드 블록",
+      subtext: "코드 블록을 삽입합니다",
+      group: "기본 블록",
+      aliases: ["code", "codeblock", "코드"],
+      onItemClick: () => {
+        const cursor = editor.getTextCursorPosition();
+        if (cursor?.block) {
+          editor.insertBlocks(
+            [{ type: "paragraph", content: [{ type: "text", text: "코드를 입력하세요", styles: { code: true } }] }],
             cursor.block,
             "after"
           );

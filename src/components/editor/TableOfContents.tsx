@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { ListTree, ChevronRight, ChevronDown } from "lucide-react";
+import { ListTree, ChevronRight, ChevronDown, LinkIcon } from "lucide-react";
 
 export interface TocItem {
   id: string;
@@ -149,7 +149,7 @@ export function TableOfContents({ content, editorContainerRef }: TableOfContents
     };
   }, [handleScroll, editorContainerRef]);
 
-  // 클릭 시 해당 헤딩으로 스크롤
+  // 클릭 시 해당 헤딩으로 스크롤 + URL 해시 업데이트
   const scrollToHeading = useCallback(
     (item: TocItem) => {
       if (!editorContainerRef?.current) return;
@@ -164,12 +164,38 @@ export function TableOfContents({ content, editorContainerRef }: TableOfContents
         if (text === item.text) {
           el.scrollIntoView({ behavior: "smooth", block: "start" });
           setActiveId(item.id);
+          // URL 해시 업데이트 (페이지 리로드 없이)
+          window.history.replaceState(null, "", `#${item.id}`);
           break;
         }
       }
     },
     [editorContainerRef]
   );
+
+  // 앵커 링크 복사
+  const copyAnchorLink = useCallback((item: TocItem) => {
+    const url = `${window.location.origin}${window.location.pathname}#${item.id}`;
+    navigator.clipboard.writeText(url).catch((error: unknown) => {
+      console.warn("[TOC] clipboard write failed:", error);
+    });
+  }, []);
+
+  // 페이지 로드 시 URL 해시에 해당하는 헤딩으로 스크롤
+  useEffect(() => {
+    if (!editorContainerRef?.current || headings.length === 0) return;
+    const hash = window.location.hash.replace("#", "");
+    if (!hash) return;
+
+    const targetItem = headings.find((h) => h.id === hash);
+    if (targetItem) {
+      // 약간의 지연을 두고 스크롤 (에디터 렌더링 대기)
+      const timer = setTimeout(() => {
+        scrollToHeading(targetItem);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [headings, editorContainerRef, scrollToHeading]);
 
   const indentMap: Record<number, number> = { 1: 0, 2: 12, 3: 24 };
 
@@ -220,7 +246,7 @@ export function TableOfContents({ content, editorContainerRef }: TableOfContents
               {headings.map((item, index) => {
                 const isActive = activeId === item.id;
                 return (
-                  <div key={`${item.id}-${index}`} className="relative">
+                  <div key={`${item.id}-${index}`} className="relative group/toc-item">
                     {/* 현재 위치 표시 점 */}
                     {isActive && (
                       <div
@@ -235,30 +261,44 @@ export function TableOfContents({ content, editorContainerRef }: TableOfContents
                       />
                     )}
 
-                    <button
-                      onClick={() => scrollToHeading(item)}
-                      className="block w-full text-left py-1 pr-1 rounded-r transition-colors hover:bg-black/5 dark:hover:bg-white/5 truncate"
-                      style={{
-                        paddingLeft: indentMap[item.level] + 12,
-                        fontSize: 12,
-                        lineHeight: "1.5",
-                        color: isActive
-                          ? "var(--primary)"
-                          : item.level === 3
-                            ? "var(--muted)"
-                            : "var(--foreground)",
-                        fontWeight: isActive ? 600 : item.level === 1 ? 600 : 400,
-                        background: isActive
-                          ? "var(--sidebar-hover)"
-                          : undefined,
-                        borderLeft: isActive
-                          ? "2px solid var(--primary)"
-                          : "2px solid transparent",
-                      }}
-                      title={item.text}
-                    >
-                      {item.text}
-                    </button>
+                    <div className="flex items-center">
+                      <button
+                        onClick={() => scrollToHeading(item)}
+                        className="block flex-1 text-left py-1 pr-1 rounded-r transition-colors hover:bg-black/5 dark:hover:bg-white/5 truncate"
+                        style={{
+                          paddingLeft: indentMap[item.level] + 12,
+                          fontSize: 12,
+                          lineHeight: "1.5",
+                          color: isActive
+                            ? "var(--primary)"
+                            : item.level === 3
+                              ? "var(--muted)"
+                              : "var(--foreground)",
+                          fontWeight: isActive ? 600 : item.level === 1 ? 600 : 400,
+                          background: isActive
+                            ? "var(--sidebar-hover)"
+                            : undefined,
+                          borderLeft: isActive
+                            ? "2px solid var(--primary)"
+                            : "2px solid transparent",
+                        }}
+                        title={item.text}
+                      >
+                        {item.text}
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          copyAnchorLink(item);
+                        }}
+                        className="opacity-0 group-hover/toc-item:opacity-100 p-0.5 rounded transition-opacity hover:bg-black/5 dark:hover:bg-white/10 shrink-0"
+                        style={{ color: "var(--muted)" }}
+                        title="앵커 링크 복사"
+                        aria-label={`${item.text} 앵커 링크 복사`}
+                      >
+                        <LinkIcon size={10} />
+                      </button>
+                    </div>
                   </div>
                 );
               })}
