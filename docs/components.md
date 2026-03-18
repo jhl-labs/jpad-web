@@ -134,6 +134,13 @@ Git 커밋 히스토리 패널. 특정 버전 미리보기 및 복원.
 - 한국어/영어 혼합 단어 수 계산
 - 읽기 시간 추정 (WPM 기반)
 
+### `imageUpload` (`src/components/editor/imageUpload.ts`)
+에디터 이미지 업로드 유틸리티.
+- `uploadImageToPage(file, workspaceId, pageId)` — 이미지 파일을 서버에 업로드하고 페이지에 첨부
+- `isImageFile(file)` — MIME 타입 기반 이미지 파일 검증
+- 지원 형식: JPEG, PNG, GIF, WebP, SVG
+- 최대 파일 크기: 10MB
+
 ---
 
 ## 사이드바 컴포넌트
@@ -159,6 +166,7 @@ Git 커밋 히스토리 패널. 특정 버전 미리보기 및 복원.
 - 검색 단축키 표시
 - 휴지통 패널 토글
 - 페이지 아이콘(이모지) 표시
+- 빈 영역 우클릭 컨텍스트 메뉴 (`BlankAreaContextMenu` 서브 컴포넌트: 새 페이지 생성, 가져오기)
 
 ### `TrashPanel` (`src/components/sidebar/TrashPanel.tsx`)
 삭제된 페이지 목록. 복원/영구 삭제.
@@ -215,6 +223,7 @@ AI 기능 패널. 2개 탭: 글쓰기 도우미 + AI 채팅.
 - 마감일 설정
 - 페이지 연결
 - 필터링 (완료 여부, 담당자, 우선순위)
+- 드래그 앤 드롭 정렬 (`SortableTodoItem` 서브 컴포넌트)
 
 ---
 
