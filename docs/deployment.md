@@ -376,7 +376,7 @@ bun run vector-store:smoke --expect-backend=qdrant
 - `--keep-data`를 주면 검증 후 데이터를 남겨둘 수 있습니다.
 - `QDRANT_URL`이 없거나 Qdrant가 죽어 있으면 smoke test는 실패해야 정상입니다. 운영 UI에서는 이 경우 JSON fallback 상태로 보입니다.
 
-### 14. SCIM 연동
+### 17. SCIM 연동
 
 1. `/organizations`에서 대상 조직의 `SCIM 토큰 발급`
 2. IdP에 Base URL `/api/scim/v2`와 bearer token 등록
@@ -396,7 +396,7 @@ bun run vector-store:smoke --expect-backend=qdrant
 - SCIM-managed 워크스페이스 멤버는 수동 제거/role 변경 대신 IdP group 또는 mapping 변경으로 관리해야 합니다.
 - 이미 수동으로 초대된 멤버는 SCIM mapping이 role을 강제로 승격/강등하지 않습니다. 완전한 IdP 관리가 필요하면 기존 수동 멤버십을 먼저 정리한 뒤 group mapping을 적용하세요.
 
-### 15. Keycloak OIDC Smoke
+### 18. Keycloak OIDC Smoke
 
 개발용 Keycloak realm import는 [jpad-realm.json](deploy/idp/keycloak/realm-import/jpad-realm.json)에 들어 있습니다.
 
@@ -411,7 +411,7 @@ bun run oidc:keycloak:smoke
 - client id: `jpad`
 - smoke는 실행 전 같은 이메일의 로컬 smoke 계정을 정리하고, `Keycloak 로그인 -> NextAuth callback -> /workspace redirect -> OIDC 사용자 JIT 생성`까지 확인합니다.
 
-### 16. Keycloak SAML Smoke
+### 19. Keycloak SAML Smoke
 
 SAML smoke는 실행 시점에 테스트용 SAML client와 사용자를 동적으로 만들고, SP metadata entity ID를 `SAML_ISSUER`와 일치시킵니다.
 

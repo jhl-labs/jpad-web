@@ -191,6 +191,9 @@ SAML SP 메타데이터 XML 반환.
 ### `DELETE /api/pages/[pageId]`
 페이지 소프트 삭제 (isDeleted=true, 휴지통으로 이동).
 
+### `POST /api/pages/[pageId]/lock`
+페이지 잠금/해제.
+
 ---
 
 ## 페이지 콘텐츠 API
@@ -814,6 +817,30 @@ Base URL: `/api/scim/v2`
 - `GET /api/scim/v2/Groups/[groupId]` - 그룹 조회
 - `PATCH /api/scim/v2/Groups/[groupId]` - 그룹 수정
 - `DELETE /api/scim/v2/Groups/[groupId]` - 그룹 삭제
+
+---
+
+## 플랫폼 운영 API
+
+## Git 동기화
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/workspaces/[workspaceId]/git-sync` | Git 리모트 설정 조회 |
+| PATCH | `/api/workspaces/[workspaceId]/git-sync` | Git 리모트 설정 수정 |
+| POST | `/api/workspaces/[workspaceId]/git-sync/push` | 수동 Push |
+| POST | `/api/workspaces/[workspaceId]/git-sync/pull` | 수동 Pull |
+| POST | `/api/workspaces/[workspaceId]/git-sync/test` | 연결 테스트 |
+| GET | `/api/workspaces/[workspaceId]/git-sync/logs` | 동기화 이력 조회 |
+
+---
+
+## 인프라 관리 (Platform Admin)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/admin/infrastructure/health` | 전체 서비스 헬스체크 |
+| GET | `/api/admin/infrastructure/storage-stats` | 스토리지 통계 |
 
 ---
 
