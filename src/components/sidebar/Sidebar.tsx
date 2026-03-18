@@ -473,6 +473,13 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
     return () => document.removeEventListener("mousedown", handleClick);
   }, [wsDropdownOpen]);
 
+  // Ctrl+Shift+W 워크스페이스 전환 단축키 수신
+  useEffect(() => {
+    const handleToggle = () => setWsDropdownOpen((prev) => !prev);
+    window.addEventListener("workspace-switcher:toggle", handleToggle);
+    return () => window.removeEventListener("workspace-switcher:toggle", handleToggle);
+  }, []);
+
   const canManagePages = workspace.currentRole !== "viewer";
   const canManageTrash =
     workspace.currentRole === "owner" || workspace.currentRole === "admin" || workspace.currentRole === "maintainer";
