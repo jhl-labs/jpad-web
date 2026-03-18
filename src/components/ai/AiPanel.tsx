@@ -21,6 +21,7 @@ import {
   ArrowDownToLine,
   RotateCcw,
   Trash2,
+  WandSparkles,
 } from "lucide-react";
 import { parseSSEStream } from "@/lib/sseUtils";
 
@@ -58,8 +59,14 @@ interface ActionDef {
 
 const ACTION_GROUPS: { title: string; actions: ActionDef[] }[] = [
   {
-    title: "변환",
+    title: "작성",
     actions: [
+      {
+        action: "autocomplete",
+        label: "이어쓰기",
+        description: "문서를 자연스럽게 이어 작성",
+        icon: <WandSparkles size={15} />,
+      },
       {
         action: "summarize",
         label: "요약",
@@ -292,6 +299,61 @@ export function AiPanel({
       setExpandedAction(null);
 
       const effectiveOptions = { ...optionValues, ...optionOverride };
+
+      // 이어쓰기는 별도 API 사용
+      if (action === "autocomplete") {
+        try {
+          const res = await fetch("/api/ai/autocomplete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              workspaceId,
+              pageId,
+              text: inputText || pageContent,
+            }),
+          });
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            throw new Error((data as { error?: string }).error || "이어쓰기에 실패했습니다");
+          }
+          // SSE 스트리밍 읽기
+          const reader = res.body?.getReader();
+          if (!reader) throw new Error("스트리밍 미지원");
+          const decoder = new TextDecoder();
+          let accumulated = "";
+          let buffer = "";
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() || "";
+            for (const line of lines) {
+              if (!line.startsWith("data: ")) continue;
+              const payload = line.slice(6);
+              if (payload === "[DONE]") break;
+              try {
+                const parsed = JSON.parse(payload) as { text?: string };
+                if (parsed.text) {
+                  accumulated += parsed.text;
+                  setResult(accumulated);
+                }
+              } catch { /* skip */ }
+            }
+          }
+          if (!accumulated.trim()) throw new Error("비어 있는 응답");
+          setResult(accumulated);
+          setStreamingDone(true);
+          setLoading(false);
+          return;
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "이어쓰기 실패");
+          setLoading(false);
+          setStreamingDone(true);
+          return;
+        }
+      }
+
       const body: Record<string, unknown> = {
         action,
         text: inputText || pageContent,
