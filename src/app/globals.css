@@ -13,7 +13,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --background: #191919;
     --foreground: #ededed;
     --sidebar-bg: #202020;
@@ -24,6 +24,18 @@
     --primary-hover: #2563eb;
     --danger: #ef4444;
   }
+}
+
+:root[data-theme="dark"] {
+  --background: #191919;
+  --foreground: #ededed;
+  --sidebar-bg: #202020;
+  --sidebar-hover: #2f2f2f;
+  --border: #333333;
+  --muted: #9ca3af;
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+  --danger: #ef4444;
 }
 
 * {
