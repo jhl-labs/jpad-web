@@ -596,9 +596,13 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
         maxWidth: SIDEBAR_MAX_WIDTH,
         background: "var(--sidebar-bg)",
         borderRight: isOpen ? "1px solid var(--border)" : "none",
-        transition: isResizingRef.current ? "none" : "width 200ms ease-in-out",
+        transition: isResizingRef.current ? "none" : "width 200ms ease-in-out, min-width 200ms ease-in-out",
+        overflow: "hidden",
       }}
     >
+      {/* 내부 콘텐츠 줄바꿈 방지 래퍼 */}
+      <div style={{ minWidth: SIDEBAR_MIN_WIDTH }} className="flex flex-col h-full">
+
       {/* 모바일 오버레이 */}
       {isOpen && (
         <div
@@ -685,6 +689,27 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
                 <div className="px-3 py-2 text-xs" style={{ color: "var(--muted)" }}>
                   로딩 중...
                 </div>
+              )}
+              {(workspace.currentRole === "owner" || workspace.currentRole === "admin") && (
+                <>
+                  <div className="my-1" style={{ borderTop: "1px solid var(--border)" }} />
+                  <button
+                    onClick={() => {
+                      setWsDropdownOpen(false);
+                      router.push(`/workspace/${workspace.id}/settings`);
+                    }}
+                    className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-left transition-colors"
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "var(--sidebar-hover, var(--sidebar-bg))";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                    }}
+                  >
+                    <Settings size={14} style={{ color: "var(--muted)" }} className="shrink-0" />
+                    <span>워크스페이스 설정</span>
+                  </button>
+                </>
               )}
             </div>
           )}
@@ -920,6 +945,8 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
           </button>
         </div>
       </div>
+
+      </div>{/* end inner content wrapper */}
 
       {showTrash && (
         <TrashPanel

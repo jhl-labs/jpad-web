@@ -969,37 +969,47 @@ export function AiPanel({
                 placeholder="메시지를 입력하세요..."
                 rows={1}
                 className="flex-1 text-sm resize-none outline-none bg-transparent py-0.5"
-                style={{ maxHeight: 120 }}
+                style={{ maxHeight: "calc(1.5em * 5 + 4px)" }}
                 onInput={(e) => {
                   const target = e.target as HTMLTextAreaElement;
                   target.style.height = "auto";
-                  target.style.height = `${Math.min(target.scrollHeight, 120)}px`;
+                  target.style.height = `${Math.min(target.scrollHeight, 5 * 24)}px`;
                 }}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                  if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
                     handleChatSend();
                   }
                 }}
               />
-              <button
-                onClick={handleChatSend}
-                disabled={!chatInput.trim() || chatLoading}
-                aria-label="전송"
-                className="p-1.5 rounded-lg transition-all disabled:opacity-30"
-                style={{
-                  background: chatInput.trim() ? "var(--primary)" : "transparent",
-                  color: chatInput.trim() ? "white" : "var(--muted)",
-                }}
-              >
-                <Send size={14} />
-              </button>
+              <div className="flex items-end gap-1 shrink-0">
+                {chatInput.length > 100 && (
+                  <span
+                    className="text-[10px] pb-1"
+                    style={{ color: "var(--muted)" }}
+                  >
+                    {chatInput.length}
+                  </span>
+                )}
+                <button
+                  onClick={handleChatSend}
+                  disabled={!chatInput.trim() || chatLoading}
+                  aria-label="전송"
+                  className="p-1.5 rounded-lg transition-all disabled:opacity-30"
+                  style={{
+                    background: chatInput.trim() ? "var(--primary)" : "transparent",
+                    color: chatInput.trim() ? "white" : "var(--muted)",
+                  }}
+                >
+                  <Send size={14} />
+                </button>
+              </div>
             </div>
             <p
               className="text-[10px] text-center mt-1.5"
               style={{ color: "var(--muted)" }}
             >
-              Ctrl+Enter로 전송
+              Enter로 전송 · Shift+Enter로 줄바꿈
             </p>
           </div>
         </div>
