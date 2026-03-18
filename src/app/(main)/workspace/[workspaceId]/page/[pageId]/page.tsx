@@ -482,11 +482,28 @@ export default function PageEditorPage() {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${safeTitle}</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem; line-height: 1.6; }
-    h1 { border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
-    pre { background: var(--sidebar-bg); padding: 1rem; border-radius: 4px; overflow-x: auto; }
-    code { background: var(--sidebar-bg); padding: 0.2em 0.4em; border-radius: 3px; font-size: 0.9em; }
-    blockquote { border-left: 4px solid var(--border); margin-left: 0; padding-left: 1rem; color: var(--muted); }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem; line-height: 1.7; color: #1a1a1a; background: #ffffff; }
+    h1 { font-size: 2em; border-bottom: 2px solid #e5e7eb; padding-bottom: 0.5rem; margin-top: 1.5rem; }
+    h2 { font-size: 1.5em; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.3rem; margin-top: 1.3rem; }
+    h3 { font-size: 1.25em; margin-top: 1.2rem; }
+    h4, h5, h6 { margin-top: 1rem; }
+    p { margin: 0.8em 0; }
+    a { color: #2563eb; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    pre { background: #f3f4f6; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: 0.9em; border: 1px solid #e5e7eb; }
+    code { background: #f3f4f6; padding: 0.2em 0.4em; border-radius: 3px; font-size: 0.9em; font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace; }
+    pre code { background: none; padding: 0; }
+    blockquote { border-left: 4px solid #d1d5db; margin-left: 0; padding-left: 1rem; color: #6b7280; }
+    ul, ol { padding-left: 1.5em; margin: 0.5em 0; }
+    li { margin: 0.25em 0; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    th, td { border: 1px solid #d1d5db; padding: 0.5rem 0.75rem; text-align: left; }
+    th { background: #f3f4f6; font-weight: 600; }
+    tr:nth-child(even) { background: #f9fafb; }
+    img { max-width: 100%; height: auto; border-radius: 4px; }
+    hr { border: none; border-top: 1px solid #e5e7eb; margin: 1.5rem 0; }
+    .task-list-item { list-style: none; }
+    .task-list-item input[type="checkbox"] { margin-right: 0.5em; }
   </style>
 </head>
 <body>

@@ -72,6 +72,35 @@ const PRIORITY_CONFIG = {
 
 const PRIORITY_ORDER: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
 
+function parseNaturalDate(input: string): string | null {
+  const today = new Date();
+  const normalized = input.trim().toLowerCase();
+
+  if (normalized === "오늘" || normalized === "today") {
+    return today.toISOString();
+  }
+  if (normalized === "내일" || normalized === "tomorrow") {
+    const d = new Date(today); d.setDate(d.getDate() + 1);
+    return d.toISOString();
+  }
+  if (normalized === "모레") {
+    const d = new Date(today); d.setDate(d.getDate() + 2);
+    return d.toISOString();
+  }
+  if (normalized === "다음주" || normalized === "next week") {
+    const d = new Date(today); d.setDate(d.getDate() + 7);
+    return d.toISOString();
+  }
+  if (normalized === "다음달" || normalized === "next month") {
+    const d = new Date(today); d.setMonth(d.getMonth() + 1);
+    return d.toISOString();
+  }
+  // Try parsing as date string
+  const parsed = new Date(input);
+  if (!isNaN(parsed.getTime())) return parsed.toISOString();
+  return null;
+}
+
 interface WorkspaceMember {
   id: string;
   userId: string;
@@ -546,6 +575,7 @@ function TodoItem({
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(todo.title);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [naturalDateInput, setNaturalDateInput] = useState("");
   const [showAssigneePicker, setShowAssigneePicker] = useState(false);
   const editInputRef = useRef<HTMLInputElement>(null);
   const config = PRIORITY_CONFIG[todo.priority];
@@ -693,6 +723,7 @@ function TodoItem({
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowDatePicker(!showDatePicker);
+                  setNaturalDateInput("");
                 }}
                 className="inline-flex items-center gap-0.5 text-[11px] border-none bg-transparent cursor-pointer p-0 transition-opacity hover:opacity-70"
                 style={{ color: "var(--muted)" }}
@@ -702,19 +733,61 @@ function TodoItem({
                 {!todo.dueDate && <span>마감일</span>}
               </button>
               {showDatePicker && (
-                <input
-                  type="date"
-                  defaultValue={todo.dueDate ? todo.dueDate.slice(0, 10) : ""}
-                  onChange={(e) => handleDateChange(e.target.value)}
-                  onBlur={() => setShowDatePicker(false)}
-                  autoFocus
-                  className="absolute left-0 top-5 z-10 text-xs rounded px-1 py-0.5"
+                <div
+                  className="absolute left-0 top-5 z-10 flex flex-col gap-1 p-1.5 rounded-lg shadow-md"
                   style={{
                     background: "var(--background)",
                     border: "1px solid var(--border)",
-                    color: "var(--foreground)",
+                    minWidth: 180,
                   }}
-                />
+                >
+                  <input
+                    type="text"
+                    placeholder="오늘, 내일, 다음주..."
+                    value={naturalDateInput}
+                    onChange={(e) => setNaturalDateInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+                        e.preventDefault();
+                        const parsed = parseNaturalDate(naturalDateInput);
+                        if (parsed) {
+                          setShowDatePicker(false);
+                          onUpdate({ dueDate: parsed });
+                          setNaturalDateInput("");
+                        }
+                      }
+                      if (e.key === "Escape") {
+                        setShowDatePicker(false);
+                        setNaturalDateInput("");
+                      }
+                    }}
+                    onBlur={() => {
+                      // Delay to allow date input click
+                      setTimeout(() => {
+                        setShowDatePicker(false);
+                        setNaturalDateInput("");
+                      }, 200);
+                    }}
+                    autoFocus
+                    className="text-xs rounded px-2 py-1 outline-none"
+                    style={{
+                      background: "var(--sidebar-bg)",
+                      border: "1px solid var(--border)",
+                      color: "var(--foreground)",
+                    }}
+                  />
+                  <input
+                    type="date"
+                    defaultValue={todo.dueDate ? todo.dueDate.slice(0, 10) : ""}
+                    onChange={(e) => handleDateChange(e.target.value)}
+                    className="text-xs rounded px-1 py-0.5"
+                    style={{
+                      background: "var(--sidebar-bg)",
+                      border: "1px solid var(--border)",
+                      color: "var(--foreground)",
+                    }}
+                  />
+                </div>
               )}
             </span>
           )}
