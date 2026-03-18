@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
     if (!wsUrl) {
       const origin = req.headers.get("origin") || req.headers.get("host") || "localhost:3000";
       const hostname = origin.replace(/^https?:\/\//, "").replace(/:\d+$/, "");
-      const wsPort = process.env.WS_PORT || "1234";
+      const wsPort = process.env.WS_HOST_PORT || process.env.WS_PORT || "1234";
       wsUrl = `ws://${hostname}:${wsPort}`;
     }
 

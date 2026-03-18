@@ -3,7 +3,7 @@ services:
     image: ghcr.io/jhl-labs/jpad-web:latest
     ports:
       - "${APP_PORT:-3000}:3000"
-      - "${WS_PORT:-1234}:1234"
+      - "${WS_HOST_PORT:-1234}:1234"
     depends_on:
       postgres:
         condition: service_healthy
