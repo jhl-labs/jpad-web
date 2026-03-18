@@ -23,13 +23,15 @@ RUN bunx prisma generate && bun run build
 FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=build /app/.next ./.next
-COPY --from=build /app/public ./public
-COPY --from=build /app/package.json ./
-COPY --from=build /app/prisma ./prisma
-COPY --from=build /app/prisma.config.ts ./
-COPY --from=build /app/src/server ./src/server
-COPY entrypoint.sh ./
+RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
+USER nextjs
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules ./node_modules
+COPY --from=build --chown=nextjs:nodejs /app/.next ./.next
+COPY --from=build --chown=nextjs:nodejs /app/public ./public
+COPY --from=build --chown=nextjs:nodejs /app/package.json ./
+COPY --from=build --chown=nextjs:nodejs /app/prisma ./prisma
+COPY --from=build --chown=nextjs:nodejs /app/prisma.config.ts ./
+COPY --from=build --chown=nextjs:nodejs /app/src/server ./src/server
+COPY --chown=nextjs:nodejs entrypoint.sh ./
 EXPOSE 3000 1234
 CMD ["sh", "entrypoint.sh"]
