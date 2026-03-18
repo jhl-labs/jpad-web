@@ -8,7 +8,7 @@ import {
   Settings, GripVertical, Trash2, Star, Network, Copy, Link,
   FilePlus, Edit3, MoreHorizontal, StarOff, ExternalLink,
   Calendar, CheckSquare, BookOpen, Upload, ChevronsUpDown, Check,
-  MessageSquarePlus, MoveRight,
+  MessageSquarePlus, MoveRight, FolderInput, BookTemplate,
 } from "lucide-react";
 import { ImportModal } from "@/components/editor/ImportModal";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
@@ -141,6 +141,12 @@ function PageContextMenu({
   const [newTitle, setNewTitle] = useState(menu.pageTitle);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showMoveMenu, setShowMoveMenu] = useState(false);
+  const [showCopyToWs, setShowCopyToWs] = useState(false);
+  const [copyWsList, setCopyWsList] = useState<{ id: string; name: string }[]>([]);
+  const [copyLoading, setCopyLoading] = useState(false);
+  const [showTemplateSave, setShowTemplateSave] = useState(false);
+  const [templateName, setTemplateName] = useState(menu.pageTitle);
+  const [templateSaving, setTemplateSaving] = useState(false);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -278,6 +284,201 @@ function PageContextMenu({
     onClose();
   }
 
+  async function handleOpenCopyToWorkspace() {
+    setCopyLoading(true);
+    setShowCopyToWs(true);
+    try {
+      const res = await fetch("/api/workspaces");
+      if (res.ok) {
+        const data: { id: string; name: string }[] = await res.json();
+        setCopyWsList(data.filter((ws) => ws.id !== workspaceId));
+      }
+    } catch (error) {
+      console.warn("[Sidebar] workspace list fetch failed:", error);
+    } finally {
+      setCopyLoading(false);
+    }
+  }
+
+  async function handleCopyToWorkspace(targetWsId: string) {
+    try {
+      // 1. GET page content
+      const contentRes = await fetch(`/api/pages/${menu.pageId}/content`);
+      if (!contentRes.ok) {
+        console.error("페이지 콘텐츠 조회 실패:", contentRes.status);
+        return;
+      }
+      const { content } = await contentRes.json();
+
+      // 2. POST new page in target workspace
+      const createRes = await fetch("/api/pages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ workspaceId: targetWsId, title: menu.pageTitle }),
+      });
+      if (!createRes.ok) {
+        console.error("페이지 생성 실패:", createRes.status);
+        return;
+      }
+      const newPage: { id: string } = await createRes.json();
+
+      // 3. PUT content
+      const putRes = await fetch(`/api/pages/${newPage.id}/content`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+      if (!putRes.ok) {
+        console.error("페이지 콘텐츠 복사 실패:", putRes.status);
+        return;
+      }
+
+      // 4. Toast-like notification via custom event
+      window.dispatchEvent(new CustomEvent("toast", { detail: { message: "다른 워크스페이스로 복사 완료" } }));
+    } catch (error) {
+      console.error("워크스페이스 복사 실패:", error);
+    }
+    onClose();
+  }
+
+  async function handleSaveAsTemplate() {
+    if (!templateName.trim()) return;
+    setTemplateSaving(true);
+    try {
+      // 1. GET page content
+      const contentRes = await fetch(`/api/pages/${menu.pageId}/content`);
+      if (!contentRes.ok) {
+        console.error("페이지 콘텐츠 조회 실패:", contentRes.status);
+        return;
+      }
+      const { content } = await contentRes.json();
+
+      // 2. POST template
+      const res = await fetch(`/api/workspaces/${workspaceId}/templates`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: templateName.trim(),
+          content,
+          category: "custom",
+        }),
+      });
+      if (!res.ok) {
+        console.error("템플릿 저장 실패:", res.status);
+        return;
+      }
+
+      window.dispatchEvent(new CustomEvent("toast", { detail: { message: "템플릿으로 저장되었습니다" } }));
+    } catch (error) {
+      console.error("템플릿 저장 실패:", error);
+    } finally {
+      setTemplateSaving(false);
+    }
+    onClose();
+  }
+
+  if (showCopyToWs) {
+    return (
+      <div
+        ref={menuRef}
+        role="dialog"
+        aria-modal="true"
+        className="fixed z-[100] rounded-lg shadow-xl py-1"
+        style={{
+          left: pos.x,
+          top: pos.y,
+          background: "var(--background)",
+          border: "1px solid var(--border)",
+          minWidth: 220,
+          maxHeight: 320,
+          overflow: "auto",
+        }}
+      >
+        <div
+          className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider"
+          style={{ color: "var(--muted)" }}
+        >
+          복사할 워크스페이스 선택
+        </div>
+        {copyLoading && (
+          <div className="px-3 py-2 text-xs" style={{ color: "var(--muted)" }}>
+            로딩 중...
+          </div>
+        )}
+        {!copyLoading && copyWsList.length === 0 && (
+          <div className="px-3 py-2 text-xs" style={{ color: "var(--muted)" }}>
+            복사 가능한 워크스페이스가 없습니다
+          </div>
+        )}
+        {copyWsList.map((ws) => (
+          <button
+            key={ws.id}
+            onClick={() => handleCopyToWorkspace(ws.id)}
+            className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-left transition-colors truncate"
+            onMouseEnter={(e) => { e.currentTarget.style.background = "var(--sidebar-hover)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+          >
+            <FolderInput size={14} style={{ color: "var(--muted)" }} className="shrink-0" />
+            <span className="truncate">{ws.name}</span>
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  if (showTemplateSave) {
+    return (
+      <div
+        ref={menuRef}
+        role="dialog"
+        aria-modal="true"
+        className="fixed z-[100] rounded-lg shadow-xl py-2 px-3"
+        style={{
+          left: pos.x,
+          top: pos.y,
+          background: "var(--background)",
+          border: "1px solid var(--border)",
+          minWidth: 240,
+        }}
+      >
+        <p className="text-xs font-medium mb-2" style={{ color: "var(--foreground)" }}>
+          템플릿 이름
+        </p>
+        <input
+          autoFocus
+          value={templateName}
+          onChange={(e) => setTemplateName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleSaveAsTemplate();
+            if (e.key === "Escape") onClose();
+          }}
+          className="w-full px-2 py-1.5 rounded text-sm bg-transparent outline-none mb-2"
+          style={{ border: "1px solid var(--primary)" }}
+          placeholder="템플릿 이름 입력"
+        />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleSaveAsTemplate}
+            disabled={templateSaving || !templateName.trim()}
+            className="flex-1 px-3 py-1.5 rounded text-sm font-medium text-white transition-colors"
+            style={{ background: "var(--primary)", opacity: templateSaving ? 0.6 : 1 }}
+          >
+            {templateSaving ? "저장 중..." : "저장"}
+          </button>
+          <button
+            onClick={onClose}
+            className="flex-1 px-3 py-1.5 rounded text-sm font-medium transition-colors"
+            style={{ border: "1px solid var(--border)", color: "var(--foreground)" }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "var(--sidebar-hover)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+          >
+            취소
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (showMoveMenu) {
     return (
       <div
@@ -408,7 +609,9 @@ function PageContextMenu({
     { icon: <Edit3 size={14} />, label: "이름 변경", action: () => setRenaming(true), hidden: !canManagePages },
     { icon: <Copy size={14} />, label: "복제", action: handleDuplicate, hidden: !canManagePages },
     { icon: <MoveRight size={14} />, label: "이동", action: () => setShowMoveMenu(true), hidden: !canManagePages },
+    { icon: <FolderInput size={14} />, label: "다른 워크스페이스로 복사", action: handleOpenCopyToWorkspace, hidden: !canManagePages },
     { icon: <FilePlus size={14} />, label: "하위 페이지 추가", action: () => { onCreatePage(menu.pageId); onClose(); }, hidden: !canManagePages },
+    { icon: <BookTemplate size={14} />, label: "템플릿으로 저장", action: () => setShowTemplateSave(true), hidden: !canManagePages },
     { icon: <span />, label: "", action: () => {}, divider: true, hidden: !canManagePages },
     {
       icon: menu.isFavorited ? <StarOff size={14} /> : <Star size={14} />,
