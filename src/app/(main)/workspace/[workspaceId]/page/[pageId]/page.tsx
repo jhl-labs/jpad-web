@@ -458,7 +458,7 @@ export default function PageEditorPage() {
         throw new Error(errMsg || "자동완성에 실패했습니다");
       }
 
-      // SSE 스트리밍 읽기
+      // SSE 스트리밍 읽기 — 전체 텍스트를 수집한 후 한번에 삽입
       const reader = res.body?.getReader();
       if (!reader) throw new Error("스트리밍을 지원하지 않습니다");
 
@@ -482,12 +482,6 @@ export default function PageEditorPage() {
             const parsed = JSON.parse(payload) as { text?: string };
             if (parsed.text) {
               accumulated += parsed.text;
-              // 점진적으로 에디터에 삽입
-              setPendingInsertMarkdown({
-                key: Date.now(),
-                markdown: accumulated,
-                afterBlockId: cursor?.blockId,
-              });
             }
           } catch {
             // JSON 파싱 실패 무시
@@ -498,6 +492,13 @@ export default function PageEditorPage() {
       if (!accumulated.trim()) {
         throw new Error("비어 있는 응답이 반환되었습니다");
       }
+
+      // 수집 완료 후 한번에 삽입
+      setPendingInsertMarkdown({
+        key: Date.now(),
+        markdown: accumulated,
+        afterBlockId: cursor?.blockId,
+      });
 
       // 성공 시 되돌리기 토스트 표시
       setUndoToast(true);
