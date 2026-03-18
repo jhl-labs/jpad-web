@@ -335,6 +335,10 @@ function InnerEditor({
         color: userColorRef.current,
       },
     },
+    placeholders: {
+      default: "'/' 를 눌러 명령어 메뉴를 열거나 글을 작성하세요...",
+      emptyDocument: "'/' 를 눌러 명령어 메뉴를 열거나 글을 작성하세요...",
+    },
     domAttributes: {
       editor: {
         style: `padding: 0; font-size: ${fontSize}; line-height: 1.6;`,

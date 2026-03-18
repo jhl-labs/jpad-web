@@ -53,12 +53,63 @@ export function TableOfContents({ content, editorContainerRef }: TableOfContents
 
   const headings = useMemo(() => parseHeadings(debouncedContent), [debouncedContent]);
 
-  // 스크롤 위치에 따라 현재 보이는 헤딩 감지
+  // IntersectionObserver로 현재 보이는 헤딩 감지
+  useEffect(() => {
+    const container = editorContainerRef?.current;
+    if (!container || headings.length === 0) return;
+
+    const headingElements = container.querySelectorAll(
+      '[data-content-type="heading"], h1, h2, h3'
+    );
+    if (headingElements.length === 0) return;
+
+    // 가시 영역에 들어오는 마지막 헤딩을 추적
+    const visibleHeadings = new Map<Element, boolean>();
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          visibleHeadings.set(entry.target, entry.isIntersecting);
+        }
+
+        // 가시 영역에 있는 가장 위쪽 헤딩을 활성화
+        let topMostVisible: { id: string; top: number } | null = null;
+        for (const el of headingElements) {
+          if (visibleHeadings.get(el)) {
+            const rect = el.getBoundingClientRect();
+            const text = el.textContent?.trim() || "";
+            const matchingItem = headings.find((h) => h.text === text);
+            if (matchingItem && (topMostVisible === null || rect.top < topMostVisible.top)) {
+              topMostVisible = { id: matchingItem.id, top: rect.top };
+            }
+          }
+        }
+
+        if (topMostVisible) {
+          setActiveId(topMostVisible.id);
+        }
+      },
+      {
+        root: container,
+        rootMargin: "-10% 0px -60% 0px",
+        threshold: 0,
+      }
+    );
+
+    for (const el of headingElements) {
+      observer.observe(el);
+    }
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [headings, editorContainerRef]);
+
+  // 스크롤 위치에 따라 현재 보이는 헤딩 감지 (폴백)
   const handleScroll = useCallback(() => {
     if (!editorContainerRef?.current || headings.length === 0) return;
 
     const container = editorContainerRef.current;
-    // BlockNote는 heading 블록에 data-block-type="heading"을 사용
     const headingElements = container.querySelectorAll(
       '[data-content-type="heading"], h1, h2, h3'
     );
@@ -70,7 +121,6 @@ export function TableOfContents({ content, editorContainerRef }: TableOfContents
 
     for (const el of headingElements) {
       const rect = el.getBoundingClientRect();
-      // 컨테이너 상단 기준으로 100px 이내에 있는 헤딩
       if (rect.top <= containerRect.top + 100) {
         const text = el.textContent?.trim() || "";
         const matchingItem = headings.find((h) => h.text === text);
@@ -92,7 +142,6 @@ export function TableOfContents({ content, editorContainerRef }: TableOfContents
     if (!container) return;
 
     container.addEventListener("scroll", handleScroll, { passive: true });
-    // 초기 위치 감지
     handleScroll();
 
     return () => {
@@ -198,10 +247,13 @@ export function TableOfContents({ content, editorContainerRef }: TableOfContents
                           : item.level === 3
                             ? "var(--muted)"
                             : "var(--foreground)",
-                        fontWeight: item.level === 1 ? 600 : 400,
+                        fontWeight: isActive ? 600 : item.level === 1 ? 600 : 400,
                         background: isActive
                           ? "var(--sidebar-hover)"
                           : undefined,
+                        borderLeft: isActive
+                          ? "2px solid var(--primary)"
+                          : "2px solid transparent",
                       }}
                       title={item.text}
                     >
