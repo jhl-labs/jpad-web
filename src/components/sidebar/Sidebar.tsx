@@ -117,6 +117,7 @@ function PageContextMenu({
   workspaceId,
   canManagePages,
   canDelete,
+  hasChildren,
   onCreatePage,
   onDeletePage,
   onRefresh,
@@ -126,6 +127,7 @@ function PageContextMenu({
   workspaceId: string;
   canManagePages: boolean;
   canDelete: boolean;
+  hasChildren: boolean;
   onCreatePage: (parentId?: string) => void;
   onDeletePage: (pageId: string, title: string) => void;
   onRefresh: () => void;
@@ -135,6 +137,7 @@ function PageContextMenu({
   const menuRef = useRef<HTMLDivElement>(null);
   const [renaming, setRenaming] = useState(false);
   const [newTitle, setNewTitle] = useState(menu.pageTitle);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -244,6 +247,47 @@ function PageContextMenu({
     onClose();
   }
 
+  if (confirmDelete) {
+    return (
+      <div
+        ref={menuRef}
+        role="dialog"
+        aria-modal="true"
+        className="fixed z-[100] rounded-lg shadow-xl py-2 px-3"
+        style={{ left: pos.x, top: pos.y, background: "var(--background)", border: "1px solid var(--border)", minWidth: 220 }}
+      >
+        <p className="text-sm font-medium mb-1" style={{ color: "var(--foreground)" }}>
+          정말 삭제하시겠습니까?
+        </p>
+        {hasChildren && (
+          <p className="text-xs mb-2" style={{ color: "var(--danger, #ef4444)" }}>
+            하위 페이지도 함께 삭제됩니다
+          </p>
+        )}
+        <div className="flex items-center gap-2 mt-2">
+          <button
+            onClick={() => { onDeletePage(menu.pageId, menu.pageTitle); onClose(); }}
+            className="flex-1 px-3 py-1.5 rounded text-sm font-medium text-white transition-colors"
+            style={{ background: "var(--danger, #ef4444)" }}
+            onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.9"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; }}
+          >
+            삭제
+          </button>
+          <button
+            onClick={() => setConfirmDelete(false)}
+            className="flex-1 px-3 py-1.5 rounded text-sm font-medium transition-colors"
+            style={{ border: "1px solid var(--border)", color: "var(--foreground)" }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "var(--sidebar-hover)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+          >
+            취소
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (renaming) {
     return (
       <div
@@ -281,7 +325,7 @@ function PageContextMenu({
       action: handleToggleFavorite,
     },
     { icon: <span />, label: "", action: () => {}, divider: true, hidden: !canDelete },
-    { icon: <Trash2 size={14} />, label: "삭제", action: () => { onDeletePage(menu.pageId, menu.pageTitle); onClose(); }, danger: true, hidden: !canDelete },
+    { icon: <Trash2 size={14} />, label: "삭제", action: () => { setConfirmDelete(true); }, danger: true, hidden: !canDelete },
   ];
 
   return (
@@ -346,6 +390,26 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
   const [sidebarWidth, setSidebarWidth] = useState(getSavedWidth);
   const isResizingRef = useRef(false);
   const sidebarRef = useRef<HTMLElement>(null);
+
+  // Mobile swipe-to-close
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (!touchStartRef.current) return;
+    const touch = e.changedTouches[0];
+    const deltaX = touch.clientX - touchStartRef.current.x;
+    const deltaY = Math.abs(touch.clientY - touchStartRef.current.y);
+    // 왼쪽으로 50px 이상 스와이프하고, 수직 이동이 과도하지 않을 때 닫기
+    if (deltaX < -50 && deltaY < 100) {
+      onToggle();
+    }
+    touchStartRef.current = null;
+  }, [onToggle]);
 
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -512,6 +576,8 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
   return (
     <aside
       ref={sidebarRef}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
       className={`
         h-full flex flex-col overflow-hidden shrink-0
         ${isOpen ? "" : "!w-0"}
@@ -874,6 +940,7 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
           workspaceId={workspace.id}
           canManagePages={canManagePages}
           canDelete={canDelete}
+          hasChildren={pages.some((p) => p.parentId === contextMenu.pageId)}
           onCreatePage={onCreatePage}
           onDeletePage={onDeletePage}
           onRefresh={onRefresh}

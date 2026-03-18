@@ -66,6 +66,8 @@ export default function DailyNotePage() {
   const [savedContent, setSavedContent] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [notFound, setNotFound] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [existingDates, setExistingDates] = useState<Set<string>>(new Set());
   const [calendarMonth, setCalendarMonth] = useState(getMonthStr(today));
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -76,6 +78,10 @@ export default function DailyNotePage() {
   const loadDailyNote = useCallback(
     async (date: string) => {
       setLoading(true);
+      setNotFound(false);
+      setPage(null);
+      setContent("");
+      setSavedContent("");
       try {
         const res = await fetch(
           `/api/workspaces/${workspaceId}/daily?date=${date}`
@@ -91,6 +97,8 @@ export default function DailyNotePage() {
             setContent(c || "");
             setSavedContent(c || "");
           }
+        } else if (res.status === 404) {
+          setNotFound(true);
         }
       } catch (e) {
         console.error("Failed to load daily note:", e);
@@ -100,6 +108,33 @@ export default function DailyNotePage() {
     },
     [workspaceId]
   );
+
+  // 오늘의 노트 수동 생성 (viewer 등 자동 생성 불가 시)
+  const createTodayNote = useCallback(async () => {
+    setCreating(true);
+    try {
+      const res = await fetch(
+        `/api/workspaces/${workspaceId}/daily?date=${selectedDate}`,
+        { method: "GET" }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setPage(data);
+        setNotFound(false);
+
+        const contentRes = await fetch(`/api/pages/${data.id}/content`);
+        if (contentRes.ok) {
+          const { content: c } = await contentRes.json();
+          setContent(c || "");
+          setSavedContent(c || "");
+        }
+      }
+    } catch (e) {
+      console.error("Failed to create daily note:", e);
+    } finally {
+      setCreating(false);
+    }
+  }, [workspaceId, selectedDate]);
 
   // 날짜 목록 로드
   const loadDateList = useCallback(
@@ -376,6 +411,36 @@ export default function DailyNotePage() {
           >
             <Loader2 size={24} className="animate-spin mr-2" />
             로딩 중...
+          </div>
+        ) : notFound ? (
+          <div
+            className="flex flex-col items-center justify-center py-20 gap-4"
+          >
+            <CalendarDays size={48} style={{ color: "var(--muted)" }} />
+            <p className="text-sm" style={{ color: "var(--muted)" }}>
+              {formatDate(selectedDate)}의 노트가 아직 없습니다.
+            </p>
+            <button
+              onClick={createTodayNote}
+              disabled={creating}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+              style={{
+                background: "var(--primary)",
+                color: "white",
+              }}
+            >
+              {creating ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  생성 중...
+                </>
+              ) : (
+                <>
+                  <CalendarDays size={16} />
+                  오늘의 노트 생성
+                </>
+              )}
+            </button>
           </div>
         ) : (
           <div>
