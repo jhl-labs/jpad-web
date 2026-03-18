@@ -152,6 +152,7 @@ export function AiPanel({
   });
   const [expandedAction, setExpandedAction] = useState<WritingAction | null>(null);
   const [copyFeedback, setCopyFeedback] = useState(false);
+  const [streamingDone, setStreamingDone] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
   const lastActionRef = useRef<WritingAction | null>(null);
 
@@ -287,6 +288,7 @@ export function AiPanel({
       lastActionRef.current = action;
       setError(null);
       setResult("");
+      setStreamingDone(false);
       setExpandedAction(null);
 
       const effectiveOptions = { ...optionValues, ...optionOverride };
@@ -313,7 +315,15 @@ export function AiPanel({
 
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
-          throw new Error(data.error || "AI 요청에 실패했습니다");
+          const errMsg = (data as { error?: string }).error || "";
+          if (res.status === 429) {
+            throw new Error("요청이 너무 많습니다. 잠시 후 다시 시도하세요.");
+          } else if (res.status === 403) {
+            throw new Error("AI 기능이 비활성화되어 있습니다. 설정을 확인하세요.");
+          } else if (res.status === 500 && errMsg.toLowerCase().includes("not found")) {
+            throw new Error("AI 모델을 찾을 수 없습니다. 프로필을 확인하세요.");
+          }
+          throw new Error(errMsg || "AI 요청에 실패했습니다");
         }
 
         if (res.headers.get("content-type")?.includes("text/event-stream")) {
@@ -326,8 +336,13 @@ export function AiPanel({
           const data = await res.json();
           setResult(data.result || data.text || "");
         }
+        setStreamingDone(true);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다");
+        if (err instanceof DOMException && err.name === "AbortError") {
+          setError("요청 시간이 초과되었습니다.");
+        } else {
+          setError(err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다");
+        }
       } finally {
         setLoading(false);
         setActiveAction(null);
@@ -387,7 +402,15 @@ export function AiPanel({
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "AI 채팅 요청에 실패했습니다");
+        const errMsg = (data as { error?: string }).error || "";
+        if (res.status === 429) {
+          throw new Error("요청이 너무 많습니다. 잠시 후 다시 시도하세요.");
+        } else if (res.status === 403) {
+          throw new Error("AI 기능이 비활성화되어 있습니다. 설정을 확인하세요.");
+        } else if (res.status === 500 && errMsg.toLowerCase().includes("not found")) {
+          throw new Error("AI 모델을 찾을 수 없습니다. 프로필을 확인하세요.");
+        }
+        throw new Error(errMsg || "AI 채팅 요청에 실패했습니다");
       }
 
       if (res.headers.get("content-type")?.includes("text/event-stream")) {
@@ -714,6 +737,24 @@ export function AiPanel({
                         }}
                       />
                     )}
+                  </div>
+
+                  {/* Streaming status + character count */}
+                  <div
+                    className="flex items-center justify-between px-3 py-1.5 text-[11px]"
+                    style={{ color: "var(--muted)" }}
+                  >
+                    <span>
+                      {loading ? (
+                        <span className="flex items-center gap-1">
+                          <Loader2 size={10} className="animate-spin" />
+                          생성 중...
+                        </span>
+                      ) : streamingDone ? (
+                        <span style={{ color: "#22c55e" }}>&#10003; 생성 완료</span>
+                      ) : null}
+                    </span>
+                    <span>결과: {result.length}자</span>
                   </div>
 
                   {/* Action bar */}

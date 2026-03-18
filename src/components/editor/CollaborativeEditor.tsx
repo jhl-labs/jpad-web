@@ -12,7 +12,7 @@ import type { BlockNoteEditor } from "@blocknote/core";
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import { blocksToMarkdown } from "@/lib/markdown/serializer";
-import { Sparkles, FileText, Expand, Languages, SpellCheck, Image as ImageIcon } from "lucide-react";
+import { Sparkles, FileText, Expand, Languages, SpellCheck, HelpCircle, Palette, ListChecks, Image as ImageIcon } from "lucide-react";
 import { AI_EVENTS } from "@/lib/events";
 import { uploadImageToPage, isImageFile } from "./imageUpload";
 
@@ -25,6 +25,9 @@ const FLOATING_AI_ACTIONS = [
   { label: "AI 확장", action: "expand", icon: <Expand size={13} /> },
   { label: "AI 번역", action: "translate", icon: <Languages size={13} /> },
   { label: "AI 교정", action: "fixGrammar", icon: <SpellCheck size={13} /> },
+  { label: "AI 설명", action: "explain", icon: <HelpCircle size={13} /> },
+  { label: "AI 톤 변경", action: "changeTone", icon: <Palette size={13} /> },
+  { label: "AI 액션 아이템", action: "actionItems", icon: <ListChecks size={13} /> },
 ] as const;
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error";
@@ -666,8 +669,18 @@ function InnerEditor({
       setSelectedText(text);
       setSelectionRect(rect);
     };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setSelectedText("");
+        setSelectionRect(null);
+      }
+    };
     document.addEventListener("selectionchange", handleSelectionChange);
-    return () => document.removeEventListener("selectionchange", handleSelectionChange);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("selectionchange", handleSelectionChange);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
   const handleFloatingAiAction = useCallback(

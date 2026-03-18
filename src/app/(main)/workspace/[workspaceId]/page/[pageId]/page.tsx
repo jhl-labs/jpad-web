@@ -98,7 +98,10 @@ export default function PageEditorPage() {
   const [autocompleteLoading, setAutocompleteLoading] = useState(false);
   const [autocompleteError, setAutocompleteError] = useState<string | null>(null);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [undoToast, setUndoToast] = useState(false);
   const cursorContextRef = useRef<CursorContext | null>(null);
+  const autocompleteAbortRef = useRef<AbortController | null>(null);
+  const undoToastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const titleTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
   const editorContainerRef = useRef<HTMLDivElement>(null);
 
@@ -187,6 +190,7 @@ export default function PageEditorPage() {
 
     return () => {
       if (titleTimeout.current) clearTimeout(titleTimeout.current);
+      if (undoToastTimer.current) clearTimeout(undoToastTimer.current);
     };
   }, [fetchPage, workspaceId, pageId]);
 
@@ -278,6 +282,9 @@ export default function PageEditorPage() {
   const handleAutocomplete = useCallback(async () => {
     if (autocompleteLoading || isReadOnly) return;
 
+    const abortController = new AbortController();
+    autocompleteAbortRef.current = abortController;
+
     setAutocompleteLoading(true);
     setAutocompleteError(null);
 
@@ -293,11 +300,20 @@ export default function PageEditorPage() {
           pageId,
           ...(textForAi ? { text: textForAi } : {}),
         }),
+        signal: abortController.signal,
       });
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "자동완성에 실패했습니다");
+        const errMsg = (data as { error?: string }).error || "";
+        if (res.status === 429) {
+          throw new Error("요청이 너무 많습니다. 잠시 후 다시 시도하세요.");
+        } else if (res.status === 403) {
+          throw new Error("AI 기능이 비활성화되어 있습니다. 설정을 확인하세요.");
+        } else if (res.status === 500 && errMsg.toLowerCase().includes("not found")) {
+          throw new Error("AI 모델을 찾을 수 없습니다. 프로필을 확인하세요.");
+        }
+        throw new Error(errMsg || "자동완성에 실패했습니다");
       }
 
       // SSE 스트리밍 읽기
@@ -340,11 +356,21 @@ export default function PageEditorPage() {
       if (!accumulated.trim()) {
         throw new Error("비어 있는 응답이 반환되었습니다");
       }
+
+      // 성공 시 되돌리기 토스트 표시
+      setUndoToast(true);
+      if (undoToastTimer.current) clearTimeout(undoToastTimer.current);
+      undoToastTimer.current = setTimeout(() => setUndoToast(false), 5000);
     } catch (error) {
-      setAutocompleteError(
-        error instanceof Error ? error.message : "자동완성에 실패했습니다"
-      );
+      if (error instanceof DOMException && error.name === "AbortError") {
+        setAutocompleteError("요청 시간이 초과되었습니다.");
+      } else {
+        setAutocompleteError(
+          error instanceof Error ? error.message : "자동완성에 실패했습니다"
+        );
+      }
     } finally {
+      autocompleteAbortRef.current = null;
       setAutocompleteLoading(false);
     }
   }, [autocompleteLoading, isReadOnly, content, workspaceId, pageId]);
@@ -359,6 +385,19 @@ export default function PageEditorPage() {
       markdown: text,
     });
   }, []);
+
+  // ESC로 자동완성 취소
+  useEffect(() => {
+    if (!autocompleteLoading) return;
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        autocompleteAbortRef.current?.abort();
+        setAutocompleteLoading(false);
+      }
+    };
+    document.addEventListener("keydown", handleEsc);
+    return () => document.removeEventListener("keydown", handleEsc);
+  }, [autocompleteLoading]);
 
   // 더보기 메뉴 외부 클릭 닫기
   useEffect(() => {
@@ -768,7 +807,43 @@ export default function PageEditorPage() {
           }}
         >
           <Loader2 size={14} className="animate-spin" />
-          AI 이어쓰기 생성 중...
+          AI 이어쓰기 생성 중... (ESC로 취소)
+        </div>
+      )}
+      {undoToast && (
+        <div
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-lg shadow-lg text-sm font-medium flex items-center gap-3"
+          style={{
+            background: "var(--foreground)",
+            color: "var(--background)",
+          }}
+        >
+          <span>AI 이어쓰기 삽입됨</span>
+          <button
+            onClick={() => {
+              document.dispatchEvent(
+                new KeyboardEvent("keydown", {
+                  key: "z",
+                  ctrlKey: true,
+                  bubbles: true,
+                })
+              );
+              setUndoToast(false);
+            }}
+            className="px-2 py-0.5 rounded text-xs font-semibold transition-opacity hover:opacity-80"
+            style={{
+              background: "var(--primary)",
+              color: "white",
+            }}
+          >
+            되돌리기
+          </button>
+          <button
+            onClick={() => setUndoToast(false)}
+            className="text-xs opacity-60 hover:opacity-100"
+          >
+            닫기
+          </button>
         </div>
       )}
 
