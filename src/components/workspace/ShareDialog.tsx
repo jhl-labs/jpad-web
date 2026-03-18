@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Copy, Globe, Link2, X } from "lucide-react";
+import { Check, Copy, Globe, Link2, X } from "lucide-react";
 
 interface Member {
   id: string;
@@ -54,6 +54,7 @@ export function ShareDialog({
   const [pageAccessMode, setPageAccessMode] = useState<"workspace" | "restricted">("workspace");
   const [pageAllowedUserIds, setPageAllowedUserIds] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -248,11 +249,14 @@ export function ShareDialog({
     }
   }
 
-  async function copyToClipboard(value: string) {
+  async function copyToClipboard(value: string, key?: string) {
     if (!value) return;
     try {
       await navigator.clipboard.writeText(value);
-    } catch (error) {
+      const copyKey = key || value;
+      setCopied(copyKey);
+      setTimeout(() => setCopied((prev) => (prev === copyKey ? null : prev)), 2000);
+    } catch (_error) {
       setError("클립보드 복사에 실패했습니다.");
     }
   }
@@ -442,11 +446,21 @@ export function ShareDialog({
                       style={{ border: "1px solid var(--border)" }}
                     />
                     <button
-                      onClick={() => copyToClipboard(publicPageUrl)}
-                      className="px-3 py-2 rounded-md text-sm"
-                      style={{ border: "1px solid var(--border)" }}
+                      onClick={() => copyToClipboard(publicPageUrl, "page")}
+                      className="px-3 py-2 rounded-md text-sm flex items-center gap-1"
+                      style={{
+                        border: "1px solid var(--border)",
+                        color: copied === "page" ? "#22c55e" : "var(--foreground)",
+                      }}
                     >
-                      <Copy size={14} />
+                      {copied === "page" ? (
+                        <>
+                          <Check size={14} />
+                          <span className="text-xs">복사됨!</span>
+                        </>
+                      ) : (
+                        <Copy size={14} />
+                      )}
                     </button>
                   </div>
                   <div className="flex gap-2">
@@ -504,11 +518,24 @@ export function ShareDialog({
               </button>
               {publicWikiEnabled && (
                 <button
-                  onClick={() => copyToClipboard(publicWikiUrl)}
-                  className="px-3 py-2 rounded-md text-sm"
-                  style={{ border: "1px solid var(--border)" }}
+                  onClick={() => copyToClipboard(publicWikiUrl, "wiki")}
+                  className="flex items-center gap-1 px-3 py-2 rounded-md text-sm"
+                  style={{
+                    border: "1px solid var(--border)",
+                    color: copied === "wiki" ? "#22c55e" : "var(--foreground)",
+                  }}
                 >
-                  위키 링크 복사
+                  {copied === "wiki" ? (
+                    <>
+                      <Check size={14} />
+                      복사됨!
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={14} />
+                      위키 링크 복사
+                    </>
+                  )}
                 </button>
               )}
             </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { Upload, X, FileText, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { Upload, X, FileText, FileCode, File, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 
 interface ImportModalProps {
   workspaceId: string;
@@ -11,9 +11,29 @@ interface ImportModalProps {
 
 interface FileStatus {
   name: string;
+  size?: number;
   status: "pending" | "uploading" | "done" | "error";
   error?: string;
   pageId?: string;
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function getFileTypeIcon(filename: string) {
+  if (filename.endsWith(".md") || filename.endsWith(".markdown")) {
+    return <FileCode size={14} style={{ color: "rgba(59,130,246,0.8)" }} className="shrink-0" />;
+  }
+  if (filename.endsWith(".html") || filename.endsWith(".htm")) {
+    return <FileCode size={14} style={{ color: "rgba(245,158,11,0.8)" }} className="shrink-0" />;
+  }
+  if (filename.endsWith(".txt")) {
+    return <FileText size={14} style={{ color: "var(--muted)" }} className="shrink-0" />;
+  }
+  return <File size={14} style={{ color: "var(--muted)" }} className="shrink-0" />;
 }
 
 export function ImportModal({ workspaceId, onClose, onImported }: ImportModalProps) {
@@ -31,6 +51,7 @@ export function ImportModal({ workspaceId, onClose, onImported }: ImportModalPro
 
     const newEntries: FileStatus[] = mdFiles.map((f) => ({
       name: f.name,
+      size: f.size,
       status: "pending" as const,
     }));
     setFiles((prev) => [...prev, ...newEntries]);
@@ -263,8 +284,13 @@ export function ImportModal({ workspaceId, onClose, onImported }: ImportModalPro
                     border: "1px solid var(--border)",
                   }}
                 >
-                  <FileText size={14} style={{ color: "var(--muted)" }} className="shrink-0" />
+                  {getFileTypeIcon(f.name)}
                   <span className="flex-1 truncate">{f.name}</span>
+                  {f.size != null && (
+                    <span className="text-[11px] shrink-0" style={{ color: "var(--muted)" }}>
+                      {formatFileSize(f.size)}
+                    </span>
+                  )}
 
                   {f.status === "pending" && !importing && (
                     <button

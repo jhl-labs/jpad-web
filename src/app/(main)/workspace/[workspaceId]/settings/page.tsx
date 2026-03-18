@@ -271,14 +271,24 @@ export default function WorkspaceSettingsPage() {
 
   async function handleInvite() {
     setInviteError("");
-    if (!inviteEmail.trim()) return;
+    const trimmed = inviteEmail.trim();
+    if (!trimmed) return;
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmed)) {
+      setInviteError("올바른 이메일 형식을 입력해주세요");
+      return;
+    }
+
     const res = await fetch(`/api/workspaces/${workspaceId}/members`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
+      body: JSON.stringify({ email: trimmed, role: inviteRole }),
     });
     if (res.ok) {
       setInviteEmail("");
+      setInviteError("");
       showToast("멤버가 추가되었습니다");
       fetchWorkspace();
     } else {
@@ -577,7 +587,7 @@ export default function WorkspaceSettingsPage() {
               </button>
             </div>
             {inviteError && (
-              <p className="text-sm text-red-500 mt-1">{inviteError}</p>
+              <p className="text-sm mt-1" style={{ color: "var(--danger, #ef4444)" }}>{inviteError}</p>
             )}
           </Section>
 

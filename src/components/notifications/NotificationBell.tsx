@@ -10,7 +10,9 @@ import {
   Info,
   CheckCircle2,
   CheckCheck,
+  Settings,
 } from "lucide-react";
+import Link from "next/link";
 
 interface Notification {
   id: string;
@@ -239,27 +241,26 @@ export function NotificationBell({ workspaceId }: NotificationBellProps) {
             style={{ borderBottom: "1px solid var(--border)" }}
           >
             <span className="text-sm font-semibold">알림</span>
-            {unreadCount > 0 && (
-              <button
-                onClick={handleReadAll}
-                className="flex items-center gap-1 text-xs hover:opacity-70 transition-opacity"
-                style={{ color: "var(--primary)" }}
-              >
-                <CheckCheck size={12} />
-                모두 읽음
-              </button>
-            )}
+            <button
+              onClick={handleReadAll}
+              disabled={unreadCount === 0}
+              className="flex items-center gap-1 text-xs hover:opacity-70 transition-opacity disabled:opacity-40"
+              style={{ color: "var(--primary)" }}
+            >
+              <CheckCheck size={12} />
+              모두 읽음
+            </button>
           </div>
 
           {/* Notification list */}
-          <div className="overflow-auto" style={{ maxHeight: 360 }}>
+          <div className="overflow-auto" style={{ maxHeight: 320 }}>
             {notifications.length === 0 ? (
               <div
                 className="flex flex-col items-center justify-center py-8 text-sm"
                 style={{ color: "var(--muted)" }}
               >
                 <Bell size={24} className="mb-2 opacity-40" />
-                알림이 없습니다
+                새로운 알림이 없습니다
                 <p className="text-xs mt-1 text-center" style={{ color: "var(--muted)", opacity: 0.7 }}>
                   멘션, 마감일 알림 등이 여기에 표시됩니다.
                 </p>
@@ -330,6 +331,19 @@ export function NotificationBell({ workspaceId }: NotificationBellProps) {
               ))
             )}
           </div>
+
+          {/* Footer */}
+          {workspaceId && (
+            <Link
+              href={`/workspace/${workspaceId}/user-settings?tab=notifications`}
+              className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs transition-opacity hover:opacity-70"
+              style={{ borderTop: "1px solid var(--border)", color: "var(--primary)" }}
+              onClick={() => setOpen(false)}
+            >
+              <Settings size={12} />
+              알림 설정
+            </Link>
+          )}
         </div>
       )}
     </div>
