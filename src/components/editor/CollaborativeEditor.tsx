@@ -12,7 +12,7 @@ import type { BlockNoteEditor } from "@blocknote/core";
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import { blocksToMarkdown } from "@/lib/markdown/serializer";
-import { Sparkles, FileText, Expand, Languages, SpellCheck, HelpCircle, Palette, ListChecks, Image as ImageIcon, RefreshCw } from "lucide-react";
+import { Sparkles, FileText, Expand, Languages, SpellCheck, HelpCircle, Palette, ListChecks, Image as ImageIcon, RefreshCw, Undo2, Redo2 } from "lucide-react";
 import { AI_EVENTS } from "@/lib/events";
 import { uploadImageToPage, isImageFile } from "./imageUpload";
 
@@ -991,6 +991,43 @@ function InnerEditor({
         className="absolute top-0 right-0 flex items-center gap-2 text-xs z-10"
         style={{ color: "var(--muted)" }}
       >
+        {/* Undo / Redo buttons */}
+        {!readOnly && (
+          <span className="flex items-center gap-0.5">
+            <button
+              onClick={() => {
+                const editorEl = editorContainerRef.current?.querySelector("[contenteditable]");
+                if (editorEl instanceof HTMLElement) {
+                  editorEl.focus();
+                  document.execCommand("undo");
+                } else {
+                  document.dispatchEvent(new KeyboardEvent("keydown", { key: "z", ctrlKey: true, bubbles: true }));
+                }
+              }}
+              className="p-1 rounded transition-colors hover:bg-black/5 dark:hover:bg-white/10"
+              title="실행 취소 (Ctrl+Z)"
+              aria-label="실행 취소"
+            >
+              <Undo2 size={14} />
+            </button>
+            <button
+              onClick={() => {
+                const editorEl = editorContainerRef.current?.querySelector("[contenteditable]");
+                if (editorEl instanceof HTMLElement) {
+                  editorEl.focus();
+                  document.execCommand("redo");
+                } else {
+                  document.dispatchEvent(new KeyboardEvent("keydown", { key: "z", ctrlKey: true, shiftKey: true, bubbles: true }));
+                }
+              }}
+              className="p-1 rounded transition-colors hover:bg-black/5 dark:hover:bg-white/10"
+              title="다시 실행 (Ctrl+Shift+Z)"
+              aria-label="다시 실행"
+            >
+              <Redo2 size={14} />
+            </button>
+          </span>
+        )}
         {saveStatus === "saving" && <span>저장 중...</span>}
         {saveStatus === "saved" && (
           <span style={{ color: "var(--success, #22c55e)" }}>저장됨</span>

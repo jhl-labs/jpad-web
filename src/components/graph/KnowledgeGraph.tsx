@@ -29,6 +29,27 @@ interface KnowledgeGraphProps {
   currentPageId?: string;
 }
 
+const MAX_VISIBLE_NODES = 200;
+const VIEWPORT_MARGIN = 100; // 뷰포트 밖 여유 px (월드 좌표)
+
+function isInViewport(
+  node: GraphNode,
+  cam: { x: number; y: number; scale: number },
+  w: number,
+  h: number
+): boolean {
+  // 월드 좌표 → 스크린 좌표 변환
+  const sx = node.x * cam.scale + cam.x;
+  const sy = node.y * cam.scale + cam.y;
+  const margin = VIEWPORT_MARGIN * cam.scale;
+  return (
+    sx >= -margin &&
+    sx <= w + margin &&
+    sy >= -margin &&
+    sy <= h + margin
+  );
+}
+
 export function KnowledgeGraph({ workspaceId, currentPageId }: KnowledgeGraphProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -38,6 +59,7 @@ export function KnowledgeGraph({ workspaceId, currentPageId }: KnowledgeGraphPro
   const [nodeCount, setNodeCount] = useState(0);
   const [edgeCount, setEdgeCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [visibleCount, setVisibleCount] = useState(0);
 
   // Camera state
   const cameraRef = useRef({ x: 0, y: 0, scale: 1 });
@@ -290,15 +312,29 @@ export function KnowledgeGraph({ workspaceId, currentPageId }: KnowledgeGraphPro
       const nodeMap = new Map<string, GraphNode>();
       for (const n of nodes) nodeMap.set(n.id, n);
 
+      // Viewport culling: 뷰포트 안에 있는 노드만 렌더링
+      const visibleNodeIds = new Set<string>();
+      let culledCount = 0;
+      for (const n of nodes) {
+        if (isInViewport(n, cam, w, h)) {
+          if (culledCount < MAX_VISIBLE_NODES) {
+            visibleNodeIds.add(n.id);
+            culledCount++;
+          }
+        }
+      }
+      setVisibleCount(culledCount);
+
       const hoverId = hoverNodeRef.current;
       const highlightedIds = hoverId ? getConnectedIds(hoverId) : null;
       const dimming = hoverId !== null;
 
-      // Draw edges
+      // Draw edges (only if at least one endpoint is visible)
       for (const edge of edges) {
         const a = nodeMap.get(edge.source);
         const b = nodeMap.get(edge.target);
         if (!a || !b) continue;
+        if (!visibleNodeIds.has(edge.source) && !visibleNodeIds.has(edge.target)) continue;
 
         const isHighlighted =
           highlightedIds && highlightedIds.has(edge.source) && highlightedIds.has(edge.target);
@@ -330,8 +366,9 @@ export function KnowledgeGraph({ workspaceId, currentPageId }: KnowledgeGraphPro
 
       ctx.globalAlpha = 1;
 
-      // Draw nodes
+      // Draw nodes (only visible ones)
       for (const n of nodes) {
+        if (!visibleNodeIds.has(n.id)) continue;
         const isCurrent = n.id === currentPageId;
         const isHovered = n.id === hoverId;
         const isConnectedToHover = highlightedIds?.has(n.id);
@@ -569,6 +606,20 @@ export function KnowledgeGraph({ workspaceId, currentPageId }: KnowledgeGraphPro
         <span style={{ color: "var(--border)" }}>|</span>
         <span>{edgeCount}개 연결</span>
       </div>
+
+      {/* Viewport culling notice */}
+      {!loading && nodeCount > 0 && visibleCount < nodeCount && (
+        <div
+          className="absolute top-3 right-3 text-xs px-3 py-1.5 rounded-lg"
+          style={{
+            background: "var(--background)",
+            border: "1px solid var(--border)",
+            color: "var(--muted)",
+          }}
+        >
+          {visibleCount}/{nodeCount}개 노드 표시 중 (줌 아웃으로 더 보기)
+        </div>
+      )}
 
       {/* Legend */}
       <div
