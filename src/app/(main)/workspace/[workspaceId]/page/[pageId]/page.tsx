@@ -493,11 +493,13 @@ export default function PageEditorPage() {
         throw new Error("비어 있는 응답이 반환되었습니다");
       }
 
-      // 수집 완료 후 한번에 삽입
+      // 수집 완료 후 현재 커서 위치에 삽입
+      // 슬래시 메뉴에서 호출 시 커서가 이동했을 수 있으므로 최신 커서 사용
+      const latestCursor = cursorContextRef.current;
       setPendingInsertMarkdown({
         key: Date.now(),
         markdown: accumulated,
-        afterBlockId: cursor?.blockId,
+        afterBlockId: latestCursor?.blockId || cursor?.blockId,
       });
 
       // 성공 시 되돌리기 토스트 표시

@@ -673,7 +673,7 @@ function InnerEditor({
         );
         if (cancelled || blocks.length === 0) return;
 
-        // Insert after specific block (cursor position) or at end
+        // Insert at cursor position
         const targetBlockId = insertRequest.afterBlockId;
         const targetBlock = targetBlockId
           ? editor.document.find((b) => b.id === targetBlockId)
@@ -681,7 +681,18 @@ function InnerEditor({
         const anchorBlock = targetBlock || editor.document.at(-1);
 
         if (anchorBlock) {
-          editor.insertBlocks(blocks, anchorBlock, "after");
+          // 현재 블록이 비어있으면 대체, 아니면 뒤에 삽입
+          const blockContent = editor.getBlock(anchorBlock.id);
+          const isEmpty = !blockContent?.content ||
+            (Array.isArray(blockContent.content) && blockContent.content.length === 0) ||
+            (Array.isArray(blockContent.content) && blockContent.content.every(
+              (c: { type?: string; text?: string }) => c.type === "text" && !c.text?.trim()
+            ));
+          if (isEmpty) {
+            editor.replaceBlocks([anchorBlock.id], blocks);
+          } else {
+            editor.insertBlocks(blocks, anchorBlock, "after");
+          }
         } else {
           editor.replaceBlocks(editor.document, blocks);
         }
