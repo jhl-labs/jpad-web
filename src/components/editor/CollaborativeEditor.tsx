@@ -909,6 +909,7 @@ function InnerEditor({
               className="flex items-center gap-1 px-2 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap hover:bg-black/5 dark:hover:bg-white/10"
               style={{ color: "var(--foreground)" }}
               title={item.label}
+              aria-label={item.label}
             >
               {item.icon}
               <span className="hidden sm:inline">{item.label.replace("AI ", "")}</span>

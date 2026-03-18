@@ -564,6 +564,7 @@ export default function PageEditorPage() {
             className="flex items-center gap-1 px-2 py-1 rounded text-sm hover:opacity-70"
             style={{ color: "var(--muted)" }}
             title="검색 (Ctrl+K)"
+            aria-label="검색"
           >
             <Search size={14} />
             <span className="hidden sm:inline">검색</span>
@@ -573,6 +574,7 @@ export default function PageEditorPage() {
             className="flex items-center gap-1 px-2 py-1 rounded text-sm hover:opacity-70"
             style={{ color: isFavorited ? "var(--primary)" : "var(--muted)" }}
             title={isFavorited ? "즐겨찾기 해제" : "즐겨찾기 추가"}
+            aria-label={isFavorited ? "즐겨찾기 해제" : "즐겨찾기 추가"}
           >
             <Star size={14} fill={isFavorited ? "currentColor" : "none"} />
           </button>
@@ -609,6 +611,7 @@ export default function PageEditorPage() {
             className="hidden md:flex items-center px-2 py-1 rounded text-sm hover:opacity-70"
             style={{ color: showHistory ? "var(--primary)" : "var(--muted)" }}
             title="히스토리"
+            aria-label="히스토리"
           >
             <Clock size={14} />
           </button>
@@ -617,6 +620,7 @@ export default function PageEditorPage() {
             className="hidden md:flex items-center gap-1 px-2 py-1 rounded text-sm hover:opacity-70"
             style={{ color: "var(--muted)" }}
             title="그래프 뷰"
+            aria-label="그래프 뷰"
           >
             <Network size={14} />
           </button>
@@ -626,6 +630,7 @@ export default function PageEditorPage() {
               className="flex items-center px-2 py-1 rounded text-sm hover:opacity-70"
               style={{ color: "var(--muted)" }}
               title="내보내기"
+              aria-label="내보내기"
             >
               <Download size={14} />
             </button>
@@ -665,6 +670,7 @@ export default function PageEditorPage() {
               className="hidden md:flex items-center px-2 py-1 rounded text-sm hover:opacity-70"
               style={{ color: "var(--muted)" }}
               title="공유"
+              aria-label="공유"
             >
               <Share2 size={14} />
             </button>
@@ -677,6 +683,7 @@ export default function PageEditorPage() {
               className="flex items-center gap-1 px-2 py-1 rounded text-sm hover:opacity-70"
               style={{ color: "var(--muted)" }}
               title="더보기"
+              aria-label="더보기"
             >
               <MoreHorizontal size={16} />
             </button>
@@ -792,7 +799,7 @@ export default function PageEditorPage() {
             color: "white",
           }}
           onClick={() => setAutocompleteError(null)}
-          role="button"
+          role="alert"
           tabIndex={0}
           onKeyDown={(e) => { if (e.key === "Enter") setAutocompleteError(null); }}
         >
@@ -807,6 +814,7 @@ export default function PageEditorPage() {
             background: "var(--primary)",
             color: "white",
           }}
+          role="status"
         >
           <Loader2 size={14} className="animate-spin" />
           AI 이어쓰기 생성 중... (ESC로 취소)

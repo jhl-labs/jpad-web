@@ -483,6 +483,7 @@ export function AiPanel({
         <button
           onClick={onClose}
           className="p-1.5 rounded-md transition-colors hover:bg-black/5 dark:hover:bg-white/10"
+          aria-label="닫기"
         >
           <X size={15} style={{ color: "var(--muted)" }} />
         </button>
@@ -666,6 +667,7 @@ export function AiPanel({
             <div
               className="mx-4 mb-4 rounded-lg overflow-hidden"
               style={{ border: "1px solid var(--border)" }}
+              aria-live="polite"
             >
               {/* Result header */}
               <div
@@ -690,6 +692,7 @@ export function AiPanel({
                       }}
                       className="p-1 rounded transition-colors hover:bg-black/5 dark:hover:bg-white/10"
                       title="초기화"
+                      aria-label="초기화"
                     >
                       <RotateCcw size={12} style={{ color: "var(--muted)" }} />
                     </button>
@@ -982,6 +985,7 @@ export function AiPanel({
               <button
                 onClick={handleChatSend}
                 disabled={!chatInput.trim() || chatLoading}
+                aria-label="전송"
                 className="p-1.5 rounded-lg transition-all disabled:opacity-30"
                 style={{
                   background: chatInput.trim() ? "var(--primary)" : "transparent",
