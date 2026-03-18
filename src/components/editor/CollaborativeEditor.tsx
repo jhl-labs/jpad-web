@@ -12,7 +12,7 @@ import type { BlockNoteEditor } from "@blocknote/core";
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import { blocksToMarkdown } from "@/lib/markdown/serializer";
-import { Sparkles, FileText, Expand, Languages, SpellCheck, HelpCircle, Palette, ListChecks, Image as ImageIcon } from "lucide-react";
+import { Sparkles, FileText, Expand, Languages, SpellCheck, HelpCircle, Palette, ListChecks, Image as ImageIcon, RefreshCw } from "lucide-react";
 import { AI_EVENTS } from "@/lib/events";
 import { uploadImageToPage, isImageFile } from "./imageUpload";
 
@@ -1000,12 +1000,13 @@ function InnerEditor({
             저장 실패
             <button
               onClick={handleChange}
-              className="px-2 py-0.5 rounded text-[11px] font-medium transition-opacity hover:opacity-80"
+              className="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium transition-opacity hover:opacity-80"
               style={{
                 background: "rgba(239,68,68,0.9)",
                 color: "white",
               }}
             >
+              <RefreshCw size={11} />
               재시도
             </button>
           </span>

@@ -155,48 +155,24 @@ export default function WorkspaceHomePage() {
         {/* 시작하기 (빈 상태일 때 강조 표시) */}
         {isEmpty ? (
           <section className="mb-10">
-            <div
-              className="rounded-xl p-8 text-center"
-              style={{
-                background: "var(--sidebar-bg)",
-                border: "1px solid var(--border)",
-              }}
-            >
-              <h2 className="text-lg font-semibold mb-2">시작하기</h2>
-              <p className="text-sm mb-6" style={{ color: "var(--muted)" }}>
-                워크스페이스가 비어 있습니다. 첫 페이지를 만들어보세요.
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <FileText size={48} style={{ color: "var(--muted)" }} />
+              <h2 className="text-xl font-semibold mt-4">시작해 볼까요?</h2>
+              <p className="text-sm mt-2" style={{ color: "var(--muted)" }}>
+                첫 번째 페이지를 만들어 보세요
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <button
-                  onClick={handleCreatePage}
-                  disabled={!canCreate}
-                  className="flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg text-sm font-semibold transition-opacity hover:opacity-80"
-                  style={{
-                    background: "var(--primary)",
-                    color: "white",
-                    opacity: canCreate ? 1 : 0.5,
-                    cursor: canCreate ? "pointer" : "not-allowed",
-                  }}
-                >
-                  <Plus size={18} />
-                  새 페이지 만들기
-                </button>
-                <button
-                  onClick={() => window.dispatchEvent(new Event("template-picker:open"))}
-                  disabled={!canCreate}
-                  className="flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg text-sm font-medium transition-opacity hover:opacity-80"
-                  style={{
-                    background: "var(--background)",
-                    border: "1px solid var(--border)",
-                    color: "var(--foreground)",
-                    opacity: canCreate ? 1 : 0.5,
-                    cursor: canCreate ? "pointer" : "not-allowed",
-                  }}
-                >
-                  <Layout size={16} />
-                  템플릿에서 시작
-                </button>
-              </div>
+              <button
+                onClick={handleCreatePage}
+                disabled={!canCreate}
+                className="mt-4 px-4 py-2 rounded-lg text-sm font-medium text-white transition-opacity hover:opacity-80"
+                style={{
+                  background: "var(--primary)",
+                  opacity: canCreate ? 1 : 0.5,
+                  cursor: canCreate ? "pointer" : "not-allowed",
+                }}
+              >
+                새 페이지 만들기
+              </button>
             </div>
 
             {quickLinksGrid}
