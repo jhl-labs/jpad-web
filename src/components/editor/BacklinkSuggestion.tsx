@@ -73,12 +73,18 @@ export function BacklinkSuggestion({
       }
     };
 
+    const handleDocKeyup = (e: Event) => {
+      const key = (e as KeyboardEvent).key;
+      if (key === "ArrowDown" || key === "ArrowUp" || key === "Enter" || key === "Escape") return;
+      handleDocInput(e);
+    };
+
     document.addEventListener("input", handleDocInput, true);
-    document.addEventListener("keyup", handleDocInput, true);
+    document.addEventListener("keyup", handleDocKeyup, true);
 
     return () => {
       document.removeEventListener("input", handleDocInput, true);
-      document.removeEventListener("keyup", handleDocInput, true);
+      document.removeEventListener("keyup", handleDocKeyup, true);
     };
   }, [editorElement]);
 
