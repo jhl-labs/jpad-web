@@ -38,8 +38,10 @@ import {
   SmilePlus,
   Sparkles,
   Star,
+  Tag,
   Unlock,
   WandSparkles,
+  X,
 } from "lucide-react";
 import { trackRecentPage } from "@/components/ui/QuickSwitcher";
 
@@ -130,6 +132,15 @@ export default function PageEditorPage() {
   const [loadError, setLoadError] = useState(false);
   const [commentCount, setCommentCount] = useState(0);
 
+  // --- Task 1: Page Tags ---
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState("");
+  const [showTagInput, setShowTagInput] = useState(false);
+
+  // --- Task 4: AI Tag Suggestions ---
+  const [aiTagSuggestions, setAiTagSuggestions] = useState<string[]>([]);
+  const [aiTagLoading, setAiTagLoading] = useState(false);
+
   const fetchPage = useCallback(async () => {
     try {
       const [pageRes, contentRes] = await Promise.all([
@@ -204,6 +215,103 @@ export default function PageEditorPage() {
       if (undoToastTimer.current) clearTimeout(undoToastTimer.current);
     };
   }, [fetchPage, workspaceId, pageId]);
+
+  // Load tags from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(`page-tags:${pageId}`);
+      if (stored) {
+        const parsed = JSON.parse(stored) as string[];
+        if (Array.isArray(parsed)) setTags(parsed);
+      }
+    } catch {
+      // ignore parse errors
+    }
+  }, [pageId]);
+
+  function saveTagsToStorage(newTags: string[]) {
+    setTags(newTags);
+    try {
+      localStorage.setItem(`page-tags:${pageId}`, JSON.stringify(newTags));
+    } catch {
+      // ignore storage errors
+    }
+  }
+
+  function handleAddTag(tag: string) {
+    const trimmed = tag.trim();
+    if (!trimmed || tags.includes(trimmed)) return;
+    saveTagsToStorage([...tags, trimmed]);
+    setTagInput("");
+  }
+
+  function handleRemoveTag(tag: string) {
+    saveTagsToStorage(tags.filter((t) => t !== tag));
+  }
+
+  function handleTagInputKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      handleAddTag(tagInput);
+    } else if (e.key === "Escape") {
+      setShowTagInput(false);
+      setTagInput("");
+    }
+  }
+
+  // AI Tag Suggestion
+  async function handleAiTagSuggestion() {
+    if (aiTagLoading || !content.trim()) return;
+    setAiTagLoading(true);
+    setAiTagSuggestions([]);
+    try {
+      const res = await fetch("/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          workspaceId,
+          pageId,
+          question: "이 문서의 핵심 키워드 5개를 쉼표로 나열하세요. 키워드만 출력.",
+          usePageContext: true,
+        }),
+      });
+      if (!res.ok) throw new Error("AI tag suggestion failed");
+
+      // SSE streaming response
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("No stream");
+      const decoder = new TextDecoder();
+      let accumulated = "";
+      let buffer = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const payload = line.slice(6);
+          if (payload === "[DONE]") break;
+          try {
+            const parsed = JSON.parse(payload) as { text?: string };
+            if (parsed.text) accumulated += parsed.text;
+          } catch {
+            // ignore
+          }
+        }
+      }
+      const suggested = accumulated
+        .split(/[,，\n]/)
+        .map((s) => s.trim().replace(/^[0-9]+\.\s*/, ""))
+        .filter((s) => s.length > 0 && s.length < 30);
+      setAiTagSuggestions(suggested.slice(0, 7));
+    } catch (error) {
+      console.warn("[PageEditor] AI tag suggestion failed:", error);
+    } finally {
+      setAiTagLoading(false);
+    }
+  }
 
   async function handleToggleFavorite() {
     const newState = !isFavorited;
@@ -1091,6 +1199,108 @@ export default function PageEditorPage() {
           aria-label="페이지 제목"
           className="w-full text-4xl font-bold bg-transparent outline-none"
         />
+
+        {/* Tags */}
+        <div className="flex flex-wrap items-center gap-1.5 mt-2 min-h-[28px]">
+          {tags.map((tag) => (
+            <span
+              key={tag}
+              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium"
+              style={{
+                background: "color-mix(in srgb, var(--primary) 10%, transparent)",
+                color: "var(--primary)",
+              }}
+            >
+              <Tag size={10} />
+              {tag}
+              {!isReadOnly && (
+                <button
+                  onClick={() => handleRemoveTag(tag)}
+                  className="ml-0.5 hover:opacity-70"
+                  aria-label={`태그 "${tag}" 삭제`}
+                >
+                  <X size={10} />
+                </button>
+              )}
+            </span>
+          ))}
+          {!isReadOnly && !showTagInput && (
+            <button
+              onClick={() => setShowTagInput(true)}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs transition-opacity hover:opacity-70"
+              style={{ color: "var(--muted)", border: "1px dashed var(--border)" }}
+            >
+              <Tag size={10} /> 태그 추가
+            </button>
+          )}
+          {showTagInput && (
+            <input
+              autoFocus
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={handleTagInputKeyDown}
+              onBlur={() => {
+                if (tagInput.trim()) handleAddTag(tagInput);
+                setShowTagInput(false);
+              }}
+              placeholder="태그 입력 (Enter로 추가)"
+              className="px-2 py-0.5 rounded-full text-xs bg-transparent outline-none"
+              style={{
+                border: "1px solid var(--primary)",
+                color: "var(--foreground)",
+                minWidth: 120,
+              }}
+            />
+          )}
+          {/* AI Tag Suggestion Button */}
+          {!isReadOnly && content.trim() && (
+            <button
+              onClick={handleAiTagSuggestion}
+              disabled={aiTagLoading}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs transition-opacity hover:opacity-70"
+              style={{ color: "var(--muted)" }}
+              title="AI 태그 제안"
+            >
+              {aiTagLoading ? (
+                <Loader2 size={10} className="animate-spin" />
+              ) : (
+                <WandSparkles size={10} />
+              )}
+              AI 태그 제안
+            </button>
+          )}
+        </div>
+
+        {/* AI Tag Suggestions */}
+        {aiTagSuggestions.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+            <span className="text-[10px]" style={{ color: "var(--muted)" }}>추천:</span>
+            {aiTagSuggestions.map((suggestion) => (
+              <button
+                key={suggestion}
+                onClick={() => {
+                  handleAddTag(suggestion);
+                  setAiTagSuggestions((prev) => prev.filter((s) => s !== suggestion));
+                }}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs transition-opacity hover:opacity-80 cursor-pointer"
+                style={{
+                  background: "color-mix(in srgb, var(--primary) 6%, transparent)",
+                  color: "var(--primary)",
+                  border: "1px dashed color-mix(in srgb, var(--primary) 30%, transparent)",
+                }}
+              >
+                + {suggestion}
+              </button>
+            ))}
+            <button
+              onClick={() => setAiTagSuggestions([])}
+              className="text-[10px] hover:opacity-70"
+              style={{ color: "var(--muted)" }}
+            >
+              닫기
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Editor + TOC */}

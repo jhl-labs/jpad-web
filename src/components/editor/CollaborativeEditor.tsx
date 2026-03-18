@@ -12,7 +12,7 @@ import type { BlockNoteEditor } from "@blocknote/core";
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import { blocksToMarkdown } from "@/lib/markdown/serializer";
-import { Sparkles, FileText, Expand, Languages, SpellCheck, HelpCircle, Palette, ListChecks, Image as ImageIcon, RefreshCw, Undo2, Redo2 } from "lucide-react";
+import { Sparkles, FileText, Expand, Languages, SpellCheck, HelpCircle, Palette, ListChecks, Image as ImageIcon, RefreshCw, Undo2, Redo2, WifiOff } from "lucide-react";
 import { AI_EVENTS } from "@/lib/events";
 import { uploadImageToPage, isImageFile } from "./imageUpload";
 
@@ -279,7 +279,6 @@ function getCustomSlashMenuItems(
         editor.insertInlineContent([{ type: "text", text: now, styles: {} }]);
       },
     },
-    // TODO: #31 — 멘션 기능 플레이스홀더. 추후 전체 구현 예정.
     {
       title: "@멘션",
       subtext: "추후 지원 예정입니다",
@@ -287,6 +286,28 @@ function getCustomSlashMenuItems(
       aliases: ["mention", "멘션", "@"],
       onItemClick: () => {
         alert("멘션 기능은 추후 지원 예정입니다");
+      },
+    },
+    {
+      title: "임베드",
+      subtext: "URL을 삽입합니다 (YouTube, 웹 링크 등)",
+      group: "기본 블록",
+      aliases: ["embed", "youtube", "링크", "임베드"],
+      onItemClick: () => {
+        const url = prompt("URL을 입력하세요:");
+        if (url) {
+          const cursor = editor.getTextCursorPosition();
+          if (cursor?.block) {
+            editor.insertBlocks(
+              [{
+                type: "paragraph",
+                content: [{ type: "link", href: url, content: [{ type: "text", text: url, styles: {} }] }],
+              }],
+              cursor.block,
+              "after"
+            );
+          }
+        }
       },
     },
   ];
@@ -328,6 +349,9 @@ function InnerEditor({
   const saveTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
   const savedTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [connected, setConnected] = useState(false);
+  const [browserOnline, setBrowserOnline] = useState(
+    typeof navigator !== "undefined" ? navigator.onLine : true
+  );
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [lastSavedTime, setLastSavedTime] = useState<string>("");
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -565,6 +589,24 @@ function InnerEditor({
       if (savedTimeout.current) clearTimeout(savedTimeout.current);
     };
   }, []);
+
+  // Track browser online/offline status & auto-save on reconnect
+  useEffect(() => {
+    const handleOnline = () => {
+      setBrowserOnline(true);
+      // Auto-trigger save when coming back online
+      handleChange();
+    };
+    const handleOffline = () => {
+      setBrowserOnline(false);
+    };
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, [handleChange]);
 
   // Keyboard shortcut: Ctrl+. or Cmd+. to trigger AI autocomplete
   // Ctrl+Shift+. or Cmd+Shift+. to open AI panel
@@ -915,8 +957,25 @@ function InnerEditor({
       onDrop={handleEditorDrop}
       ref={editorContainerRef}
     >
-      {/* Offline banner */}
-      {!connected && (
+      {/* Offline banner — browser offline (navigator.onLine) */}
+      {!browserOnline && (
+        <div
+          className="flex items-center gap-2 rounded-md text-[13px]"
+          style={{
+            padding: "8px 12px",
+            background: "var(--warning-bg, rgba(234, 179, 8, 0.12))",
+            color: "var(--warning, #f97316)",
+            border: "1px solid var(--warning-border, rgba(234, 179, 8, 0.3))",
+            marginBottom: 8,
+          }}
+          role="alert"
+        >
+          <WifiOff size={14} className="shrink-0" />
+          오프라인 — 변경사항은 연결 복원 시 저장됩니다
+        </div>
+      )}
+      {/* WS disconnected banner (online but WS not connected) */}
+      {browserOnline && !connected && (
         <div
           className="flex items-center gap-2 rounded-md text-[13px]"
           style={{
@@ -931,7 +990,7 @@ function InnerEditor({
             className="w-2 h-2 rounded-full shrink-0"
             style={{ background: "var(--warning, #f97316)" }}
           />
-          인터넷 연결이 끊어졌습니다. 변경사항은 연결이 복원되면 동기화됩니다.
+          실시간 연결이 끊어졌습니다. 변경사항은 연결이 복원되면 동기화됩니다.
         </div>
       )}
 

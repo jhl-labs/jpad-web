@@ -128,6 +128,9 @@ export function KeyboardShortcutsHelp() {
             ESC
           </kbd>
           {" "}를 눌러 닫기
+          <p className="text-xs mt-2" style={{ color: "var(--muted)" }}>
+            단축키 커스터마이징은 추후 지원 예정입니다
+          </p>
         </div>
       </div>
     </div>
