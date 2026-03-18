@@ -84,8 +84,8 @@ export function NotificationBell({ workspaceId }: NotificationBellProps) {
         setNotifications(data.data);
         setUnreadCount(data.unreadCount);
       }
-    } catch (_error) {
-      // ignore
+    } catch (error) {
+      console.warn("[NotificationBell] fetch failed:", error);
     }
   }, [workspaceId]);
 
@@ -105,14 +105,46 @@ export function NotificationBell({ workspaceId }: NotificationBellProps) {
     }
   }
 
-  // Initial fetch and polling with configurable interval from localStorage
+  // Initial fetch and polling with visibility API optimization
+  const intervalRef = useRef<ReturnType<typeof setInterval>>(undefined);
+
   useEffect(() => {
+    const pollMs = pollIntervalMsRef.current!;
+    const pollingDisabled = pollMs === -1;
+
+    function startPolling() {
+      if (pollingDisabled) return;
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      intervalRef.current = setInterval(fetchNotifications, pollMs);
+    }
+
+    function stopPolling() {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = undefined;
+      }
+    }
+
+    function handleVisibility() {
+      if (document.hidden) {
+        stopPolling();
+      } else {
+        // Tab visible — immediate fetch + resume polling
+        fetchNotifications();
+        startPolling();
+      }
+    }
+
+    // Initial fetch always
     fetchNotifications();
+    // Start polling only if tab is visible
+    if (!document.hidden) startPolling();
 
-    if (pollIntervalMsRef.current === -1) return;
-
-    const interval = setInterval(fetchNotifications, pollIntervalMsRef.current!);
-    return () => clearInterval(interval);
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      stopPolling();
+    };
   }, [fetchNotifications]);
 
   // Close panel on outside click

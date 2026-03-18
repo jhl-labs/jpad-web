@@ -1,7 +1,13 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import CalendarView from "@/components/calendar/CalendarView";
+import dynamic from "next/dynamic";
+import { Loader2 } from "lucide-react";
+
+const CalendarView = dynamic(
+  () => import("@/components/calendar/CalendarView"),
+  { loading: () => <div className="flex items-center justify-center py-20"><Loader2 className="animate-spin" size={24} /></div> }
+);
 
 export default function CalendarPage() {
   const params = useParams();

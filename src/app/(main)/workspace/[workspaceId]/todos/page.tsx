@@ -1,8 +1,13 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { ListTodo } from "lucide-react";
-import { TodoList } from "@/components/todos/TodoList";
+import dynamic from "next/dynamic";
+import { ListTodo, Loader2 } from "lucide-react";
+
+const TodoList = dynamic(
+  () => import("@/components/todos/TodoList").then(m => m.TodoList),
+  { loading: () => <div className="flex items-center justify-center py-20"><Loader2 className="animate-spin" size={24} /></div> }
+);
 
 export default function TodosPage() {
   const params = useParams();
