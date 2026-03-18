@@ -24,6 +24,7 @@ import {
   syncWorkspaceScimAccessForWorkspaces,
   updateScimGroupMembers,
 } from "@/lib/scimGroups";
+import { rateLimitRedis } from "@/lib/rateLimit";
 
 const partialGroupPatchSchema = z
   .object({
@@ -305,6 +306,11 @@ export async function DELETE(
     const auth = await requireScimAuth(req);
     const actor = createScimSystemAuditActor(auth);
     const { groupId } = await params;
+
+    if (!(await rateLimitRedis(`scim:delete:${auth.tokenId}`, 30, 60_000))) {
+      return scimError("Rate limit exceeded", 429);
+    }
+
     const existingGroup = await loadScimGroup(auth.organizationId, groupId);
 
     if (!existingGroup) {

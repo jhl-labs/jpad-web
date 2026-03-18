@@ -24,6 +24,7 @@ import {
   normalizeScimCreateUserInput,
   scimIdentityWithUserInclude,
 } from "@/lib/scimProvisioning";
+import { rateLimitRedis } from "@/lib/rateLimit";
 import {
   createScimSystemAuditActor,
   findWorkspaceIdsForScimIdentity,
@@ -428,6 +429,11 @@ export async function DELETE(
   try {
     const auth = await requireScimAuth(req);
     const { userId } = await params;
+
+    if (!(await rateLimitRedis(`scim:delete:${auth.tokenId}`, 30, 60_000))) {
+      return scimError("Rate limit exceeded", 429);
+    }
+
     const existingIdentity = await loadScimIdentity(auth.organizationId, userId);
 
     if (!existingIdentity) {

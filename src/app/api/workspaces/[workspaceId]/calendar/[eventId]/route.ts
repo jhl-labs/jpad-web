@@ -78,7 +78,7 @@ export async function PATCH(
     if (typeof body.title === "string") {
       if (body.title.length > 500) {
         return NextResponse.json(
-          { error: "제목은 500자 이하여야 합니다." },
+          { error: "Title must be 500 characters or less" },
           { status: 400 }
         );
       }
@@ -87,7 +87,7 @@ export async function PATCH(
     if (typeof body.description === "string") {
       if (body.description.length > 5000) {
         return NextResponse.json(
-          { error: "설명은 5000자 이하여야 합니다." },
+          { error: "Description must be 5000 characters or less" },
           { status: 400 }
         );
       }
@@ -111,7 +111,7 @@ export async function PATCH(
     if (typeof body.location === "string") {
       if (body.location.length > 500) {
         return NextResponse.json(
-          { error: "위치는 500자 이하여야 합니다." },
+          { error: "Location must be 500 characters or less" },
           { status: 400 }
         );
       }
