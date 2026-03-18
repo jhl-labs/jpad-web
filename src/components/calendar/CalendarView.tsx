@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Calendar,
   ChevronLeft,
@@ -104,6 +104,9 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [, setSelectedDate] = useState<string | null>(null);
+  const [quickAddDate, setQuickAddDate] = useState<string | null>(null);
+  const [quickAddTitle, setQuickAddTitle] = useState("");
+  const quickAddInputRef = useRef<HTMLInputElement>(null);
 
   // Form state
   const [formTitle, setFormTitle] = useState("");
@@ -379,6 +382,41 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
       setErrorMessage("일정 삭제에 실패했습니다. 다시 시도해주세요.");
     }
   }
+
+  async function handleQuickAdd() {
+    if (!quickAddTitle.trim() || !quickAddDate) return;
+    const startAt = new Date(quickAddDate + "T09:00:00").toISOString();
+    const endAt = new Date(quickAddDate + "T10:00:00").toISOString();
+    try {
+      const res = await fetch(`/api/workspaces/${workspaceId}/calendar`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: quickAddTitle.trim(),
+          description: null,
+          startAt,
+          endAt,
+          allDay: false,
+          color: "#3b82f6",
+          location: null,
+          recurrence: null,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      setQuickAddDate(null);
+      setQuickAddTitle("");
+      fetchEvents();
+    } catch {
+      setErrorMessage("일정 저장에 실패했습니다. 다시 시도해주세요.");
+    }
+  }
+
+  // Focus the quick-add input when it appears
+  useEffect(() => {
+    if (quickAddDate && quickAddInputRef.current) {
+      quickAddInputRef.current.focus();
+    }
+  }, [quickAddDate]);
 
   const todayStr = formatDate(today);
 
@@ -780,11 +818,17 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
                 key={idx}
                 role="gridcell"
                 tabIndex={dayInfo.currentMonth ? 0 : -1}
-                onClick={() => dayInfo.currentMonth && openCreateModal(dayInfo.date)}
+                onClick={() => {
+                  if (dayInfo.currentMonth && quickAddDate !== dayInfo.date) {
+                    setQuickAddDate(dayInfo.date);
+                    setQuickAddTitle("");
+                  }
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && dayInfo.currentMonth) {
                     e.preventDefault();
-                    openCreateModal(dayInfo.date);
+                    setQuickAddDate(dayInfo.date);
+                    setQuickAddTitle("");
                   }
                 }}
                 style={{
@@ -866,6 +910,49 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
                       }}
                     >
                       +{dayEvents.length - 3}개 더
+                    </div>
+                  )}
+                  {quickAddDate === dayInfo.date && (
+                    <div
+                      style={{ marginTop: 2 }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <input
+                        ref={quickAddInputRef}
+                        type="text"
+                        value={quickAddTitle}
+                        onChange={(e) => setQuickAddTitle(e.target.value)}
+                        placeholder="일정 제목"
+                        onKeyDown={(e) => {
+                          e.stopPropagation();
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleQuickAdd();
+                          } else if (e.key === "Escape") {
+                            e.preventDefault();
+                            setQuickAddDate(null);
+                            setQuickAddTitle("");
+                          }
+                        }}
+                        onBlur={() => {
+                          // Delay to allow Enter to fire first
+                          setTimeout(() => {
+                            setQuickAddDate(null);
+                            setQuickAddTitle("");
+                          }, 150);
+                        }}
+                        style={{
+                          width: "100%",
+                          fontSize: 11,
+                          padding: "2px 4px",
+                          borderRadius: 3,
+                          border: "1px solid var(--primary)",
+                          background: "var(--background)",
+                          color: "var(--foreground)",
+                          outline: "none",
+                          boxSizing: "border-box",
+                        }}
+                      />
                     </div>
                   )}
                 </div>
