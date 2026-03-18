@@ -209,7 +209,9 @@ export function QuickSwitcher({ workspaceId, isOpen, onClose }: QuickSwitcherPro
           );
           if (res.ok) {
             const data = await res.json();
-            setResults(data);
+            // Support both { results, hasMore } envelope and plain array
+            const items = Array.isArray(data) ? data : data.results;
+            setResults(items);
             setSelectedIndex(0);
           }
         } catch (error) {

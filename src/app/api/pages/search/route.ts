@@ -102,6 +102,8 @@ export async function GET(req: NextRequest) {
 
     const workspaceId = req.nextUrl.searchParams.get("workspaceId");
     const q = req.nextUrl.searchParams.get("q")?.trim() || "";
+    const limitParam = parseInt(req.nextUrl.searchParams.get("limit") || "20", 10);
+    const limit = Math.min(Math.max(1, isNaN(limitParam) ? 20 : limitParam), 50);
 
     if (!workspaceId) {
       return NextResponse.json(
@@ -120,19 +122,20 @@ export async function GET(req: NextRequest) {
 
     // Empty query: return recent pages
     if (!q) {
-      return NextResponse.json(
-        [...pages]
-          .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
-          .slice(0, MAX_RESULTS)
-          .map((page) => ({
-            id: page.id,
-            title: page.title,
-            slug: page.slug,
-            icon: page.icon,
-            snippet: null,
-            matchType: "recent" as const,
-          }))
-      );
+      const sorted = [...pages]
+        .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+      const hasMore = sorted.length > limit;
+      const results = sorted
+        .slice(0, limit)
+        .map((page) => ({
+          id: page.id,
+          title: page.title,
+          slug: page.slug,
+          icon: page.icon,
+          snippet: null,
+          matchType: "recent" as const,
+        }));
+      return NextResponse.json({ results, hasMore });
     }
 
     // 1. Title matches from DB (case-insensitive)
@@ -258,12 +261,14 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const ranked = [...merged.values()]
-      .sort((left, right) => right.score - left.score)
-      .slice(0, MAX_RESULTS)
+    const allRanked = [...merged.values()]
+      .sort((left, right) => right.score - left.score);
+    const hasMore = allRanked.length > limit;
+    const ranked = allRanked
+      .slice(0, limit)
       .map(({ score: _score, ...result }) => result);
 
-    return NextResponse.json(ranked);
+    return NextResponse.json({ results: ranked, hasMore });
   } catch (error) {
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

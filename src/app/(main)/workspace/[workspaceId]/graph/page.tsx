@@ -1,8 +1,13 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Network } from "lucide-react";
-import { KnowledgeGraph } from "@/components/graph/KnowledgeGraph";
+import dynamic from "next/dynamic";
+import { ArrowLeft, Network, Loader2 } from "lucide-react";
+
+const KnowledgeGraph = dynamic(
+  () => import("@/components/graph/KnowledgeGraph").then(m => m.KnowledgeGraph),
+  { loading: () => <div className="flex items-center justify-center py-20"><Loader2 className="animate-spin" size={24} /></div> }
+);
 
 export default function GraphPage() {
   const { workspaceId, pageId } = useParams<{

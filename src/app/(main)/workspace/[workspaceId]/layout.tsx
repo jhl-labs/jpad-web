@@ -113,14 +113,22 @@ export default function WorkspaceLayout({
     };
   }, []);
 
-  // 페이지 메타데이터 변경 시 사이드바 갱신 (title, icon 등)
+  // 페이지 메타데이터 변경 시 사이드바 갱신 (title, icon 등) — debounce로 빠른 연속 호출 방지
+  const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
   useEffect(() => {
     function handleRefresh() {
-      fetchPages();
-      fetchFavorites();
+      if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current);
+      refreshTimeoutRef.current = setTimeout(() => {
+        fetchPages();
+        fetchFavorites();
+      }, 300);
     }
     window.addEventListener("sidebar:refresh", handleRefresh);
-    return () => window.removeEventListener("sidebar:refresh", handleRefresh);
+    return () => {
+      window.removeEventListener("sidebar:refresh", handleRefresh);
+      if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current);
+    };
   }, [fetchPages, fetchFavorites]);
 
   // 워크스페이스 홈에서 "템플릿에서 시작" 이벤트 수신
