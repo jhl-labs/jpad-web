@@ -29,32 +29,45 @@ export function Breadcrumb({ workspaceId, workspaceName, pages, currentPageId }:
     }
   }
 
+  // 3개 초과 시 첫 번째 + ... + 마지막 2개만 표시
+  const shouldTruncate = chain.length > 3;
+  const displayChain = shouldTruncate
+    ? [chain[0], ...chain.slice(-2)]
+    : chain;
+
   return (
     <nav className="flex items-center gap-1 text-sm flex-wrap" style={{ color: "var(--muted)" }}>
       <Link
         href={`/workspace/${workspaceId}`}
-        className="hover:underline truncate max-w-[120px]"
+        className="hover:underline truncate max-w-[150px]"
         style={{ color: "var(--muted)" }}
       >
         {workspaceName}
       </Link>
-      {chain.map((page, i) => {
-        const isLast = i === chain.length - 1;
+      {displayChain.map((page, i) => {
+        const isLast = i === displayChain.length - 1;
+        const showEllipsis = shouldTruncate && i === 0;
         return (
           <span key={page.id} className="flex items-center gap-1">
             <span style={{ color: "var(--muted)" }}>/</span>
             {isLast ? (
-              <span className="truncate max-w-[160px]" style={{ color: "var(--foreground)" }}>
+              <span className="truncate max-w-[150px]" style={{ color: "var(--foreground)" }}>
                 {page.title || "제목 없음"}
               </span>
             ) : (
               <Link
                 href={`/workspace/${workspaceId}/page/${page.id}`}
-                className="hover:underline truncate max-w-[120px]"
+                className="hover:underline truncate max-w-[150px]"
                 style={{ color: "var(--muted)" }}
               >
                 {page.title || "제목 없음"}
               </Link>
+            )}
+            {showEllipsis && (
+              <>
+                <span style={{ color: "var(--muted)" }}>/</span>
+                <span style={{ color: "var(--muted)" }}>...</span>
+              </>
             )}
           </span>
         );

@@ -27,6 +27,7 @@ import {
   FileText,
   ImageIcon,
   ListTree,
+  Lock,
   Loader2,
   MessageCircle,
   MoreHorizontal,
@@ -36,6 +37,7 @@ import {
   SmilePlus,
   Sparkles,
   Star,
+  Unlock,
   WandSparkles,
 } from "lucide-react";
 import { trackRecentPage } from "@/components/ui/QuickSwitcher";
@@ -53,6 +55,10 @@ interface PageData {
   currentRole: string;
   icon?: string | null;
   coverImage?: string | null;
+  isLocked?: boolean;
+  lockedById?: string | null;
+  lockedByName?: string | null;
+  lockedAt?: string | null;
 }
 
 interface BreadcrumbPage {
@@ -105,7 +111,10 @@ export default function PageEditorPage() {
   const titleTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
   const editorContainerRef = useRef<HTMLDivElement>(null);
 
-  const isReadOnly = page?.currentRole === "viewer";
+  const currentUserId = (session?.user as { id?: string } | undefined)?.id;
+  const isLockedByOther = page?.isLocked === true && page?.lockedById !== currentUserId;
+  const isLockedByMe = page?.isLocked === true && page?.lockedById === currentUserId;
+  const isReadOnly = page?.currentRole === "viewer" || isLockedByOther;
 
   const handleAwarenessChange = useCallback(
     (users: { name: string; color: string }[]) => {
@@ -216,6 +225,28 @@ export default function PageEditorPage() {
     } catch (error) {
       console.warn("[PageEditor] toggle favorite failed:", error);
       setIsFavorited(!newState); // revert on error
+    }
+  }
+
+  async function handleToggleLock() {
+    if (!page) return;
+    const newLockState = !page.isLocked;
+    try {
+      const res = await fetch(`/api/pages/${pageId}/lock`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lock: newLockState }),
+      });
+      if (res.ok) {
+        const data = await res.json() as { isLocked: boolean; lockedById: string | null; lockedByName?: string | null; lockedAt: string | null };
+        setPage((prev) =>
+          prev
+            ? { ...prev, isLocked: data.isLocked, lockedById: data.lockedById, lockedByName: data.lockedByName ?? null, lockedAt: data.lockedAt }
+            : prev
+        );
+      }
+    } catch (error) {
+      console.warn("[PageEditor] toggle lock failed:", error);
     }
   }
 
@@ -513,20 +544,12 @@ export default function PageEditorPage() {
 
   if (!page) {
     return (
-      <div className="h-full flex flex-col animate-pulse">
-        <div className="flex items-center gap-2 px-4 py-2 shrink-0" style={{ borderBottom: "1px solid var(--border)" }}>
-          <div className="h-4 rounded w-48" style={{ background: "var(--sidebar-hover)" }} />
-          <div className="flex-1" />
-          <div className="h-4 rounded w-24" style={{ background: "var(--sidebar-hover)" }} />
-        </div>
-        <div className="px-4 md:px-8 lg:px-16 pt-6 md:pt-12 pb-2">
-          <div className="h-10 rounded w-64 mb-4" style={{ background: "var(--sidebar-hover)" }} />
-        </div>
-        <div className="flex-1 px-4 md:px-8 lg:px-16 space-y-3">
-          <div className="h-4 rounded w-full" style={{ background: "var(--sidebar-hover)" }} />
-          <div className="h-4 rounded w-3/4" style={{ background: "var(--sidebar-hover)" }} />
-          <div className="h-4 rounded w-5/6" style={{ background: "var(--sidebar-hover)" }} />
-        </div>
+      <div className="max-w-4xl mx-auto p-8 space-y-4 animate-pulse">
+        <div className="h-8 rounded" style={{ background: "var(--sidebar-bg)", width: "60%" }} />
+        <div className="h-4 rounded" style={{ background: "var(--sidebar-bg)", width: "100%" }} />
+        <div className="h-4 rounded" style={{ background: "var(--sidebar-bg)", width: "85%" }} />
+        <div className="h-4 rounded" style={{ background: "var(--sidebar-bg)", width: "90%" }} />
+        <div className="h-32 rounded" style={{ background: "var(--sidebar-bg)" }} />
       </div>
     );
   }
@@ -659,6 +682,24 @@ export default function PageEditorPage() {
               </div>
             )}
           </div>
+          {/* 잠금 버튼 */}
+          {page?.currentRole !== "viewer" && (
+            <button
+              onClick={handleToggleLock}
+              className="hidden md:flex items-center gap-1 px-2 py-1 rounded text-sm hover:opacity-70"
+              style={{ color: isLockedByOther ? "var(--danger, #ef4444)" : isLockedByMe ? "var(--primary)" : "var(--muted)" }}
+              title={
+                isLockedByOther
+                  ? `잠김 (by ${page?.lockedByName || "다른 사용자"})`
+                  : isLockedByMe
+                    ? "잠금 해제"
+                    : "페이지 잠금"
+              }
+              disabled={isLockedByOther}
+            >
+              {page?.isLocked ? <Lock size={14} /> : <Unlock size={14} />}
+            </button>
+          )}
           {!isReadOnly && (
             <button
               onClick={() => setShowShare(true)}
@@ -770,7 +811,12 @@ export default function PageEditorPage() {
             </div>
           )}
 
-          {isReadOnly && (
+          {isLockedByOther && (
+            <span className="text-xs px-2 py-1 rounded flex items-center gap-1" style={{ background: "var(--sidebar-hover)", color: "var(--danger, #ef4444)" }}>
+              <Lock size={12} /> 잠김 (by {page?.lockedByName || "다른 사용자"})
+            </span>
+          )}
+          {isReadOnly && !isLockedByOther && (
             <span className="text-xs px-2 py-1 rounded" style={{ background: "var(--sidebar-hover)", color: "var(--muted)" }}>
               읽기 전용
             </span>
