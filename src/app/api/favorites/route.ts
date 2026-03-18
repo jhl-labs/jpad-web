@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, checkWorkspaceAccess } from "@/lib/auth/helpers";
 import { listAccessiblePageIds, getPageAccessContext } from "@/lib/pageAccess";
 import { createAuditActor, getAuditRequestContext, recordAuditLog } from "@/lib/audit";
-import { logError } from "@/lib/logger";
+import { handleApiError } from "@/lib/apiErrorHandler";
 import { rateLimitRedis } from "@/lib/rateLimit";
 
 export async function GET(req: NextRequest) {
@@ -45,11 +45,7 @@ export async function GET(req: NextRequest) {
       .filter((page) => accessibleIds.has(page.id));
     return NextResponse.json(pages);
   } catch (error) {
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    logError("favorites.get.error", error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return handleApiError(error, "favorites.get");
   }
 }
 
@@ -105,11 +101,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(favorite, { status: 201 });
   } catch (error) {
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    logError("favorites.post.error", error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return handleApiError(error, "favorites.post");
   }
 }
 
@@ -155,10 +147,6 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    logError("favorites.delete.error", error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return handleApiError(error, "favorites.delete");
   }
 }

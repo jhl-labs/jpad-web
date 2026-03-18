@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth/helpers";
-import { logError } from "@/lib/logger";
+import { handleApiError } from "@/lib/apiErrorHandler";
 import { rateLimitRedis } from "@/lib/rateLimit";
 
 export async function GET(req: NextRequest) {
@@ -65,10 +65,6 @@ export async function GET(req: NextRequest) {
       unreadCount,
     });
   } catch (error) {
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    logError("notifications.get.unhandled_error", error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return handleApiError(error, "notifications.get");
   }
 }

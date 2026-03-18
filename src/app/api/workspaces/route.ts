@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth/helpers";
 import { createAuditActor, getAuditRequestContext, recordAuditLog } from "@/lib/audit";
 import { initRepo } from "@/lib/git/repository";
-import { logError } from "@/lib/logger";
+import { handleApiError } from "@/lib/apiErrorHandler";
 import { rateLimitRedis } from "@/lib/rateLimit";
 import { slugify } from "@/lib/utils";
 import { z } from "zod";
@@ -77,15 +77,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (error) {
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    logError("workspaces.list_failed", error, {}, req);
-    return NextResponse.json(
-      { error: "Failed to list workspaces" },
-      { status: 500 }
-    );
+    return handleApiError(error, "workspaces.list");
   }
 }
 
@@ -171,14 +163,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(workspace, { status: 201 });
   } catch (error) {
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    logError("workspaces.create_failed", error, {}, req);
-    return NextResponse.json(
-      { error: "Failed to create workspace" },
-      { status: 500 }
-    );
+    return handleApiError(error, "workspaces.create");
   }
 }

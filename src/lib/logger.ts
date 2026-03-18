@@ -53,6 +53,22 @@ export function logInfo(
   });
 }
 
+export function logWarn(
+  event: string,
+  message: string,
+  fields: LogFields = {},
+  source?: RequestSource
+) {
+  const context = getRequestContext(source);
+  writeLog("warn", event, {
+    requestId: context.requestId,
+    ipAddress: context.ipAddress,
+    userAgent: context.userAgent,
+    message,
+    ...fields,
+  });
+}
+
 export function logError(
   event: string,
   error: unknown,
