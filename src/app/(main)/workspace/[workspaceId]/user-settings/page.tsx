@@ -329,6 +329,7 @@ function ProfileTab() {
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
+  const [avatarMsg, setAvatarMsg] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -395,15 +396,35 @@ function ProfileTab() {
         {/* 아바타 */}
         <div className="flex items-center gap-4 mb-6">
           <div
-            className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold shrink-0"
-            style={{ background: "var(--primary)", color: "white" }}
+            role="button"
+            tabIndex={0}
+            title="프로필 사진 변경"
+            className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold shrink-0 cursor-pointer transition-opacity"
+            style={{
+              background: "var(--primary)",
+              color: "white",
+              opacity: 1,
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.8"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; }}
+            onClick={() => {
+              setAvatarMsg("프로필 사진 기능은 추후 지원됩니다");
+              setTimeout(() => setAvatarMsg(""), 3000);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setAvatarMsg("프로필 사진 기능은 추후 지원됩니다");
+                setTimeout(() => setAvatarMsg(""), 3000);
+              }
+            }}
           >
             {initial}
           </div>
           <div>
             <div className="font-medium text-lg">{profile?.name || "이름 없음"}</div>
             <div className="text-sm" style={{ color: "var(--muted)" }}>
-              아바타 이미지 업로드는 추후 지원 예정입니다
+              {avatarMsg || "클릭하여 프로필 사진을 변경할 수 있습니다"}
             </div>
           </div>
         </div>
