@@ -35,6 +35,7 @@ interface AiPanelProps {
 }
 
 type WritingAction =
+  | "autocomplete"
   | "summarize"
   | "expand"
   | "translate"
