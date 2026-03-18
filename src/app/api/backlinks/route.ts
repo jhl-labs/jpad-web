@@ -3,10 +3,19 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth/helpers";
 import { getPageAccessContext, listAccessiblePageIds } from "@/lib/pageAccess";
 import { logError } from "@/lib/logger";
+import { rateLimitRedis } from "@/lib/rateLimit";
 
 export async function GET(req: NextRequest) {
   try {
     const user = await requireAuth();
+
+    if (!(await rateLimitRedis(`backlinks:${user.id}`, 60, 60_000))) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded" },
+        { status: 429 }
+      );
+    }
+
     const pageId = req.nextUrl.searchParams.get("pageId");
     const workspaceId = req.nextUrl.searchParams.get("workspaceId");
 

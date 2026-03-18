@@ -48,6 +48,18 @@ export async function POST(req: NextRequest) {
     const email = normalizeEmailAddress(parsed.data.email);
     const { password, name } = parsed.data;
 
+    // Password strength validation
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasLowercase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecial = /[!@#$%^&*()_+\-=]/.test(password);
+    if (!hasUppercase || !hasLowercase || !hasNumber || !hasSpecial) {
+      return NextResponse.json(
+        { error: "Password must contain at least 8 characters, including uppercase, lowercase, number, and special character" },
+        { status: 400 }
+      );
+    }
+
     const existing = await prisma.user.findMany({
       where: {
         email: {
