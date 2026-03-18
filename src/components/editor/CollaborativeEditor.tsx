@@ -890,11 +890,19 @@ function InnerEditor({
         <div
           role="toolbar"
           aria-label="AI 도구"
-          className="fixed z-[60] flex items-center gap-0.5 px-1 py-0.5 rounded-full shadow-lg"
+          className="fixed z-[60] flex items-center gap-0.5 px-1 py-0.5 shadow-lg
+            bottom-0 left-0 right-0 rounded-t-xl justify-center py-2
+            md:bottom-auto md:left-auto md:right-auto md:rounded-full md:py-0.5"
           style={{
-            left: selectionRect.left + selectionRect.width / 2,
-            top: selectionRect.top - 44,
-            transform: "translateX(-50%)",
+            left: typeof window !== "undefined" && window.innerWidth >= 768
+              ? selectionRect.left + selectionRect.width / 2
+              : undefined,
+            top: typeof window !== "undefined" && window.innerWidth >= 768
+              ? selectionRect.top - 44
+              : undefined,
+            transform: typeof window !== "undefined" && window.innerWidth >= 768
+              ? "translateX(-50%)"
+              : undefined,
             background: "var(--background)",
             border: "1px solid var(--border)",
             backdropFilter: "blur(12px)",
@@ -1028,26 +1036,49 @@ function InnerEditor({
             </button>
           </span>
         )}
-        {saveStatus === "saving" && <span>저장 중...</span>}
-        {saveStatus === "saved" && (
-          <span style={{ color: "var(--success, #22c55e)" }}>저장됨</span>
-        )}
-        {saveStatus === "error" && (
-          <span className="flex items-center gap-1.5" style={{ color: "var(--danger, #ef4444)" }}>
-            저장 실패
-            <button
-              onClick={handleChange}
-              className="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium transition-opacity hover:opacity-80"
-              style={{
-                background: "rgba(239,68,68,0.9)",
-                color: "white",
-              }}
-            >
-              <RefreshCw size={11} />
-              재시도
-            </button>
-          </span>
-        )}
+        {/* Save status dot indicator */}
+        <span
+          className="flex items-center gap-1.5"
+          title={
+            saveStatus === "saving" ? "저장 중..." :
+            saveStatus === "saved" ? "저장 완료" :
+            saveStatus === "error" ? "저장 실패" :
+            "변경 없음"
+          }
+        >
+          <span
+            className={`w-2 h-2 rounded-full shrink-0 transition-colors ${saveStatus === "saving" ? "animate-pulse" : ""}`}
+            style={{
+              background:
+                saveStatus === "saving" ? "#eab308" :
+                saveStatus === "saved" ? "#22c55e" :
+                saveStatus === "error" ? "#ef4444" :
+                "var(--muted)",
+            }}
+          />
+          {saveStatus === "saving" && (
+            <span className="text-[11px]" style={{ color: "#eab308" }}>저장 중</span>
+          )}
+          {saveStatus === "saved" && (
+            <span className="text-[11px]" style={{ color: "#22c55e" }}>저장됨</span>
+          )}
+          {saveStatus === "error" && (
+            <span className="flex items-center gap-1" style={{ color: "#ef4444" }}>
+              <span className="text-[11px]">저장 실패</span>
+              <button
+                onClick={handleChange}
+                className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium transition-opacity hover:opacity-80"
+                style={{
+                  background: "rgba(239,68,68,0.9)",
+                  color: "white",
+                }}
+              >
+                <RefreshCw size={10} />
+                재시도
+              </button>
+            </span>
+          )}
+        </span>
         <div
           className="w-2 h-2 rounded-full"
           role="status"

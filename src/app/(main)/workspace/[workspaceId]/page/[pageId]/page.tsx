@@ -412,6 +412,14 @@ export default function PageEditorPage() {
     setTitle((prev) => (remoteTitle !== prev ? remoteTitle : prev));
   }, []);
 
+  // 새 페이지 생성 시 타이틀 인풋에 자동 포커스
+  useEffect(() => {
+    if (page && (page.title === "제목 없음" || !page.title.trim())) {
+      const titleInput = document.querySelector("[data-title-input]") as HTMLElement;
+      titleInput?.focus();
+    }
+  }, [page]);
+
   const onInsertText = useCallback((text: string) => {
     setPendingInsertMarkdown({
       key: Date.now(),
@@ -572,7 +580,7 @@ export default function PageEditorPage() {
             />
           )}
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 overflow-x-auto">
           {/* AI 버튼 (이어쓰기 통합) */}
           <button
             onClick={() => setShowAi(!showAi)}
@@ -1043,6 +1051,7 @@ export default function PageEditorPage() {
 
         {/* Title */}
         <input
+          data-title-input
           value={title}
           onChange={(e) => handleTitleChange(e.target.value)}
           disabled={isReadOnly}

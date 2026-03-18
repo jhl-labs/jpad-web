@@ -78,7 +78,7 @@ export default function WorkspaceLayout({
     return () => mql.removeEventListener("change", handler);
   }, []);
 
-  // Cmd+K / Ctrl+K 단축키, Ctrl+\ Zen Mode
+  // Cmd+K / Ctrl+K 단축키, Ctrl+\ Zen Mode, Ctrl+Shift+W 워크스페이스 전환
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
@@ -88,6 +88,10 @@ export default function WorkspaceLayout({
       if ((e.metaKey || e.ctrlKey) && e.key === "\\") {
         e.preventDefault();
         setZenMode((prev) => !prev);
+      }
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === "w" || e.key === "W")) {
+        e.preventDefault();
+        window.dispatchEvent(new Event("workspace-switcher:toggle"));
       }
     }
     window.addEventListener("keydown", handleKeyDown);
