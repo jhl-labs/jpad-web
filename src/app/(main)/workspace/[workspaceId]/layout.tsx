@@ -217,7 +217,15 @@ export default function WorkspaceLayout({
 
   return (
     <div className="flex h-screen">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:rounded focus:text-sm"
+        style={{ background: "var(--primary)", color: "white" }}
+      >
+        본문으로 건너뛰기
+      </a>
       {!zenMode && (
+        <div data-no-print>
         <Sidebar
           workspace={workspace}
           pages={pages}
@@ -228,6 +236,7 @@ export default function WorkspaceLayout({
           isOpen={sidebarOpen}
           onToggle={() => setSidebarOpen(!sidebarOpen)}
         />
+        </div>
       )}
       {!zenMode && !sidebarOpen && (
         <button
@@ -239,7 +248,7 @@ export default function WorkspaceLayout({
           <Menu size={18} />
         </button>
       )}
-      <main className="flex-1 overflow-auto relative">
+      <main id="main-content" className="flex-1 overflow-auto relative">
         {children}
       </main>
       <QuickSwitcher

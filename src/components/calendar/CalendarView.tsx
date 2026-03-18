@@ -921,15 +921,21 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
                             maxWidth: "none",
                             cursor: "pointer",
                             lineHeight: "16px",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 2,
                           }}
-                          title={ev.title}
+                          title={`${ev.title}${ev.recurrence ? ` (${RECURRENCE_LABELS[ev.recurrence] || ev.recurrence})` : ""}`}
                         >
+                          {ev.recurrence && (
+                            <Repeat size={9} style={{ opacity: 0.85, flexShrink: 0 }} />
+                          )}
                           {!ev.allDay && (
-                            <span style={{ opacity: 0.8, marginRight: 2 }}>
+                            <span style={{ opacity: 0.8 }}>
                               {formatTime(ev.startAt)}
                             </span>
                           )}
-                          {ev.title}
+                          <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{ev.title}</span>
                         </div>
                       ))}
                       {dayEvents.length > 3 && (

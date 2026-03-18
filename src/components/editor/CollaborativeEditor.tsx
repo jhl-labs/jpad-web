@@ -18,7 +18,7 @@ import { uploadImageToPage, isImageFile } from "./imageUpload";
 
 const SYNC_FALLBACK_MS = 3000;
 const AUTO_SAVE_DEBOUNCE_MS = 2000;
-const SAVED_STATUS_RESET_MS = 2000;
+const SAVED_STATUS_RESET_MS = 3000;
 
 const FLOATING_AI_ACTIONS = [
   { label: "AI 요약", action: "summarize", icon: <FileText size={13} /> },
@@ -286,6 +286,7 @@ function InnerEditor({
   const savedTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [connected, setConnected] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [lastSavedTime, setLastSavedTime] = useState<string>("");
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [fontSize, setFontSize] = useState<string>("16px");
   const initialLoaded = useRef(false);
@@ -504,6 +505,8 @@ function InnerEditor({
       try {
         const markdown = blocksToMarkdown(editor.document);
         await onSave(markdown);
+        const now = new Date();
+        setLastSavedTime(`${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`);
         updateSaveStatus("saved");
         savedTimeout.current = setTimeout(() => updateSaveStatus("idle"), SAVED_STATUS_RESET_MS);
       } catch (error) {
@@ -1061,10 +1064,10 @@ function InnerEditor({
             }}
           />
           {saveStatus === "saving" && (
-            <span className="text-[11px]" style={{ color: "#eab308" }}>저장 중</span>
+            <span className="text-[11px]" style={{ color: "#eab308" }}>저장 중...</span>
           )}
           {saveStatus === "saved" && (
-            <span className="text-[11px]" style={{ color: "#22c55e" }}>저장됨</span>
+            <span className="text-[11px]" style={{ color: "#22c55e" }}>자동 저장됨 {lastSavedTime}</span>
           )}
           {saveStatus === "error" && (
             <span className="flex items-center gap-1" style={{ color: "#ef4444" }}>

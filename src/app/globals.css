@@ -58,7 +58,8 @@ select:focus-visible {
   header,
   footer,
   button,
-  [data-print-hide] {
+  [data-print-hide],
+  [data-no-print] {
     display: none !important;
   }
 
@@ -70,6 +71,8 @@ select:focus-visible {
 
   /* Show only the editor content */
   main {
+    margin: 0 !important;
+    padding: 20px !important;
     overflow: visible !important;
     position: static !important;
   }

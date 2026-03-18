@@ -455,6 +455,37 @@ const SIDEBAR_MAX_WIDTH = 400;
 const SIDEBAR_DEFAULT_WIDTH = 240;
 const SIDEBAR_STORAGE_KEY = "jpad:sidebar-width";
 
+interface SectionCollapseState {
+  navigation: boolean;
+  favorites: boolean;
+  pages: boolean;
+}
+
+function getSavedSectionState(workspaceId: string): SectionCollapseState {
+  try {
+    const saved = localStorage.getItem(`jpad:sidebar-sections:${workspaceId}`);
+    if (saved) {
+      const parsed = JSON.parse(saved) as Partial<SectionCollapseState>;
+      return {
+        navigation: parsed.navigation ?? false,
+        favorites: parsed.favorites ?? false,
+        pages: parsed.pages ?? false,
+      };
+    }
+  } catch (_error) {
+    // ignore
+  }
+  return { navigation: false, favorites: false, pages: false };
+}
+
+function saveSectionState(workspaceId: string, state: SectionCollapseState) {
+  try {
+    localStorage.setItem(`jpad:sidebar-sections:${workspaceId}`, JSON.stringify(state));
+  } catch (_error) {
+    // ignore
+  }
+}
+
 function getSavedWidth(): number {
   try {
     const saved = localStorage.getItem(SIDEBAR_STORAGE_KEY);
@@ -472,6 +503,15 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
   const { data: session } = useSession();
   const [showTrash, setShowTrash] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [sectionCollapse, setSectionCollapse] = useState<SectionCollapseState>(() => getSavedSectionState(workspace.id));
+
+  const toggleSection = useCallback((section: keyof SectionCollapseState) => {
+    setSectionCollapse((prev) => {
+      const next = { ...prev, [section]: !prev[section] };
+      saveSectionState(workspace.id, next);
+      return next;
+    });
+  }, [workspace.id]);
   const [trashCount, setTrashCount] = useState(0);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [blankContextMenu, setBlankContextMenu] = useState<{ x: number; y: number } | null>(null);
@@ -820,7 +860,15 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
       >
         {/* 네비게이션 메뉴 */}
         <div className="px-2 pt-2 pb-1">
-          {[
+          <button
+            onClick={() => toggleSection("navigation")}
+            className="flex items-center gap-1 w-full px-1 mb-1 text-[10px] font-semibold uppercase tracking-wider"
+            style={{ color: "var(--muted)", background: "transparent", border: "none", cursor: "pointer" }}
+          >
+            {sectionCollapse.navigation ? <ChevronRight size={10} /> : <ChevronDown size={10} />}
+            네비게이션
+          </button>
+          {!sectionCollapse.navigation && [
             { href: "daily", icon: <BookOpen size={14} />, label: "오늘의 노트" },
             { href: "graph", icon: <Network size={14} />, label: "지식 그래프" },
             { href: "calendar", icon: <Calendar size={14} />, label: "캘린더" },
@@ -847,12 +895,15 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
         {/* 즐겨찾기 */}
         {favorites.length > 0 && (
           <div className="px-2 mb-1">
-            <div className="flex items-center mb-1 px-1">
-              <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>
-                즐겨찾기
-              </span>
-            </div>
-            {favorites.map((fav) => (
+            <button
+              onClick={() => toggleSection("favorites")}
+              className="flex items-center gap-1 w-full mb-1 px-1 text-[10px] font-semibold uppercase tracking-wider"
+              style={{ color: "var(--muted)", background: "transparent", border: "none", cursor: "pointer" }}
+            >
+              {sectionCollapse.favorites ? <ChevronRight size={10} /> : <ChevronDown size={10} />}
+              즐겨찾기
+            </button>
+            {!sectionCollapse.favorites && favorites.map((fav) => (
               <div
                 key={fav.id}
                 role="button"
@@ -904,12 +955,19 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
           </div>
         )}
 
+
+
         {/* 페이지 트리 */}
         <div className="px-2 pb-2">
           <div className="flex items-center justify-between mb-1 px-1">
-            <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>
+            <button
+              onClick={() => toggleSection("pages")}
+              className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider"
+              style={{ color: "var(--muted)", background: "transparent", border: "none", cursor: "pointer", padding: 0 }}
+            >
+              {sectionCollapse.pages ? <ChevronRight size={10} /> : <ChevronDown size={10} />}
               페이지
-            </span>
+            </button>
             {canManagePages && (
               <button
                 onClick={() => onCreatePage()}
@@ -922,6 +980,7 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
             )}
           </div>
 
+        {!sectionCollapse.pages && (
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -950,8 +1009,9 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
             </div>
           </SortableContext>
         </DndContext>
+        )}
 
-        {rootPages.length === 0 && (
+        {!sectionCollapse.pages && rootPages.length === 0 && (
           <p className="text-xs px-2 py-4 text-center" style={{ color: "var(--muted)" }}>
             페이지가 없습니다
           </p>
