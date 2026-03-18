@@ -216,40 +216,80 @@ export function HistoryPanel({
         )}
       </div>
 
-      {/* Diff view */}
+      {/* Diff dialog */}
       {compareMode && diffResult && (
-        <div className="p-3" style={{ borderTop: "1px solid var(--border)", maxHeight: "50%", overflow: "auto" }}>
-          <p className="text-xs font-medium mb-2" style={{ color: "var(--muted)" }}>비교 결과</p>
-          <pre
-            className="text-xs p-2 rounded overflow-auto"
-            style={{ background: "var(--sidebar-bg)", maxHeight: 300, margin: 0 }}
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.5)" }}
+          onClick={(e) => { if (e.target === e.currentTarget) setDiffResult(null); }}
+          onKeyDown={(e) => { if (e.key === "Escape") setDiffResult(null); }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="버전 비교 결과"
+            className="rounded-xl shadow-2xl flex flex-col"
+            style={{
+              background: "var(--background)",
+              border: "1px solid var(--border)",
+              width: "min(90vw, 720px)",
+              maxHeight: "80vh",
+            }}
           >
-            {diffResult.map((line, i) => (
-              <div
-                key={i}
-                style={{
-                  background:
-                    line.type === "add"
-                      ? "rgba(34, 197, 94, 0.1)"
-                      : line.type === "remove"
-                        ? "rgba(239, 68, 68, 0.1)"
-                        : "transparent",
-                  color:
-                    line.type === "add"
-                      ? "#22c55e"
-                      : line.type === "remove"
-                        ? "#ef4444"
-                        : "var(--foreground)",
-                  padding: "1px 4px",
-                  whiteSpace: "pre-wrap",
-                  wordBreak: "break-all",
-                }}
-              >
-                {line.type === "add" ? "+ " : line.type === "remove" ? "- " : "  "}
-                {line.line}
+            <div
+              className="flex items-center justify-between px-4 py-3 shrink-0"
+              style={{ borderBottom: "1px solid var(--border)" }}
+            >
+              <div className="flex items-center gap-2">
+                <GitCompare size={16} style={{ color: "var(--primary)" }} />
+                <span className="font-semibold text-sm">버전 비교 결과</span>
+                <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "var(--sidebar-bg)", color: "var(--muted)" }}>
+                  +{diffResult.filter((l) => l.type === "add").length}
+                  {" "}-{diffResult.filter((l) => l.type === "remove").length}
+                </span>
               </div>
-            ))}
-          </pre>
+              <button
+                onClick={() => setDiffResult(null)}
+                className="p-1 rounded hover:opacity-70"
+                aria-label="닫기"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto p-4">
+              <pre
+                className="text-sm p-3 rounded overflow-auto font-mono"
+                style={{ background: "var(--sidebar-bg)", margin: 0 }}
+              >
+                {diffResult.map((line, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      background:
+                        line.type === "add"
+                          ? "rgba(34, 197, 94, 0.12)"
+                          : line.type === "remove"
+                            ? "rgba(239, 68, 68, 0.12)"
+                            : "transparent",
+                      color:
+                        line.type === "add"
+                          ? "#22c55e"
+                          : line.type === "remove"
+                            ? "#ef4444"
+                            : "var(--foreground)",
+                      padding: "2px 8px",
+                      whiteSpace: "pre-wrap",
+                      wordBreak: "break-all",
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    {line.type === "add" ? "+ " : line.type === "remove" ? "- " : "  "}
+                    {line.line}
+                  </div>
+                ))}
+              </pre>
+            </div>
+          </div>
         </div>
       )}
 

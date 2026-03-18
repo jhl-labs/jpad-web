@@ -15,6 +15,7 @@ import { blocksToMarkdown } from "@/lib/markdown/serializer";
 import { Sparkles, FileText, Expand, Languages, SpellCheck, HelpCircle, Palette, ListChecks, Image as ImageIcon, RefreshCw, Undo2, Redo2, WifiOff } from "lucide-react";
 import { AI_EVENTS } from "@/lib/events";
 import { uploadImageToPage, isImageFile } from "./imageUpload";
+import { createWikiLinkPlugin } from "./wikiLinkPlugin";
 
 const SYNC_FALLBACK_MS = 3000;
 const AUTO_SAVE_DEBOUNCE_MS = 2000;
@@ -413,6 +414,17 @@ function InnerEditor({
       },
     },
   });
+
+  // Register wiki link decoration plugin
+  const wikiLinkPluginRegistered = useRef(false);
+  useEffect(() => {
+    if (!editor || wikiLinkPluginRegistered.current) return;
+    const tiptap = (editor as unknown as { _tiptapEditor?: { registerPlugin: (p: unknown) => void } })._tiptapEditor;
+    if (tiptap?.registerPlugin) {
+      tiptap.registerPlugin(createWikiLinkPlugin(workspaceId));
+      wikiLinkPluginRegistered.current = true;
+    }
+  }, [editor, workspaceId]);
 
   // Read editor font size from localStorage and listen for changes
   useEffect(() => {
