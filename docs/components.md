@@ -269,7 +269,7 @@ AI 기능 패널. 2개 탭: 글쓰기 도우미 + AI 채팅.
 빠른 페이지 전환. `Cmd+K` 단축키로 실행.
 
 ### `KeyboardShortcutsHelp` (`src/components/ui/KeyboardShortcutsHelp.tsx`)
-키보드 단축키 도움말 모달.
+키보드 단축키 도움말 모달. 현재 단축키 커스터마이징은 지원되지 않으며, 추후 지원 예정.
 
 ### `OnboardingChecklist` (`src/components/ui/OnboardingChecklist.tsx`)
 신규 사용자 온보딩 체크리스트 컴포넌트.
