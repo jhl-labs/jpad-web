@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useSession } from "next-auth/react";
-import { X, MessageCircle, Send, Reply, Trash2, CheckCircle, Loader2 } from "lucide-react";
+import { X, MessageCircle, Send, Reply, Trash2, CheckCircle, Loader2, RefreshCw } from "lucide-react";
 
 interface CommentUser {
   id: string;
@@ -256,6 +256,14 @@ export function CommentPanel({
     fetchComments();
   }, [fetchComments]);
 
+  // Auto-refresh every 15 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchComments();
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [fetchComments]);
+
   async function handleSubmit() {
     if (!newContent.trim() || submitting) return;
     setSubmitting(true);
@@ -311,9 +319,18 @@ export function CommentPanel({
             </span>
           )}
         </div>
-        <button onClick={onClose} className="p-1 rounded hover:opacity-70">
-          <X size={16} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={fetchComments}
+            className="p-1 rounded hover:opacity-70"
+            title="새로고침"
+          >
+            <RefreshCw size={14} />
+          </button>
+          <button onClick={onClose} className="p-1 rounded hover:opacity-70">
+            <X size={16} />
+          </button>
+        </div>
       </div>
 
       {!readOnly && (

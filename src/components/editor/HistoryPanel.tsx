@@ -1,13 +1,39 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Clock, X } from "lucide-react";
+import { Clock, X, GitCompare } from "lucide-react";
 
 interface HistoryEntry {
   oid: string;
   message: string;
   author: string;
   timestamp: number;
+}
+
+interface DiffLine {
+  type: "add" | "remove" | "same";
+  line: string;
+}
+
+function computeLineDiff(oldText: string, newText: string): DiffLine[] {
+  const oldLines = oldText.split("\n");
+  const newLines = newText.split("\n");
+  const result: DiffLine[] = [];
+
+  let oi = 0, ni = 0;
+  while (oi < oldLines.length || ni < newLines.length) {
+    if (oi < oldLines.length && ni < newLines.length && oldLines[oi] === newLines[ni]) {
+      result.push({ type: "same", line: oldLines[oi] });
+      oi++; ni++;
+    } else if (ni < newLines.length && (oi >= oldLines.length || !oldLines.includes(newLines[ni]))) {
+      result.push({ type: "add", line: newLines[ni] });
+      ni++;
+    } else {
+      result.push({ type: "remove", line: oldLines[oi] });
+      oi++;
+    }
+  }
+  return result;
 }
 
 export function HistoryPanel({
@@ -24,6 +50,12 @@ export function HistoryPanel({
   const [selectedOid, setSelectedOid] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+
+  // Compare mode state
+  const [compareMode, setCompareMode] = useState(false);
+  const [compareSelections, setCompareSelections] = useState<[string | null, string | null]>([null, null]);
+  const [diffResult, setDiffResult] = useState<DiffLine[] | null>(null);
+  const [diffLoading, setDiffLoading] = useState(false);
 
   useEffect(() => {
     requestAnimationFrame(() => setIsVisible(true));
@@ -45,6 +77,52 @@ export function HistoryPanel({
     }
   }
 
+  function toggleCompareSelection(oid: string) {
+    setCompareSelections((prev) => {
+      if (prev[0] === oid) return [null, prev[1]];
+      if (prev[1] === oid) return [prev[0], null];
+      if (!prev[0]) return [oid, prev[1]];
+      if (!prev[1]) return [prev[0], oid];
+      // Both filled, replace the second
+      return [prev[0], oid];
+    });
+  }
+
+  async function runCompare() {
+    const [oidA, oidB] = compareSelections;
+    if (!oidA || !oidB) return;
+
+    setDiffLoading(true);
+    setDiffResult(null);
+    try {
+      const [resA, resB] = await Promise.all([
+        fetch(`/api/pages/${pageId}/history?oid=${oidA}`),
+        fetch(`/api/pages/${pageId}/history?oid=${oidB}`),
+      ]);
+      if (resA.ok && resB.ok) {
+        const dataA = await resA.json();
+        const dataB = await resB.json();
+        // Older version (A) vs newer version (B)
+        const idxA = history.findIndex((h) => h.oid === oidA);
+        const idxB = history.findIndex((h) => h.oid === oidB);
+        // Higher index = older (list is newest first)
+        const oldContent = idxA > idxB ? dataA.content : dataB.content;
+        const newContent = idxA > idxB ? dataB.content : dataA.content;
+        setDiffResult(computeLineDiff(oldContent as string, newContent as string));
+      }
+    } catch {
+      // ignore fetch errors
+    } finally {
+      setDiffLoading(false);
+    }
+  }
+
+  function exitCompareMode() {
+    setCompareMode(false);
+    setCompareSelections([null, null]);
+    setDiffResult(null);
+  }
+
   return (
     <div
       ref={panelRef}
@@ -62,27 +140,73 @@ export function HistoryPanel({
     >
       <div className="flex items-center justify-between p-3" style={{ borderBottom: "1px solid var(--border)" }}>
         <h3 className="font-semibold text-sm">히스토리</h3>
-        <button onClick={onClose} className="p-1 rounded hover:opacity-70">
-          <X size={16} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => compareMode ? exitCompareMode() : setCompareMode(true)}
+            className="p-1 rounded hover:opacity-70 flex items-center gap-1 text-xs"
+            style={{
+              color: compareMode ? "var(--primary)" : "var(--foreground)",
+              background: compareMode ? "var(--sidebar-hover)" : "transparent",
+              border: "1px solid var(--border)",
+              padding: "2px 8px",
+              borderRadius: 4,
+            }}
+            title="버전 비교"
+          >
+            <GitCompare size={14} />
+            비교
+          </button>
+          <button onClick={onClose} className="p-1 rounded hover:opacity-70">
+            <X size={16} />
+          </button>
+        </div>
       </div>
+
+      {compareMode && (
+        <div className="p-2 text-xs" style={{ borderBottom: "1px solid var(--border)", background: "var(--sidebar-bg)" }}>
+          <p style={{ color: "var(--muted)", marginBottom: 4 }}>
+            비교할 두 버전을 선택하세요
+          </p>
+          <button
+            onClick={runCompare}
+            disabled={!compareSelections[0] || !compareSelections[1] || diffLoading}
+            className="w-full py-1.5 rounded text-white text-xs disabled:opacity-40"
+            style={{ background: "var(--primary)" }}
+          >
+            {diffLoading ? "비교 중..." : "선택한 버전 비교"}
+          </button>
+        </div>
+      )}
 
       <div className="flex-1 overflow-auto">
         {history.map((entry) => (
-          <button
+          <div
             key={entry.oid}
-            onClick={() => viewVersion(entry.oid)}
-            className="w-full text-left p-3 text-sm"
+            className="w-full text-left p-3 text-sm flex items-start gap-2"
             style={{
               borderBottom: "1px solid var(--border)",
-              background: selectedOid === entry.oid ? "var(--sidebar-hover)" : undefined,
+              background: (!compareMode && selectedOid === entry.oid) ? "var(--sidebar-hover)" : undefined,
             }}
           >
-            <div className="font-medium">{entry.message}</div>
-            <div className="text-xs mt-1" style={{ color: "var(--muted)" }}>
-              {entry.author} · {new Date(entry.timestamp).toLocaleString("ko")}
-            </div>
-          </button>
+            {compareMode && (
+              <input
+                type="checkbox"
+                checked={compareSelections[0] === entry.oid || compareSelections[1] === entry.oid}
+                onChange={() => toggleCompareSelection(entry.oid)}
+                style={{ marginTop: 2, accentColor: "var(--primary)", flexShrink: 0 }}
+              />
+            )}
+            <button
+              onClick={() => !compareMode && viewVersion(entry.oid)}
+              className="flex-1 text-left"
+              style={{ background: "none", border: "none", padding: 0, cursor: compareMode ? "default" : "pointer" }}
+            >
+              <div className="font-medium">{entry.message}</div>
+              <div className="text-xs mt-1" style={{ color: "var(--muted)" }}>
+                {entry.author} · {new Date(entry.timestamp).toLocaleString("ko")}
+              </div>
+            </button>
+          </div>
         ))}
         {history.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 gap-2" style={{ color: "var(--muted)" }}>
@@ -92,7 +216,45 @@ export function HistoryPanel({
         )}
       </div>
 
-      {preview && (
+      {/* Diff view */}
+      {compareMode && diffResult && (
+        <div className="p-3" style={{ borderTop: "1px solid var(--border)", maxHeight: "50%", overflow: "auto" }}>
+          <p className="text-xs font-medium mb-2" style={{ color: "var(--muted)" }}>비교 결과</p>
+          <pre
+            className="text-xs p-2 rounded overflow-auto"
+            style={{ background: "var(--sidebar-bg)", maxHeight: 300, margin: 0 }}
+          >
+            {diffResult.map((line, i) => (
+              <div
+                key={i}
+                style={{
+                  background:
+                    line.type === "add"
+                      ? "rgba(34, 197, 94, 0.1)"
+                      : line.type === "remove"
+                        ? "rgba(239, 68, 68, 0.1)"
+                        : "transparent",
+                  color:
+                    line.type === "add"
+                      ? "#22c55e"
+                      : line.type === "remove"
+                        ? "#ef4444"
+                        : "var(--foreground)",
+                  padding: "1px 4px",
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-all",
+                }}
+              >
+                {line.type === "add" ? "+ " : line.type === "remove" ? "- " : "  "}
+                {line.line}
+              </div>
+            ))}
+          </pre>
+        </div>
+      )}
+
+      {/* Single version preview */}
+      {!compareMode && preview && (
         <div className="p-3" style={{ borderTop: "1px solid var(--border)" }}>
           <pre className="text-xs max-h-40 overflow-auto p-2 rounded mb-2" style={{ background: "var(--sidebar-bg)" }}>
             {preview}
