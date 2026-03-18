@@ -195,3 +195,54 @@ googleCalendarSync.ts → Google Calendar API 양방향 동기화
 | uploadSecurity.ts | `src/lib/uploadSecurity.ts` | 업로드 보안 스캔 (ClamAV) |
 | uploadDlp.ts | `src/lib/uploadDlp.ts` | 업로드 DLP 검사 |
 | scim.ts | `src/lib/scim.ts` | SCIM 프로비저닝 |
+
+## Git Sync
+
+워크스페이스별 원격 Git 저장소 동기화를 지원합니다.
+
+- 설정: 워크스페이스 설정 → Git 동기화 탭
+- `WorkspaceGitSyncTab` 컴포넌트에서 remote URL, branch, credentials 관리
+- `isomorphic-git`으로 push/pull 수행
+- 민감 정보(토큰 등)는 `encryptSecret()`으로 AES-256-GCM 암호화 저장
+
+## 인프라 대시보드
+
+플랫폼 운영자를 위한 `/admin/ops` 대시보드:
+
+- `OpsDashboard` 컴포넌트 (`src/components/admin/OpsDashboard.tsx`)
+- 시스템 헬스, DB 연결 상태, 활성 사용자 수, 스토리지 사용량 모니터링
+- Retention 정책 실행 이력 및 수동 트리거
+- SCIM 프로비저닝 상태 확인
+
+## AI 스트리밍
+
+AI 기능은 Server-Sent Events(SSE) 기반 실시간 스트리밍을 사용합니다:
+
+- `/api/ai/write`, `/api/ai/chat` 엔드포인트에서 SSE 응답
+- `llmProviders.ts`에서 Anthropic, OpenAI, Gemini, Ollama 4개 provider 추상화
+- `AiPanel` 컴포넌트에서 스트림 수신 및 실시간 렌더링
+- 에러 시 재시도 버튼 제공
+
+## 에러 처리 패턴
+
+- **ErrorBoundary**: `src/components/ui/ErrorBoundary.tsx` — React 에러 경계. 라우트 그룹별 `error.tsx`에서 활용
+- **handleApiError**: API 라우트에서 통합 에러 핸들링 (Unauthorized/AiError 분기 + logError)
+- **logError / logWarn**: `src/lib/logger.ts` — 구조화된 로그 출력
+
+## 100-항목 개선 작업
+
+v1.0.0 이후 코드 품질, 보안, UX, 성능 전반에 걸쳐 100건 이상의 개선을 진행했습니다:
+
+- CSS 변수 전환 (~32개 파일의 하드코딩 색상 제거)
+- catch 블록 에러 캡처 강화 (logError 통합)
+- 접근성 개선 (aria 속성, 키보드 핸들러)
+- API rate limiting 및 감사 로그 확대
+- 테스트 안정화 및 mock 충돌 해결
+
+## i18n 계획
+
+현재 UI는 한국어 전용(`lang="ko"`)입니다. 향후 다국어 지원 계획:
+
+- `next-intl` 또는 유사 라이브러리 도입 예정
+- 브라우저 locale 감지 (`navigator.language`)
+- 우선 지원 언어: ko, en, ja

@@ -279,6 +279,16 @@ function getCustomSlashMenuItems(
         editor.insertInlineContent([{ type: "text", text: now, styles: {} }]);
       },
     },
+    // TODO: #31 — 멘션 기능 플레이스홀더. 추후 전체 구현 예정.
+    {
+      title: "@멘션",
+      subtext: "추후 지원 예정입니다",
+      group: "기본 블록",
+      aliases: ["mention", "멘션", "@"],
+      onItemClick: () => {
+        alert("멘션 기능은 추후 지원 예정입니다");
+      },
+    },
   ];
 
   return [...aiItems, ...utilItems, ...defaults];

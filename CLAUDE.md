@@ -43,7 +43,7 @@ Yjs 실시간 협업, AI 어시스턴트, 캘린더, TODO, 지식 그래프, Git
 
 ## 디렉토리 구조
 - `src/app/api/` — REST API (105+ 라우트 파일)
-- `src/components/` — React 컴포넌트 (40+)
+- `src/components/` — React 컴포넌트 (44+)
 - `src/lib/` — 비즈니스 로직
 - `src/server/` — WebSocket 서버
 - `prisma/schema.prisma` — DB 스키마
@@ -59,6 +59,8 @@ Yjs 실시간 협업, AI 어시스턴트, 캘린더, TODO, 지식 그래프, Git
 - 에디터: BlockNote + Yjs. `InnerEditor` 분리 패턴 (collaboration 준비 후 마운트).
 - API 에러 핸들링: `handleApiError(error, "context")` — Unauthorized/AiError 분기 + logError 통합.
 - 로깅: `logError(event, error)`, `logWarn(event, message)` — 구조화된 로그 출력.
+- ErrorBoundary: `src/components/ui/ErrorBoundary.tsx` — React 에러 경계. 라우트 그룹별 `error.tsx` 활용.
+- logRequest: `src/lib/logger.ts` — API 요청 로깅 유틸리티.
 
 ## 스킬 사용
 - `/release patch|minor|major` — 릴리스
