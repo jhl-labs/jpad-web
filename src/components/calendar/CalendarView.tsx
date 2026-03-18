@@ -832,7 +832,7 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
                   }
                 }}
                 style={{
-                  minHeight: isMobile ? 60 : 100,
+                  minHeight: isMobile ? 64 : 96,
                   borderRight:
                     dayOfWeek < 6 ? "1px solid var(--border)" : "none",
                   borderBottom: "1px solid var(--border)",
@@ -846,7 +846,7 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
               >
                 <div
                   style={{
-                    fontSize: 13,
+                    fontSize: isMobile ? 11 : 13,
                     fontWeight: isToday ? 700 : 400,
                     color: isToday
                       ? "var(--primary)"
@@ -870,47 +870,81 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
                 </div>
 
                 <div style={{ marginTop: 2 }}>
-                  {dayEvents.slice(0, 3).map((ev) => (
-                    <div
-                      key={ev.id}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openEditModal(ev);
-                      }}
-                      style={{
-                        fontSize: 11,
-                        padding: "1px 4px",
-                        marginBottom: 1,
-                        borderRadius: 3,
-                        background: ev.color || "var(--primary)",
-                        color: "#fff",
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        cursor: "pointer",
-                        lineHeight: "16px",
-                      }}
-                      title={ev.title}
-                    >
-                      {!ev.allDay && (
-                        <span style={{ opacity: 0.8, marginRight: 2 }}>
-                          {formatTime(ev.startAt)}
-                        </span>
+                  {isMobile ? (
+                    /* Mobile condensed view: event count dot */
+                    dayEvents.length > 0 && (
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          gap: 2,
+                          marginTop: 4,
+                        }}
+                      >
+                        <span
+                          style={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: "50%",
+                            background: dayEvents[0].color || "var(--primary)",
+                            display: "inline-block",
+                          }}
+                        />
+                        {dayEvents.length > 1 && (
+                          <span style={{ fontSize: 9, color: "var(--muted)" }}>
+                            +{dayEvents.length - 1}
+                          </span>
+                        )}
+                      </div>
+                    )
+                  ) : (
+                    /* Desktop full view */
+                    <>
+                      {dayEvents.slice(0, 3).map((ev) => (
+                        <div
+                          key={ev.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditModal(ev);
+                          }}
+                          style={{
+                            fontSize: 11,
+                            padding: "1px 4px",
+                            marginBottom: 1,
+                            borderRadius: 3,
+                            background: ev.color || "var(--primary)",
+                            color: "#fff",
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            maxWidth: "none",
+                            cursor: "pointer",
+                            lineHeight: "16px",
+                          }}
+                          title={ev.title}
+                        >
+                          {!ev.allDay && (
+                            <span style={{ opacity: 0.8, marginRight: 2 }}>
+                              {formatTime(ev.startAt)}
+                            </span>
+                          )}
+                          {ev.title}
+                        </div>
+                      ))}
+                      {dayEvents.length > 3 && (
+                        <div
+                          style={{
+                            fontSize: 10,
+                            color: "var(--foreground)",
+                            opacity: 0.6,
+                            paddingLeft: 4,
+                          }}
+                        >
+                          +{dayEvents.length - 3}개 더
+                        </div>
                       )}
-                      {ev.title}
-                    </div>
-                  ))}
-                  {dayEvents.length > 3 && (
-                    <div
-                      style={{
-                        fontSize: 10,
-                        color: "var(--foreground)",
-                        opacity: 0.6,
-                        paddingLeft: 4,
-                      }}
-                    >
-                      +{dayEvents.length - 3}개 더
-                    </div>
+                    </>
                   )}
                   {quickAddDate === dayInfo.date && (
                     <div

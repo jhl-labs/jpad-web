@@ -69,6 +69,24 @@ export function logWarn(
   });
 }
 
+export function logRequest(
+  event: string,
+  req: { method?: string; url?: string },
+  meta?: Record<string, unknown>
+) {
+  const url = req.url ? new URL(req.url).pathname : "unknown";
+  console.log(
+    JSON.stringify({
+      timestamp: new Date().toISOString(),
+      level: "info",
+      event,
+      method: req.method || "GET",
+      path: url,
+      ...meta,
+    })
+  );
+}
+
 export function logError(
   event: string,
   error: unknown,
