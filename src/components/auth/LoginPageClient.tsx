@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ClientSafeProvider, getProviders, signIn } from "next-auth/react";
 import { useEffect, useState } from "react";
+import { AppLogo } from "@/components/ui/AppLogo";
 
 interface LoginPageClientProps {
   allowCredentialsLogin: boolean;
@@ -123,10 +124,18 @@ export function LoginPageClient({
   return (
     <div
       className="min-h-screen flex items-center justify-center"
-      style={{ background: "var(--background)" }}
+      style={{
+        background: "linear-gradient(135deg, var(--background) 0%, var(--sidebar-bg) 50%, var(--background) 100%)",
+      }}
     >
-      <div className="w-full max-w-sm p-8">
-        <h1 className="text-2xl font-bold mb-6 text-center">JPAD</h1>
+      <div
+        className="w-full max-w-sm p-8 rounded-xl"
+        style={{ background: "var(--background)", boxShadow: "0 4px 24px rgba(0,0,0,0.08)" }}
+      >
+        <div className="flex justify-center mb-4">
+          <AppLogo />
+        </div>
+        <h1 className="text-2xl font-bold mb-6 text-center" style={{ color: "var(--foreground)" }}>jpad에 로그인</h1>
 
         {error && (
           <p
