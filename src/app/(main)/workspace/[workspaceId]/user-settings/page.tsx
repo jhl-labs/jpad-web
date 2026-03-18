@@ -882,6 +882,61 @@ function DataTab({ workspaceId }: { workspaceId: string }) {
     }
   }
 
+  /** 전체 워크스페이스를 단일 마크다운 파일로 내보내기 (#79) */
+  async function handleExportWorkspaceMd() {
+    setExporting(true);
+    try {
+      const pagesRes = await fetch(`/api/pages?workspaceId=${workspaceId}&limit=10000`);
+      if (!pagesRes.ok) {
+        alert("페이지 목록을 가져올 수 없습니다.");
+        return;
+      }
+      const pagesData = await pagesRes.json();
+      const pages: { id: string; title: string; slug: string }[] = Array.isArray(pagesData)
+        ? pagesData
+        : pagesData.pages || [];
+
+      if (pages.length === 0) {
+        alert("내보낼 페이지가 없습니다.");
+        return;
+      }
+
+      const parts: string[] = [];
+      for (const page of pages) {
+        try {
+          const contentRes = await fetch(`/api/pages/${page.id}/content`);
+          if (contentRes.ok) {
+            const data = await contentRes.json();
+            const md = data.markdown || data.content || "";
+            const title = page.title || page.slug || page.id;
+            parts.push(`# ${title}\n\n${md}`);
+          }
+        } catch (_error) {
+          // skip failed pages
+        }
+      }
+
+      if (parts.length === 0) {
+        alert("내보낼 콘텐츠가 없습니다.");
+        return;
+      }
+
+      const combined = parts.join("\n\n---\n\n");
+      const blob = new Blob([combined], { type: "text/markdown;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `jpad-workspace-${new Date().toISOString().slice(0, 10)}.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Export workspace MD failed:", err);
+      alert("내보내기 중 오류가 발생했습니다.");
+    } finally {
+      setExporting(false);
+    }
+  }
+
   useEffect(() => {
     function handleOpenImport() {
       setImportModalOpen(true);
@@ -922,19 +977,34 @@ function DataTab({ workspaceId }: { workspaceId: string }) {
       <Section title="내보내기 & 가져오기">
         <div className="space-y-3">
           <Field label="전체 내보내기" description="모든 문서를 마크다운(.md)으로 내보내기">
-            <button
-              onClick={handleExportAll}
-              disabled={exporting}
-              className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50"
-              style={{ background: "var(--primary)", color: "white" }}
-            >
-              {exporting ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : (
-                <Download size={14} />
-              )}
-              {exporting ? "내보내는 중..." : "ZIP으로 내보내기"}
-            </button>
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={handleExportAll}
+                disabled={exporting}
+                className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50"
+                style={{ background: "var(--primary)", color: "white" }}
+              >
+                {exporting ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <Download size={14} />
+                )}
+                {exporting ? "내보내는 중..." : "ZIP으로 내보내기"}
+              </button>
+              <button
+                onClick={handleExportWorkspaceMd}
+                disabled={exporting}
+                className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50"
+                style={{ border: "1px solid var(--border)" }}
+              >
+                {exporting ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <Download size={14} />
+                )}
+                {exporting ? "내보내는 중..." : "단일 .md 파일로 내보내기"}
+              </button>
+            </div>
           </Field>
 
           <Field label="가져오기" description="마크다운 파일을 가져옵니다">

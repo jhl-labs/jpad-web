@@ -735,6 +735,46 @@ export default function WorkspaceSettingsPage() {
               </table>
             </div>
           </Section>
+
+          {/* 웹훅 & 통합 — #82 placeholder */}
+          <Section title="웹훅 & 통합">
+            <div
+              className="rounded-lg p-4"
+              style={{ background: "var(--sidebar-bg)", border: "1px solid var(--border)" }}
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex gap-2">
+                  {/* Slack icon placeholder */}
+                  <span
+                    className="inline-flex items-center justify-center w-8 h-8 rounded text-xs font-bold"
+                    style={{ background: "var(--sidebar-hover)", color: "var(--muted)" }}
+                    title="Slack"
+                  >
+                    S
+                  </span>
+                  {/* Zapier icon placeholder */}
+                  <span
+                    className="inline-flex items-center justify-center w-8 h-8 rounded text-xs font-bold"
+                    style={{ background: "var(--sidebar-hover)", color: "var(--muted)" }}
+                    title="Zapier"
+                  >
+                    Z
+                  </span>
+                  {/* Discord icon placeholder */}
+                  <span
+                    className="inline-flex items-center justify-center w-8 h-8 rounded text-xs font-bold"
+                    style={{ background: "var(--sidebar-hover)", color: "var(--muted)" }}
+                    title="Discord"
+                  >
+                    D
+                  </span>
+                </div>
+              </div>
+              <p className="text-sm" style={{ color: "var(--muted)" }}>
+                Slack, Zapier, Discord 등 외부 서비스 연동은 추후 지원 예정입니다.
+              </p>
+            </div>
+          </Section>
         </div>
       )}
 

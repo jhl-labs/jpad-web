@@ -25,6 +25,9 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // TODO: #81 i18n — 현재 lang="ko" 하드코딩. 추후 navigator.language 감지 및
+  // next-intl 등으로 다국어(en, ja, zh 등) 지원 예정.
+  // 클라이언트에서 locale 감지: typeof window !== "undefined" ? navigator.language : "ko"
   return (
     <html lang="ko">
       <body>
