@@ -458,6 +458,7 @@ export function AiPanel({
     <div
       ref={panelRef}
       role="dialog"
+      aria-modal="true"
       aria-label="AI 어시스턴트"
       className="fixed z-50 flex flex-col shadow-2xl
         bottom-0 left-0 right-0 h-[70vh] rounded-t-2xl

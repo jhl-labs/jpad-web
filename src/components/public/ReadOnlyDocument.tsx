@@ -1,3 +1,13 @@
+function sanitizeHtml(html: string): string {
+  return html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/\son\w+\s*=/gi, ' data-removed=')
+    .replace(/<iframe\b[^>]*>/gi, '')
+    .replace(/<object\b[^>]*>/gi, '')
+    .replace(/<embed\b[^>]*>/gi, '')
+    .replace(/javascript:/gi, 'removed:');
+}
+
 interface NavItem {
   title: string;
   href: string;
@@ -67,7 +77,7 @@ export function ReadOnlyDocument({
             {title}
           </h1>
         </div>
-        <article className="prose max-w-none" dangerouslySetInnerHTML={{ __html: html }} />
+        <article className="prose max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(html) }} />
       </main>
     </div>
   );

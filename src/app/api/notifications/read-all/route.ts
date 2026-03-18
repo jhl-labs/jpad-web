@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   try {
     const user = await requireAuth();
 
-    if (!(await rateLimitRedis(`notifications-read-all:${user.id}`, 30, 60_000))) {
+    if (!(await rateLimitRedis(`notifications-read-all:${user.id}`, 10, 60_000))) {
       return NextResponse.json(
         { error: "Rate limit exceeded. Please wait a moment." },
         { status: 429 }
