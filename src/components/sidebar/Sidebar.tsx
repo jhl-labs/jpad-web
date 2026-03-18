@@ -544,6 +544,7 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
                 onClick={() => router.push(`/workspace/${workspace.id}/settings`)}
                 className="p-1 rounded hover:opacity-70"
                 title="워크스페이스 설정"
+                aria-label="워크스페이스 설정"
               >
                 <Settings size={14} />
               </button>
@@ -552,6 +553,7 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
               onClick={onToggle}
               className="p-1 rounded hover:opacity-70"
               title="사이드바 접기"
+              aria-label="사이드바 접기"
             >
               <ChevronLeft size={14} />
             </button>
@@ -724,6 +726,7 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
                 onClick={() => onCreatePage()}
                 className="p-0.5 rounded hover:opacity-70"
                 title="새 페이지"
+                aria-label="새 페이지"
               >
                 <Plus size={14} />
               </button>
@@ -738,6 +741,7 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
           onDragCancel={handleDragCancel}
         >
           <SortableContext items={pages.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+            <div role="tree" aria-label="페이지 트리">
             {rootPages.map((page) => (
               <SortablePageItem
                 key={page.id}
@@ -754,6 +758,7 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
                 dropTargetId={dropTargetId}
               />
             ))}
+            </div>
           </SortableContext>
         </DndContext>
 
@@ -827,6 +832,7 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
             className="p-1 rounded hover:opacity-70 shrink-0"
             style={{ color: "var(--muted)" }}
             title="로그아웃"
+            aria-label="로그아웃"
           >
             <LogOut size={14} />
           </button>
@@ -835,6 +841,7 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
             className="p-1 rounded hover:opacity-70 shrink-0"
             style={{ color: "var(--muted)" }}
             title="피드백 / 이슈 등록"
+            aria-label="피드백"
           >
             <MessageSquarePlus size={14} />
           </button>
@@ -982,6 +989,44 @@ function SortablePageItem({
             e.preventDefault();
             router.push(`/workspace/${workspaceId}/page/${page.id}`);
           }
+          if (e.key === "ArrowDown") {
+            e.preventDefault();
+            const allItems = Array.from(
+              e.currentTarget.closest('[role="tree"]')?.querySelectorAll<HTMLElement>('[role="treeitem"]') ?? []
+            );
+            const idx = allItems.indexOf(e.currentTarget);
+            if (idx >= 0 && idx < allItems.length - 1) {
+              allItems[idx + 1].focus();
+            }
+          }
+          if (e.key === "ArrowUp") {
+            e.preventDefault();
+            const allItems = Array.from(
+              e.currentTarget.closest('[role="tree"]')?.querySelectorAll<HTMLElement>('[role="treeitem"]') ?? []
+            );
+            const idx = allItems.indexOf(e.currentTarget);
+            if (idx > 0) {
+              allItems[idx - 1].focus();
+            }
+          }
+          if (e.key === "ArrowRight") {
+            e.preventDefault();
+            if (children.length > 0 && !expanded) {
+              setExpanded(true);
+            }
+          }
+          if (e.key === "ArrowLeft") {
+            e.preventDefault();
+            if (children.length > 0 && expanded) {
+              setExpanded(false);
+            } else if (depth > 0) {
+              // Move focus to parent treeitem
+              const parentItem = e.currentTarget.parentElement?.closest('[role="treeitem"]');
+              if (parentItem instanceof HTMLElement) {
+                parentItem.focus();
+              }
+            }
+          }
           if (e.key === "F10" && e.shiftKey) {
             e.preventDefault();
             const rect = e.currentTarget.getBoundingClientRect();
@@ -1042,6 +1087,7 @@ function SortablePageItem({
             }}
             className="p-0.5 rounded hover:opacity-70"
             title="더보기"
+            aria-label="더보기"
           >
             <MoreHorizontal size={12} />
           </button>
@@ -1053,6 +1099,7 @@ function SortablePageItem({
               }}
               className="p-0.5 rounded hover:opacity-70"
               title="하위 페이지 추가"
+              aria-label="하위 페이지 추가"
             >
               <Plus size={12} />
             </button>

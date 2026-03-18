@@ -107,6 +107,32 @@ export function TemplatePickerModal({
     return () => document.removeEventListener("keydown", handleEsc);
   }, [isOpen, onClose]);
 
+  // Focus trapping: Tab cycles through focusable elements within the modal
+  useEffect(() => {
+    if (!isOpen) return;
+    const modal = document.querySelector('[role="dialog"]');
+    if (!modal) return;
+    const focusable = modal.querySelectorAll(
+      'button, input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    if (focusable.length === 0) return;
+    const first = focusable[0] as HTMLElement;
+    const last = focusable[focusable.length - 1] as HTMLElement;
+    function handleTab(e: KeyboardEvent) {
+      if (e.key !== "Tab") return;
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+    document.addEventListener("keydown", handleTab);
+    first.focus();
+    return () => document.removeEventListener("keydown", handleTab);
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const allTemplates: Template[] = [...builtIn, ...custom];
@@ -182,7 +208,7 @@ export function TemplatePickerModal({
           style={{ borderBottom: "1px solid var(--border)" }}
         >
           <h2 className="text-lg font-semibold">새 페이지 만들기</h2>
-          <button onClick={onClose} className="p-1 rounded hover:opacity-70">
+          <button onClick={onClose} className="p-1 rounded hover:opacity-70" aria-label="닫기">
             <X size={18} />
           </button>
         </div>

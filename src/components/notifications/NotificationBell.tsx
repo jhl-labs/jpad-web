@@ -167,10 +167,13 @@ export function NotificationBell({ workspaceId }: NotificationBellProps) {
         aria-expanded={open}
         className="relative p-1.5 rounded hover:opacity-70 transition-opacity"
         title="알림"
+        aria-label="알림"
       >
         <Bell size={16} />
         {unreadCount > 0 && (
           <span
+            aria-live="polite"
+            aria-atomic="true"
             className="absolute -top-0.5 -right-0.5 flex items-center justify-center text-white text-[10px] font-bold rounded-full"
             style={{
               background: "var(--danger, #ef4444)",
