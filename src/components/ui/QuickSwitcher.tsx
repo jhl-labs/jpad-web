@@ -13,6 +13,7 @@ import {
   ArrowUp,
   ArrowDown,
   CornerDownLeft,
+  BookOpen,
 } from "lucide-react";
 
 // ── Types ────────────────────────────────────────────────────
@@ -135,6 +136,17 @@ export function QuickSwitcher({ workspaceId, isOpen, onClose }: QuickSwitcherPro
         onClose();
       },
       keywords: ["새", "페이지", "만들기", "생성", "new", "page", "create"],
+    },
+    {
+      id: "open-daily",
+      label: "오늘의 노트",
+      description: "오늘의 노트로 이동",
+      icon: <BookOpen size={16} />,
+      action: () => {
+        router.push(`/workspace/${workspaceId}/daily`);
+        onClose();
+      },
+      keywords: ["오늘", "노트", "daily", "note", "일기", "데일리"],
     },
     {
       id: "open-calendar",

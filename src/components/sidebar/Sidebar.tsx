@@ -8,7 +8,7 @@ import {
   Settings, GripVertical, Trash2, Star, Network, Copy, Link,
   FilePlus, Edit3, MoreHorizontal, StarOff, ExternalLink,
   Calendar, CheckSquare, BookOpen, Upload, ChevronsUpDown, Check,
-  MessageSquarePlus,
+  MessageSquarePlus, MoveRight,
 } from "lucide-react";
 import { ImportModal } from "@/components/editor/ImportModal";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
@@ -118,6 +118,7 @@ function PageContextMenu({
   canManagePages,
   canDelete,
   hasChildren,
+  allPages,
   onCreatePage,
   onDeletePage,
   onRefresh,
@@ -128,6 +129,7 @@ function PageContextMenu({
   canManagePages: boolean;
   canDelete: boolean;
   hasChildren: boolean;
+  allPages: Page[];
   onCreatePage: (parentId?: string) => void;
   onDeletePage: (pageId: string, title: string) => void;
   onRefresh: () => void;
@@ -138,6 +140,7 @@ function PageContextMenu({
   const [renaming, setRenaming] = useState(false);
   const [newTitle, setNewTitle] = useState(menu.pageTitle);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showMoveMenu, setShowMoveMenu] = useState(false);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -247,6 +250,93 @@ function PageContextMenu({
     onClose();
   }
 
+  // 자기 자신과 하위 페이지 ID 수집 (이동 대상에서 제외)
+  function getDescendantIds(parentId: string): string[] {
+    const children = allPages.filter((p) => p.parentId === parentId);
+    const ids: string[] = [];
+    for (const child of children) {
+      ids.push(child.id);
+      ids.push(...getDescendantIds(child.id));
+    }
+    return ids;
+  }
+
+  const excludedIds = new Set([menu.pageId, ...getDescendantIds(menu.pageId)]);
+  const moveTargets = allPages.filter((p) => !excludedIds.has(p.id));
+
+  async function handleMovePage(targetParentId: string | null) {
+    const res = await fetch(`/api/pages/${menu.pageId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ parentId: targetParentId }),
+    });
+    if (!res.ok) {
+      console.error("페이지 이동 실패:", res.status);
+    }
+    window.dispatchEvent(new Event("sidebar:refresh"));
+    onRefresh();
+    onClose();
+  }
+
+  if (showMoveMenu) {
+    return (
+      <div
+        ref={menuRef}
+        role="dialog"
+        aria-modal="true"
+        className="fixed z-[100] rounded-lg shadow-xl py-1"
+        style={{
+          left: pos.x,
+          top: pos.y,
+          background: "var(--background)",
+          border: "1px solid var(--border)",
+          minWidth: 220,
+          maxHeight: 320,
+          overflow: "auto",
+        }}
+      >
+        <div
+          className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider"
+          style={{ color: "var(--muted)" }}
+        >
+          이동할 위치 선택
+        </div>
+        <button
+          onClick={() => handleMovePage(null)}
+          className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-left transition-colors"
+          style={{ color: "var(--primary)" }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = "var(--sidebar-hover)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+        >
+          <MoveRight size={14} />
+          루트로 이동
+        </button>
+        <div className="my-1" style={{ borderTop: "1px solid var(--border)" }} />
+        {moveTargets.map((target) => (
+          <button
+            key={target.id}
+            onClick={() => handleMovePage(target.id)}
+            className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-left transition-colors truncate"
+            onMouseEnter={(e) => { e.currentTarget.style.background = "var(--sidebar-hover)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+          >
+            {target.icon ? (
+              <span className="shrink-0">{target.icon}</span>
+            ) : (
+              <FileText size={14} style={{ color: "var(--muted)" }} className="shrink-0" />
+            )}
+            <span className="truncate">{target.title}</span>
+          </button>
+        ))}
+        {moveTargets.length === 0 && (
+          <div className="px-3 py-2 text-xs" style={{ color: "var(--muted)" }}>
+            이동 가능한 페이지가 없습니다
+          </div>
+        )}
+      </div>
+    );
+  }
+
   if (confirmDelete) {
     return (
       <div
@@ -317,6 +407,7 @@ function PageContextMenu({
     { icon: <span />, label: "", action: () => {}, divider: true },
     { icon: <Edit3 size={14} />, label: "이름 변경", action: () => setRenaming(true), hidden: !canManagePages },
     { icon: <Copy size={14} />, label: "복제", action: handleDuplicate, hidden: !canManagePages },
+    { icon: <MoveRight size={14} />, label: "이동", action: () => setShowMoveMenu(true), hidden: !canManagePages },
     { icon: <FilePlus size={14} />, label: "하위 페이지 추가", action: () => { onCreatePage(menu.pageId); onClose(); }, hidden: !canManagePages },
     { icon: <span />, label: "", action: () => {}, divider: true, hidden: !canManagePages },
     {
@@ -948,6 +1039,7 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
           canManagePages={canManagePages}
           canDelete={canDelete}
           hasChildren={pages.some((p) => p.parentId === contextMenu.pageId)}
+          allPages={pages}
           onCreatePage={onCreatePage}
           onDeletePage={onDeletePage}
           onRefresh={onRefresh}

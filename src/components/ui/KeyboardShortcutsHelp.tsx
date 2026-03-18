@@ -7,11 +7,13 @@ const shortcuts = [
   { keys: ["Ctrl", "K"], description: "Quick Switcher (검색)" },
   { keys: ["Ctrl", "."], description: "AI 이어쓰기" },
   { keys: ["Ctrl", "Shift", "."], description: "AI 패널 열기" },
-  { keys: ["/"], description: "슬래시 메뉴" },
-  { keys: ["Ctrl", "Z"], description: "실행취소" },
-  { keys: ["Ctrl", "S"], description: "저장 (수동)" },
   { keys: ["Ctrl", "\\"], description: "집중 모드 (Zen Mode)" },
   { keys: ["Ctrl", "/"], description: "단축키 도움말" },
+  { keys: ["Ctrl", "S"], description: "저장" },
+  { keys: ["Ctrl", "Z"], description: "실행취소" },
+  { keys: ["Ctrl", "Shift", "W"], description: "워크스페이스 전환" },
+  { keys: ["/"], description: "슬래시 메뉴" },
+  { keys: ["ESC"], description: "패널/모달 닫기" },
 ];
 
 export function KeyboardShortcutsHelp() {
