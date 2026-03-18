@@ -81,7 +81,7 @@ export function SearchModal({ workspaceId, isOpen, onClose }: SearchModalProps) 
           );
           if (res.ok) {
             const data = await res.json();
-            setResults(data);
+            setResults(Array.isArray(data) ? data : data.results ?? []);
             setSelectedIndex(0);
           }
         } catch (_error) {
