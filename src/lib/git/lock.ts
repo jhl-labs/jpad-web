@@ -1,7 +1,7 @@
 import { redis } from "@/lib/redis";
 import { randomUUID } from "crypto";
 
-const LOCK_TTL_MS = 10_000; // 10 seconds max hold time
+const LOCK_TTL_MS = parseInt(process.env.GIT_LOCK_TTL_MS || "30000", 10); // 30 seconds max hold time
 const RETRY_DELAY_MS = 50;
 const MAX_RETRIES = 100; // 5 seconds total wait
 

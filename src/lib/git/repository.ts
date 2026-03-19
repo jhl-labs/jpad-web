@@ -45,7 +45,12 @@ export async function savePage(
     // 저장소가 없으면 자동 초기화
     const dir = await initRepo(workspaceId);
     const filepath = `${slug}.md`;
-    const fullPath = path.join(dir, filepath);
+    const fullPath = path.resolve(dir, filepath);
+
+    // Path traversal defense
+    if (!fullPath.startsWith(dir)) {
+      throw new Error("Invalid slug: path traversal detected");
+    }
 
     // Ensure parent directory exists
     await fs.promises.mkdir(path.dirname(fullPath), { recursive: true });
@@ -96,7 +101,12 @@ export async function deletePage(
   return withLock(workspaceId + ":" + slug, async () => {
     const dir = getRepoPath(workspaceId);
     const filepath = `${slug}.md`;
-    const fullPath = path.join(dir, filepath);
+    const fullPath = path.resolve(dir, filepath);
+
+    // Path traversal defense
+    if (!fullPath.startsWith(dir)) {
+      throw new Error("Invalid slug: path traversal detected");
+    }
 
     try {
       await fs.promises.unlink(fullPath);
