@@ -12,7 +12,7 @@ import {
   triggerBestEffortSearchIndexProcessing,
 } from "@/lib/semanticIndexQueue";
 import { slugify } from "@/lib/utils";
-import { savePage, readPage } from "@/lib/git/repository";
+import { savePage, readPage, deletePage as deletePageGitFile } from "@/lib/git/repository";
 // deletePageGit is used for permanent deletion in trash API
 
 export async function GET(
@@ -129,16 +129,12 @@ export async function PATCH(
           const newSlug = existing ? `${baseSlug}-${pageId.slice(0, 8)}` : baseSlug;
           updateData.slug = newSlug;
 
-          // Rename git file: read old, save new, delete old
+          // Rename git file: read old → save as new slug → git rm old
           try {
             const content = await readPage(access.page.workspaceId, currentSlug);
             if (content !== null) {
               await savePage(access.page.workspaceId, newSlug, content, user.name || "system", `Rename ${currentSlug} → ${newSlug}`);
-              // Delete old file by saving empty and removing
-              const fs = await import("node:fs");
-              const path = await import("node:path");
-              const oldPath = path.join(process.cwd(), "data", "repos", access.page.workspaceId, `${currentSlug}.md`);
-              try { await fs.promises.unlink(oldPath); } catch { /* may not exist */ }
+              await deletePageGitFile(access.page.workspaceId, currentSlug, user.name || "system");
             }
           } catch { /* git rename best-effort */ }
         }
