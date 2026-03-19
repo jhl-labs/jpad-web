@@ -78,9 +78,14 @@ export function RegisterPageClient({
     return (
       <div
         className="min-h-screen flex items-center justify-center"
-        style={{ background: "var(--background)" }}
+        style={{
+          background: "linear-gradient(135deg, var(--background) 0%, var(--sidebar-bg) 50%, var(--background) 100%)",
+        }}
       >
-        <div className="w-full max-w-sm p-8">
+        <div
+          className="w-full max-w-sm p-8 rounded-xl"
+          style={{ background: "var(--background)", boxShadow: "0 4px 24px rgba(0,0,0,0.08)" }}
+        >
           <h1 className="text-2xl font-bold mb-4 text-center">JPAD</h1>
           <p
             className="text-sm p-3 rounded mb-4"
@@ -128,9 +133,14 @@ export function RegisterPageClient({
   return (
     <div
       className="min-h-screen flex items-center justify-center"
-      style={{ background: "var(--background)" }}
+      style={{
+        background: "linear-gradient(135deg, var(--background) 0%, var(--sidebar-bg) 50%, var(--background) 100%)",
+      }}
     >
-      <div className="w-full max-w-sm p-8">
+      <div
+        className="w-full max-w-sm p-8 rounded-xl"
+        style={{ background: "var(--background)", boxShadow: "0 4px 24px rgba(0,0,0,0.08)" }}
+      >
         <h1 className="text-2xl font-bold mb-6 text-center">JPAD</h1>
 
         {error && (
@@ -217,6 +227,9 @@ export function RegisterPageClient({
               className="w-full px-3 py-2 rounded-md text-sm"
               style={{ border: "1px solid var(--border)", background: "var(--background)" }}
             />
+            <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>
+              8자 이상, 대/소문자, 숫자, 특수문자 포함
+            </p>
           </div>
           <button
             type="submit"

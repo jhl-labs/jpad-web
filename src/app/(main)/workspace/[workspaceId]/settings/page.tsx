@@ -125,9 +125,16 @@ export default function WorkspaceSettingsPage() {
   const [retentionPage, setRetentionPage] = useState(1);
   const [retentionTotalPages, setRetentionTotalPages] = useState(1);
 
+  // Delete workspace dialog
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteConfirmName, setDeleteConfirmName] = useState("");
+
+  // Member remove confirmation
+  const [confirmRemoveMemberId, setConfirmRemoveMemberId] = useState<string | null>(null);
+
   const showToast = useCallback((msg: string) => {
     setToast(msg);
-    setTimeout(() => setToast(null), 2000);
+    setTimeout(() => setToast(null), 3000);
   }, []);
 
   const fetchWorkspace = useCallback(async () => {
@@ -316,7 +323,6 @@ export default function WorkspaceSettingsPage() {
   }
 
   async function handleRemoveMember(userId: string) {
-    if (!confirm("이 멤버를 제거하시겠습니까?")) return;
     const res = await fetch(`/api/workspaces/${workspaceId}/members`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
@@ -324,14 +330,16 @@ export default function WorkspaceSettingsPage() {
     });
     if (res.ok) {
       showToast("멤버가 제거되었습니다");
+      setConfirmRemoveMemberId(null);
       fetchWorkspace();
     }
   }
 
   async function handleDeleteWorkspace() {
-    if (!confirm("정말로 이 워크스페이스를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.")) return;
     const res = await fetch(`/api/workspaces/${workspaceId}`, { method: "DELETE" });
     if (res.ok) {
+      setShowDeleteDialog(false);
+      setDeleteConfirmName("");
       router.push("/workspace");
     }
   }
@@ -542,7 +550,7 @@ export default function WorkspaceSettingsPage() {
             </button>
             {isOwner && (
               <button
-                onClick={handleDeleteWorkspace}
+                onClick={() => setShowDeleteDialog(true)}
                 className="flex items-center gap-2 px-4 py-2 rounded text-sm text-red-600 hover:bg-red-50"
               >
                 <Trash2 size={14} /> 워크스페이스 삭제
@@ -669,13 +677,33 @@ export default function WorkspaceSettingsPage() {
                           <option value="editor">편집자</option>
                           <option value="viewer">뷰어</option>
                         </select>
-                        <button
-                          onClick={() => handleRemoveMember(m.user.id)}
-                          className="p-1 rounded text-red-500 hover:bg-red-50"
-                          title="멤버 제거"
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        {confirmRemoveMemberId === m.user.id ? (
+                          <span className="flex items-center gap-1 text-xs">
+                            <span style={{ color: "#ef4444" }}>제거?</span>
+                            <button
+                              onClick={() => handleRemoveMember(m.user.id)}
+                              className="px-2 py-0.5 rounded text-white text-xs"
+                              style={{ background: "#ef4444" }}
+                            >
+                              확인
+                            </button>
+                            <button
+                              onClick={() => setConfirmRemoveMemberId(null)}
+                              className="px-2 py-0.5 rounded text-xs"
+                              style={{ border: "1px solid var(--border)" }}
+                            >
+                              취소
+                            </button>
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => setConfirmRemoveMemberId(m.user.id)}
+                            className="p-1 rounded text-red-500 hover:bg-red-50"
+                            title="멤버 제거"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
                       </>
                     ) : (
                         <span
@@ -1180,6 +1208,40 @@ export default function WorkspaceSettingsPage() {
               </div>
             </div>
           </Section>
+        </div>
+      )}
+      {/* Workspace Delete Confirmation Dialog */}
+      {showDeleteDialog && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center" style={{ background: "rgba(0,0,0,0.5)" }}>
+          <div role="dialog" aria-modal="true" className="rounded-xl shadow-2xl p-6"
+            style={{ background: "var(--background)", border: "1px solid var(--border)", width: "min(90vw, 400px)" }}>
+            <h3 className="font-semibold text-base mb-2">워크스페이스 삭제</h3>
+            <p className="text-sm mb-3" style={{ color: "#ef4444" }}>
+              모든 페이지, 멤버, 설정이 영구적으로 삭제됩니다.
+            </p>
+            <p className="text-sm mb-2">확인을 위해 워크스페이스 이름을 입력하세요:</p>
+            <p className="text-sm font-mono mb-2 px-2 py-1 rounded" style={{ background: "var(--sidebar-bg)" }}>{workspace?.name}</p>
+            <input
+              value={deleteConfirmName}
+              onChange={(e) => setDeleteConfirmName(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg text-sm bg-transparent outline-none mb-4"
+              style={{ border: "1px solid var(--border)" }}
+              placeholder="워크스페이스 이름 입력"
+            />
+            <div className="flex justify-end gap-2">
+              <button onClick={() => { setShowDeleteDialog(false); setDeleteConfirmName(""); }}
+                className="px-4 py-2 rounded-lg text-sm" style={{ border: "1px solid var(--border)" }}>
+                취소
+              </button>
+              <button
+                onClick={handleDeleteWorkspace}
+                disabled={deleteConfirmName !== workspace?.name}
+                className="px-4 py-2 rounded-lg text-sm text-white disabled:opacity-50"
+                style={{ background: "#ef4444" }}>
+                삭제
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
