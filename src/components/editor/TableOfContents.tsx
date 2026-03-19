@@ -74,11 +74,12 @@ export function TableOfContents({ content, editorContainerRef }: TableOfContents
 
         // 가시 영역에 있는 가장 위쪽 헤딩을 활성화
         let topMostVisible: { id: string; top: number } | null = null;
-        for (const el of headingElements) {
+        const headingArr = Array.from(headingElements);
+        for (let i = 0; i < headingArr.length; i++) {
+          const el = headingArr[i];
           if (visibleHeadings.get(el)) {
             const rect = el.getBoundingClientRect();
-            const text = el.textContent?.trim() || "";
-            const matchingItem = headings.find((h) => h.text === text);
+            const matchingItem = headings[i];
             if (matchingItem && (topMostVisible === null || rect.top < topMostVisible.top)) {
               topMostVisible = { id: matchingItem.id, top: rect.top };
             }
@@ -119,11 +120,11 @@ export function TableOfContents({ content, editorContainerRef }: TableOfContents
     const containerRect = container.getBoundingClientRect();
     let currentHeading: string | null = null;
 
-    for (const el of headingElements) {
-      const rect = el.getBoundingClientRect();
+    const headingArr = Array.from(headingElements);
+    for (let i = 0; i < headingArr.length; i++) {
+      const rect = headingArr[i].getBoundingClientRect();
       if (rect.top <= containerRect.top + 100) {
-        const text = el.textContent?.trim() || "";
-        const matchingItem = headings.find((h) => h.text === text);
+        const matchingItem = headings[i];
         if (matchingItem) {
           currentHeading = matchingItem.id;
         }
@@ -151,7 +152,7 @@ export function TableOfContents({ content, editorContainerRef }: TableOfContents
 
   // 클릭 시 해당 헤딩으로 스크롤 + URL 해시 업데이트
   const scrollToHeading = useCallback(
-    (item: TocItem) => {
+    (item: TocItem, itemIndex: number) => {
       if (!editorContainerRef?.current) return;
 
       const container = editorContainerRef.current;
@@ -159,15 +160,13 @@ export function TableOfContents({ content, editorContainerRef }: TableOfContents
         '[data-content-type="heading"], h1, h2, h3'
       );
 
-      for (const el of headingElements) {
-        const text = el.textContent?.trim() || "";
-        if (text === item.text) {
-          el.scrollIntoView({ behavior: "smooth", block: "start" });
-          setActiveId(item.id);
-          // URL 해시 업데이트 (페이지 리로드 없이)
-          window.history.replaceState(null, "", `#${item.id}`);
-          break;
-        }
+      // 동일 텍스트 헤딩 구분: headings 배열에서의 인덱스를 사용하여
+      // DOM 헤딩 중 정확한 위치를 찾음
+      const targetEl = headingElements[itemIndex];
+      if (targetEl) {
+        targetEl.scrollIntoView({ behavior: "smooth", block: "start" });
+        setActiveId(item.id);
+        window.history.replaceState(null, "", `#${item.id}`);
       }
     },
     [editorContainerRef]
@@ -187,11 +186,11 @@ export function TableOfContents({ content, editorContainerRef }: TableOfContents
     const hash = window.location.hash.replace("#", "");
     if (!hash) return;
 
-    const targetItem = headings.find((h) => h.id === hash);
-    if (targetItem) {
+    const targetIndex = headings.findIndex((h) => h.id === hash);
+    if (targetIndex >= 0) {
       // 약간의 지연을 두고 스크롤 (에디터 렌더링 대기)
       const timer = setTimeout(() => {
-        scrollToHeading(targetItem);
+        scrollToHeading(headings[targetIndex], targetIndex);
       }, 500);
       return () => clearTimeout(timer);
     }
@@ -263,7 +262,7 @@ export function TableOfContents({ content, editorContainerRef }: TableOfContents
 
                     <div className="flex items-center">
                       <button
-                        onClick={() => scrollToHeading(item)}
+                        onClick={() => scrollToHeading(item, index)}
                         className="block flex-1 text-left py-1 pr-1 rounded-r transition-colors hover:bg-black/5 dark:hover:bg-white/5 truncate"
                         style={{
                           paddingLeft: indentMap[item.level] + 12,

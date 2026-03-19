@@ -82,7 +82,11 @@ function CommentItem({
         setReplyContent("");
         setShowReplyForm(false);
         onRefresh();
+      } else {
+        console.error("[CommentPanel] reply failed:", res.status);
       }
+    } catch (error) {
+      console.error("[CommentPanel] reply failed:", error);
     } finally {
       setSubmitting(false);
     }

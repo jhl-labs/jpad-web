@@ -123,15 +123,21 @@ export function QuickSwitcher({ workspaceId, isOpen, onClose }: QuickSwitcherPro
       description: query ? `"${query}" 제목으로 생성` : "빈 페이지 생성",
       icon: <Plus size={16} />,
       action: async () => {
-        const res = await fetch("/api/pages", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ workspaceId, title: query || undefined }),
-        });
-        if (res.ok) {
-          const page = await res.json();
-          window.dispatchEvent(new Event("sidebar:refresh"));
-          router.push(`/workspace/${workspaceId}/page/${page.id}`);
+        try {
+          const res = await fetch("/api/pages", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ workspaceId, title: query || undefined }),
+          });
+          if (res.ok) {
+            const page = await res.json();
+            window.dispatchEvent(new Event("sidebar:refresh"));
+            router.push(`/workspace/${workspaceId}/page/${page.id}`);
+          } else {
+            console.error("[QuickSwitcher] create page failed:", res.status);
+          }
+        } catch (error) {
+          console.error("[QuickSwitcher] create page failed:", error);
         }
         onClose();
       },
