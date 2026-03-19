@@ -21,8 +21,8 @@ export async function POST(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const limited = await rateLimitRedis(`git-sync:test:${user.id}`, 10, 60_000);
-    if (limited) {
+    const allowed = await rateLimitRedis(`git-sync:test:${user.id}`, 30, 60_000);
+    if (!allowed) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 
