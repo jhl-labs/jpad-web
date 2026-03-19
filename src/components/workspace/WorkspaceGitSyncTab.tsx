@@ -295,6 +295,7 @@ export function WorkspaceGitSyncTab({ workspaceId, isOwner, showToast }: Props) 
           <Field label={`Personal Access Token (PAT)${settings.gitRemoteToken ? " — 설정됨" : ""}`}>
             <input
               type="password"
+              autoComplete="off"
               value={remoteToken}
               onChange={(e) => setRemoteToken(e.target.value)}
               placeholder={settings.gitRemoteToken ? "변경하려면 새 토큰을 입력하세요" : "ghp_xxxx..."}

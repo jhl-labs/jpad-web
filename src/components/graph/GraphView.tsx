@@ -34,6 +34,11 @@ export function GraphView({ workspaceId, currentPageId }: GraphViewProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Simulation state (shared between effects)
+  const alphaRef = useRef(0.3);
+  const animIdRef = useRef(0);
+  const drawFnRef = useRef<(() => void) | null>(null);
+
   // Camera state
   const cameraRef = useRef({ x: 0, y: 0, scale: 1 });
   // Interaction state
@@ -133,6 +138,21 @@ export function GraphView({ workspaceId, currentPageId }: GraphViewProps) {
     return null;
   }, []);
 
+  // Restart simulation when user interacts (drag, zoom)
+  const restartSimulation = useCallback(() => {
+    if (alphaRef.current < 0.001) {
+      alphaRef.current = 0.1;
+      function tick() {
+        if (drawFnRef.current) drawFnRef.current();
+        if (alphaRef.current < 0.001) {
+          return;
+        }
+        animIdRef.current = requestAnimationFrame(tick);
+      }
+      animIdRef.current = requestAnimationFrame(tick);
+    }
+  }, []);
+
   // Animation loop + physics
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -141,8 +161,7 @@ export function GraphView({ workspaceId, currentPageId }: GraphViewProps) {
     if (!ctx) return;
 
     readColors();
-    let animId = 0;
-    let alpha = 0.3; // cooling factor
+    alphaRef.current = 0.3;
     let tickCount = 0;
 
     function resize() {
@@ -173,6 +192,8 @@ export function GraphView({ workspaceId, currentPageId }: GraphViewProps) {
       const nodes = nodesRef.current;
       const edges = edgesRef.current;
       if (nodes.length === 0) return;
+
+      const alpha = alphaRef.current;
 
       // Only simulate when not fully cooled
       if (alpha < 0.001) return;
@@ -235,7 +256,7 @@ export function GraphView({ workspaceId, currentPageId }: GraphViewProps) {
       }
 
       tickCount++;
-      if (tickCount > 300) alpha *= 0.99;
+      if (tickCount > 300) alphaRef.current *= 0.99;
     }
 
     function draw() {
@@ -307,15 +328,26 @@ export function GraphView({ workspaceId, currentPageId }: GraphViewProps) {
       ctx.restore();
     }
 
-    function loop() {
+    drawFnRef.current = () => {
       simulate();
       draw();
-      animId = requestAnimationFrame(loop);
+    };
+
+    function loop() {
+      simulate();
+      if (alphaRef.current < 0.001) {
+        // Final draw then stop
+        draw();
+        return;
+      }
+      draw();
+      animIdRef.current = requestAnimationFrame(loop);
     }
-    animId = requestAnimationFrame(loop);
+    animIdRef.current = requestAnimationFrame(loop);
 
     return () => {
-      cancelAnimationFrame(animId);
+      cancelAnimationFrame(animIdRef.current);
+      drawFnRef.current = null;
       window.removeEventListener("resize", resize);
       observer.disconnect();
     };
@@ -342,6 +374,7 @@ export function GraphView({ workspaceId, currentPageId }: GraphViewProps) {
           camStartX: 0,
           camStartY: 0,
         };
+        restartSimulation();
       } else {
         dragRef.current = {
           type: "pan",
@@ -405,6 +438,7 @@ export function GraphView({ workspaceId, currentPageId }: GraphViewProps) {
       cam.x = mx - (mx - cam.x) * (newScale / cam.scale);
       cam.y = my - (my - cam.y) * (newScale / cam.scale);
       cam.scale = newScale;
+      restartSimulation();
     }
 
     function handleTouchStart(e: TouchEvent) {
@@ -441,7 +475,7 @@ export function GraphView({ workspaceId, currentPageId }: GraphViewProps) {
       canvas.removeEventListener("touchmove", handleTouchMove);
       canvas.removeEventListener("touchend", handleTouchEnd);
     };
-  }, [workspaceId, router, screenToWorld, findNodeAt]);
+  }, [workspaceId, router, screenToWorld, findNodeAt, restartSimulation]);
 
   return (
     <div ref={containerRef} className="relative w-full h-full">

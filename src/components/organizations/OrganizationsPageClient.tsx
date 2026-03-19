@@ -115,6 +115,22 @@ export function OrganizationsPageClient() {
     Record<string, { scimGroupId: string; workspaceId: string; role: string }>
   >({});
   const [busyScimMappingIds, setBusyScimMappingIds] = useState<Record<string, boolean>>({});
+  const [confirmDeleteDomainId, setConfirmDeleteDomainId] = useState<string | null>(null);
+  const [confirmRevokeTokenId, setConfirmRevokeTokenId] = useState<string | null>(null);
+
+  // 도메인 삭제 확인 3초 자동 취소
+  useEffect(() => {
+    if (!confirmDeleteDomainId) return;
+    const timer = setTimeout(() => setConfirmDeleteDomainId(null), 3000);
+    return () => clearTimeout(timer);
+  }, [confirmDeleteDomainId]);
+
+  // SCIM 토큰 폐기 확인 3초 자동 취소
+  useEffect(() => {
+    if (!confirmRevokeTokenId) return;
+    const timer = setTimeout(() => setConfirmRevokeTokenId(null), 3000);
+    return () => clearTimeout(timer);
+  }, [confirmRevokeTokenId]);
 
   const fetchScimTokens = useCallback(
     async (organizationId: string) => {
@@ -577,6 +593,7 @@ export function OrganizationsPageClient() {
 
       {error && (
         <div
+          role="alert"
           className="mb-6 rounded-lg px-4 py-3 text-sm"
           style={{ background: "rgba(239,68,68,0.1)", color: "rgba(153,27,27,0.9)" }}
         >
@@ -765,15 +782,41 @@ export function OrganizationsPageClient() {
                                         {verifyBusy ? "확인 중..." : "검증"}
                                       </button>
                                     )}
-                                    <button
-                                      type="button"
-                                      onClick={() => void handleDeleteDomain(organization.id, domain.id)}
-                                      disabled={deleteBusy}
-                                      className="text-xs px-2 py-1 rounded"
-                                      style={{ border: "1px solid var(--border)", color: "rgba(153,27,27,0.9)" }}
-                                    >
-                                      삭제
-                                    </button>
+                                    {confirmDeleteDomainId === domain.id ? (
+                                      <span className="flex items-center gap-1">
+                                        <span className="text-xs" style={{ color: "rgba(153,27,27,0.9)" }}>삭제?</span>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setConfirmDeleteDomainId(null);
+                                            void handleDeleteDomain(organization.id, domain.id);
+                                          }}
+                                          disabled={deleteBusy}
+                                          className="text-xs px-2 py-1 rounded"
+                                          style={{ border: "1px solid var(--border)", color: "rgba(153,27,27,0.9)" }}
+                                        >
+                                          {deleteBusy ? "삭제 중..." : "확인"}
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => setConfirmDeleteDomainId(null)}
+                                          className="text-xs px-2 py-1 rounded"
+                                          style={{ border: "1px solid var(--border)" }}
+                                        >
+                                          취소
+                                        </button>
+                                      </span>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={() => setConfirmDeleteDomainId(domain.id)}
+                                        disabled={deleteBusy}
+                                        className="text-xs px-2 py-1 rounded"
+                                        style={{ border: "1px solid var(--border)", color: "rgba(153,27,27,0.9)" }}
+                                      >
+                                        삭제
+                                      </button>
+                                    )}
                                   </div>
                                 )}
                               </div>
@@ -904,20 +947,47 @@ export function OrganizationsPageClient() {
                                       최근 사용: {formatTimestamp(token.lastUsedAt)}
                                     </div>
                                   </div>
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      void handleDeleteScimToken(organization.id, token.id)
-                                    }
-                                    disabled={deleteBusy}
-                                    className="text-xs px-2 py-1 rounded"
-                                    style={{
-                                      border: "1px solid var(--border)",
-                                      color: "rgba(153,27,27,0.9)",
-                                    }}
-                                  >
-                                    {deleteBusy ? "폐기 중..." : "폐기"}
-                                  </button>
+                                  {confirmRevokeTokenId === token.id ? (
+                                    <span className="flex items-center gap-1">
+                                      <span className="text-xs" style={{ color: "rgba(153,27,27,0.9)" }}>폐기?</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setConfirmRevokeTokenId(null);
+                                          void handleDeleteScimToken(organization.id, token.id);
+                                        }}
+                                        disabled={deleteBusy}
+                                        className="text-xs px-2 py-1 rounded"
+                                        style={{
+                                          border: "1px solid var(--border)",
+                                          color: "rgba(153,27,27,0.9)",
+                                        }}
+                                      >
+                                        {deleteBusy ? "폐기 중..." : "확인"}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => setConfirmRevokeTokenId(null)}
+                                        className="text-xs px-2 py-1 rounded"
+                                        style={{ border: "1px solid var(--border)" }}
+                                      >
+                                        취소
+                                      </button>
+                                    </span>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => setConfirmRevokeTokenId(token.id)}
+                                      disabled={deleteBusy}
+                                      className="text-xs px-2 py-1 rounded"
+                                      style={{
+                                        border: "1px solid var(--border)",
+                                        color: "rgba(153,27,27,0.9)",
+                                      }}
+                                    >
+                                      {deleteBusy ? "폐기 중..." : "폐기"}
+                                    </button>
+                                  )}
                                 </div>
                               </div>
                             );

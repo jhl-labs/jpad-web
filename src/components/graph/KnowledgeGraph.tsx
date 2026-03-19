@@ -447,7 +447,7 @@ export function KnowledgeGraph({ workspaceId, currentPageId }: KnowledgeGraphPro
         const label =
           (n.icon ? n.icon + " " : "") +
           (n.title.length > maxLabelLen ? n.title.slice(0, maxLabelLen - 1) + "\u2026" : n.title);
-        const fontSize = Math.max(10, 12) / cam.scale;
+        const fontSize = Math.max(10, 12 / cam.scale);
         ctx.fillStyle = colors.text;
         ctx.font = `${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
         ctx.textAlign = "center";
