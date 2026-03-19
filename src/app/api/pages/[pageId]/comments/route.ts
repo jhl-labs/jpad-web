@@ -5,6 +5,7 @@ import { createAuditActor, getAuditRequestContext, recordAuditLog } from "@/lib/
 import { getPageAccessContext } from "@/lib/pageAccess";
 import { rateLimitRedis } from "@/lib/rateLimit";
 import { handleApiError } from "@/lib/apiErrorHandler";
+import { createBulkNotifications } from "@/lib/notifications";
 
 export async function GET(
   req: NextRequest,
@@ -151,6 +152,34 @@ export async function POST(
       },
       context: requestContext,
     });
+
+    // 댓글 참여자 + 페이지 작성자에게 알림 (자기 자신 제외)
+    const page = await prisma.page.findUnique({
+      where: { id: pageId },
+      select: { workspaceId: true, title: true },
+    });
+    if (page) {
+      // 해당 페이지에 댓글을 남긴 사용자들 (참여자)
+      const participants = await prisma.comment.findMany({
+        where: { pageId, userId: { not: user.id } },
+        select: { userId: true },
+        distinct: ["userId"],
+      });
+      const recipientIds = [...new Set(participants.map((p) => p.userId))];
+
+      if (recipientIds.length > 0) {
+        await createBulkNotifications(
+          recipientIds,
+          "mention",
+          `새 댓글: ${page.title}`,
+          content.trim().slice(0, 100),
+          {
+            workspaceId: page.workspaceId,
+            link: `/workspace/${page.workspaceId}/page/${pageId}`,
+          }
+        );
+      }
+    }
 
     return NextResponse.json(comment, { status: 201 });
   } catch (error) {

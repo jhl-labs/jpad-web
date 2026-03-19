@@ -62,6 +62,7 @@ interface PageData {
   lockedById?: string | null;
   lockedByName?: string | null;
   lockedAt?: string | null;
+  updatedAt?: string | null;
 }
 
 interface BreadcrumbPage {
@@ -136,6 +137,7 @@ export default function PageEditorPage() {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
   const [showTagInput, setShowTagInput] = useState(false);
+  const [zenMode, setZenMode] = useState(false);
 
   // --- Task 4: AI Tag Suggestions ---
   const [aiTagSuggestions, setAiTagSuggestions] = useState<string[]>([]);
@@ -215,6 +217,18 @@ export default function PageEditorPage() {
       if (undoToastTimer.current) clearTimeout(undoToastTimer.current);
     };
   }, [fetchPage, workspaceId, pageId]);
+
+  // Zen Mode 이벤트 수신 (layout에서 토글)
+  useEffect(() => {
+    function handleZenToggle() { setZenMode((prev) => !prev); }
+    function handleZenExit() { setZenMode(false); }
+    window.addEventListener(ZEN_EVENTS.TOGGLE, handleZenToggle);
+    window.addEventListener(ZEN_EVENTS.EXIT, handleZenExit);
+    return () => {
+      window.removeEventListener(ZEN_EVENTS.TOGGLE, handleZenToggle);
+      window.removeEventListener(ZEN_EVENTS.EXIT, handleZenExit);
+    };
+  }, []);
 
   // Load tags from localStorage on mount
   useEffect(() => {
@@ -725,7 +739,7 @@ export default function PageEditorPage() {
   return (
     <div className="h-full flex flex-col">
       {/* Toolbar */}
-      <div
+      {!zenMode && <div
         data-no-print
         className="flex items-center justify-between gap-2 px-4 py-2 shrink-0"
         style={{ borderBottom: "1px solid var(--border)" }}
@@ -1015,7 +1029,17 @@ export default function PageEditorPage() {
             </span>
           )}
         </div>
-      </div>
+      </div>}
+
+      {/* 마지막 수정 시간 */}
+      {page.updatedAt && (
+        <div
+          className="px-4 py-1 text-xs"
+          style={{ color: "var(--muted)" }}
+        >
+          마지막 수정: {new Date(page.updatedAt).toLocaleString("ko")}
+        </div>
+      )}
 
       {/* AI Summary Badge */}
       <AiSummaryBadge
@@ -1343,7 +1367,7 @@ export default function PageEditorPage() {
 
       {/* Editor + TOC */}
       <div className="flex-1 overflow-auto flex" ref={editorContainerRef}>
-        <div className="flex-1 px-4 md:px-8 lg:px-16">
+        <div className={`flex-1 ${zenMode ? "px-4 md:px-16 lg:px-32" : "px-4 md:px-8 lg:px-16"}`}>
           <CollaborativeEditor
             pageId={pageId}
             workspaceId={workspaceId}
@@ -1365,11 +1389,11 @@ export default function PageEditorPage() {
               onInsert={() => {/* save triggers on change */}}
             />
           )}
-          <RelatedPagesPanel workspaceId={workspaceId} pageId={pageId} />
+          {!zenMode && <RelatedPagesPanel workspaceId={workspaceId} pageId={pageId} />}
         </div>
 
         {/* Table of Contents */}
-        {showToc && (
+        {showToc && !zenMode && (
           <div
             className="sticky top-0 shrink-0 py-4 pr-4 hidden lg:block"
             style={{ height: "fit-content", maxHeight: "calc(100vh - 120px)", overflowY: "auto" }}
@@ -1386,14 +1410,16 @@ export default function PageEditorPage() {
       <WordCount content={content} />
 
       {/* Backlinks */}
-      <BacklinkPanel pageId={pageId} workspaceId={workspaceId} />
+      {!zenMode && <BacklinkPanel pageId={pageId} workspaceId={workspaceId} />}
 
       {/* Attachments */}
-      <AttachmentPanel
-        pageId={pageId}
-        workspaceId={workspaceId}
-        readOnly={isReadOnly}
-      />
+      {!zenMode && (
+        <AttachmentPanel
+          pageId={pageId}
+          workspaceId={workspaceId}
+          readOnly={isReadOnly}
+        />
+      )}
 
       {/* History panel */}
       {showHistory && (

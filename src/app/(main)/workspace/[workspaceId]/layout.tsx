@@ -87,7 +87,7 @@ export default function WorkspaceLayout({
       }
       if ((e.metaKey || e.ctrlKey) && e.key === "\\") {
         e.preventDefault();
-        setZenMode((prev) => !prev);
+        window.dispatchEvent(new Event(ZEN_EVENTS.TOGGLE));
       }
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === "w" || e.key === "W")) {
         e.preventDefault();
