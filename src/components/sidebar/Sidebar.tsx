@@ -141,6 +141,7 @@ function PageContextMenu({
   const [newTitle, setNewTitle] = useState(menu.pageTitle);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showMoveMenu, setShowMoveMenu] = useState(false);
+  const [moveSearch, setMoveSearch] = useState("");
   const [showCopyToWs, setShowCopyToWs] = useState(false);
   const [copyWsList, setCopyWsList] = useState<{ id: string; name: string }[]>([]);
   const [copyLoading, setCopyLoading] = useState(false);
@@ -272,6 +273,9 @@ function PageContextMenu({
 
   const excludedIds = new Set([menu.pageId, ...getDescendantIds(menu.pageId)]);
   const moveTargets = allPages.filter((p) => !excludedIds.has(p.id));
+  const filteredMoveTargets = moveTargets.filter((p) =>
+    p.title.toLowerCase().includes(moveSearch.toLowerCase())
+  );
 
   async function handleMovePage(targetParentId: string | null) {
     const res = await fetch(`/api/pages/${menu.pageId}`, {
@@ -505,6 +509,16 @@ function PageContextMenu({
         >
           이동할 위치 선택
         </div>
+        <div className="px-2 pb-1">
+          <input
+            autoFocus
+            value={moveSearch}
+            onChange={(e) => setMoveSearch(e.target.value)}
+            placeholder="페이지 검색..."
+            className="w-full px-2 py-1.5 rounded text-xs bg-transparent outline-none mb-1"
+            style={{ border: "1px solid var(--border)" }}
+          />
+        </div>
         <button
           onClick={() => handleMovePage(null)}
           className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-left transition-colors"
@@ -516,7 +530,7 @@ function PageContextMenu({
           루트로 이동
         </button>
         <div className="my-1" style={{ borderTop: "1px solid var(--border)" }} />
-        {moveTargets.map((target) => (
+        {filteredMoveTargets.map((target) => (
           <button
             key={target.id}
             onClick={() => handleMovePage(target.id)}
@@ -532,9 +546,9 @@ function PageContextMenu({
             <span className="truncate">{target.title}</span>
           </button>
         ))}
-        {moveTargets.length === 0 && (
+        {filteredMoveTargets.length === 0 && (
           <div className="px-3 py-2 text-xs" style={{ color: "var(--muted)" }}>
-            이동 가능한 페이지가 없습니다
+            {moveSearch ? "검색 결과가 없습니다" : "이동 가능한 페이지가 없습니다"}
           </div>
         )}
       </div>

@@ -36,6 +36,13 @@ export async function configureRemote(
 ): Promise<void> {
   const dir = getRepoPath(workspaceId);
 
+  // Skip if remote is already configured with the correct URL
+  try {
+    const remotes = await git.listRemotes({ fs, dir });
+    const existing = remotes.find(r => r.remote === "origin");
+    if (existing?.url === url) return;
+  } catch { /* ignore */ }
+
   // Remove existing remote if present
   try {
     await git.deleteRemote({ fs, dir, remote: "origin" });

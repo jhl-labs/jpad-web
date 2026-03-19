@@ -117,8 +117,8 @@ export async function deletePage(
         message: `Delete ${slug}`,
         author: { name: authorName, email: "user@jpad.local" },
       });
-    } catch (_error) {
-      // File might not exist
+    } catch (error) {
+      logError("git.deletePage", error, { workspaceId, slug });
     }
   });
 }

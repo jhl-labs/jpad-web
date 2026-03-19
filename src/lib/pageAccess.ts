@@ -96,7 +96,7 @@ export async function getPageAccessContext(
     member,
     canView,
     canEdit,
-    canManage: canEdit,
+    canManage: canView && ["owner", "admin", "maintainer"].includes(member.role),
     hasExplicitPermission,
   };
 }

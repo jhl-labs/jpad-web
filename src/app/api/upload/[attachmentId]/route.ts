@@ -104,7 +104,7 @@ export async function GET(
       : `attachment; filename="${safeFilename}"`;
 
     const cacheControl = isInline
-      ? "public, max-age=31536000, immutable"
+      ? "private, max-age=31536000, immutable"
       : "private, max-age=3600";
 
     return new NextResponse(new Uint8Array(file.data), {

@@ -51,7 +51,7 @@ export function blocksToMarkdown(blocks: Block[]): string {
               }
             }
           }
-        } catch (_error) { /* skip malformed tables */ }
+        } catch (error) { console.warn("[Markdown] malformed table skipped:", error); }
         break;
       case "image":
         lines.push(`![${block.props?.caption || ""}](${block.props?.url || ""})`);

@@ -274,7 +274,7 @@ export async function processAuditWebhookDeliveries(
           status: exhausted ? "error" : "pending",
           attempts: nextAttemptNumber,
           lastAttemptAt: new Date(),
-          nextAttemptAt: exhausted ? retryAt : retryAt,
+          nextAttemptAt: exhausted ? new Date("9999-12-31T23:59:59Z") : retryAt,
           lastError,
         },
       });

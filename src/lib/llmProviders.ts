@@ -595,6 +595,10 @@ export async function* streamWithProfile(
 
   // OpenAI / OpenAI-compatible 스트리밍
   if (profile.provider === "openai" || profile.provider === "openai-compatible") {
+    if (!profile.apiKey) {
+      throw new Error("API key is required for streaming");
+    }
+
     const response = await fetch(
       buildApiUrl(profile.baseUrl, "/v1/chat/completions"),
       {
