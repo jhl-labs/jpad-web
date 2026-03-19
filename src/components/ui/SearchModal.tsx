@@ -95,6 +95,12 @@ export function SearchModal({ workspaceId, isOpen, onClose }: SearchModalProps) 
   );
 
   useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
     if (isOpen) {
       setQuery("");
       setResults([]);

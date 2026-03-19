@@ -239,6 +239,12 @@ export function QuickSwitcher({ workspaceId, isOpen, onClose }: QuickSwitcherPro
   // ── Open / close ─────────────────────────────────────────
 
   useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
     if (isOpen) {
       setQuery("");
       setResults([]);

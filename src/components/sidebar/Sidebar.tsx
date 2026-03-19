@@ -189,6 +189,7 @@ function PageContextMenu({
     });
     if (!res.ok) {
       console.error("페이지 이름 변경 실패:", res.status);
+      window.dispatchEvent(new CustomEvent("toast", { detail: { message: "이름 변경에 실패했습니다" } }));
     }
     window.dispatchEvent(new Event("sidebar:refresh"));
     onClose();
@@ -247,7 +248,9 @@ function PageContextMenu({
 
   function handleCopyLink() {
     const url = `${window.location.origin}/workspace/${workspaceId}/page/${menu.pageId}`;
-    navigator.clipboard.writeText(url).catch((error: unknown) => { console.warn("[Sidebar] clipboard write failed:", error); });
+    navigator.clipboard.writeText(url).catch((error: unknown) => {
+      console.warn("[Sidebar] clipboard write failed:", error);
+    });
     onClose();
   }
 

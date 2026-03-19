@@ -583,8 +583,24 @@ export default function PageEditorPage() {
       .replace(/'/g, "&#39;");
   }
 
-  function handleExportHtml() {
+  async function handleExportHtml() {
     const safeTitle = escapeHtml(title || "문서");
+
+    const { unified } = await import("unified");
+    const remarkParse = (await import("remark-parse")).default;
+    const remarkGfm = (await import("remark-gfm")).default;
+    const remarkRehype = (await import("remark-rehype")).default;
+    const rehypeStringify = (await import("rehype-stringify")).default;
+
+    const renderedBody = String(
+      await unified()
+        .use(remarkParse)
+        .use(remarkGfm)
+        .use(remarkRehype)
+        .use(rehypeStringify)
+        .process(content)
+    );
+
     const htmlContent = `<!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -618,7 +634,7 @@ export default function PageEditorPage() {
 </head>
 <body>
   <h1>${safeTitle}</h1>
-  <div>${content.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>")}</div>
+  <div>${renderedBody}</div>
 </body>
 </html>`;
     const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });

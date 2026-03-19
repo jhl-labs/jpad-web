@@ -2,25 +2,13 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { X, Trash2, RotateCcw, AlertTriangle } from "lucide-react";
+import { getRelativeTime } from "@/lib/utils/relativeTime";
 
 interface DeletedPage {
   id: string;
   title: string;
   icon: string | null;
   deletedAt: string;
-}
-
-function relativeTime(date: Date): string {
-  const now = Date.now();
-  const diff = now - date.getTime();
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return "방금 전";
-  if (minutes < 60) return `${minutes}분 전`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}시간 전`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}일 전`;
-  return date.toLocaleDateString("ko");
 }
 
 export function TrashPanel({
@@ -39,9 +27,15 @@ export function TrashPanel({
   const [emptyingAll, setEmptyingAll] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+  const deleteTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const emptyTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
     requestAnimationFrame(() => setIsVisible(true));
+    return () => {
+      if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
+      if (emptyTimerRef.current) clearTimeout(emptyTimerRef.current);
+    };
   }, []);
 
   const fetchTrash = useCallback(async () => {
@@ -71,7 +65,7 @@ export function TrashPanel({
 
   function requestPermanentDelete(pageId: string) {
     setConfirmingDeleteId(pageId);
-    setTimeout(() => {
+    deleteTimerRef.current = setTimeout(() => {
       setConfirmingDeleteId((prev) => (prev === pageId ? null : prev));
     }, 4000);
   }
@@ -87,7 +81,7 @@ export function TrashPanel({
 
   function requestEmptyAll() {
     setConfirmingEmptyAll(true);
-    setTimeout(() => {
+    emptyTimerRef.current = setTimeout(() => {
       setConfirmingEmptyAll((prev) => (prev ? false : prev));
     }, 5000);
   }
@@ -112,7 +106,7 @@ export function TrashPanel({
       role="dialog"
       aria-label="휴지통"
       aria-modal="true"
-      className="fixed right-0 top-0 h-full w-80 shadow-lg z-50 flex flex-col"
+      className="fixed right-0 top-0 h-full w-full md:w-80 shadow-lg z-50 flex flex-col"
       style={{
         background: "var(--background)",
         borderLeft: "1px solid var(--border)",
