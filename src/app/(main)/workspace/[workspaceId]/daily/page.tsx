@@ -71,6 +71,10 @@ export default function DailyNotePage() {
   const [existingDates, setExistingDates] = useState<Set<string>>(new Set());
   const [calendarMonth, setCalendarMonth] = useState(getMonthStr(today));
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const currentPageIdRef = useRef<string | null>(null);
+
+  // page가 변경될 때마다 ref 업데이트
+  useEffect(() => { currentPageIdRef.current = page?.id || null; }, [page]);
 
   const hasChanges = content !== savedContent;
 
@@ -177,10 +181,11 @@ export default function DailyNotePage() {
 
   // 저장
   const saveContent = useCallback(async () => {
-    if (!page || content === savedContent) return;
+    const pageId = currentPageIdRef.current;
+    if (!pageId || content === savedContent) return;
     setSaving(true);
     try {
-      await fetch(`/api/pages/${page.id}/content`, {
+      await fetch(`/api/pages/${pageId}/content`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content }),
@@ -191,7 +196,7 @@ export default function DailyNotePage() {
     } finally {
       setSaving(false);
     }
-  }, [page, content, savedContent]);
+  }, [content, savedContent]);
 
   // 자동 저장 (2초 딜레이)
   useEffect(() => {

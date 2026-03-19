@@ -120,6 +120,17 @@ export function TodoList({ workspaceId }: TodoListProps) {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [errorToast, setErrorToast] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const errorToastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  function showErrorToast(msg: string) {
+    if (errorToastTimer.current) clearTimeout(errorToastTimer.current);
+    setErrorToast(msg);
+    errorToastTimer.current = setTimeout(() => setErrorToast(null), 3000);
+  }
+
+  useEffect(() => {
+    return () => { if (errorToastTimer.current) clearTimeout(errorToastTimer.current); };
+  }, []);
 
   // 삭제 확인 3초 후 자동 취소
   useEffect(() => {
@@ -185,8 +196,7 @@ export function TodoList({ workspaceId }: TodoListProps) {
       inputRef.current?.focus();
     } catch (e) {
       console.error("Failed to create todo:", e);
-      setErrorToast("할 일 추가에 실패했습니다");
-      setTimeout(() => setErrorToast(null), 3000);
+      showErrorToast("할 일 추가에 실패했습니다");
     } finally {
       setSubmitting(false);
     }
@@ -216,8 +226,7 @@ export function TodoList({ workspaceId }: TodoListProps) {
       setTodos((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
     } catch (e) {
       console.error("Failed to toggle todo:", e);
-      setErrorToast("할 일 상태 변경에 실패했습니다");
-      setTimeout(() => setErrorToast(null), 3000);
+      showErrorToast("할 일 상태 변경에 실패했습니다");
       setTodos((prev) =>
         prev.map((t) => (t.id === todo.id ? todo : t))
       );
@@ -239,8 +248,7 @@ export function TodoList({ workspaceId }: TodoListProps) {
       setTodos((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
     } catch (e) {
       console.error("Failed to update todo:", e);
-      setErrorToast("할 일 수정에 실패했습니다");
-      setTimeout(() => setErrorToast(null), 3000);
+      showErrorToast("할 일 수정에 실패했습니다");
     }
   };
 
@@ -260,8 +268,7 @@ export function TodoList({ workspaceId }: TodoListProps) {
       if (!res.ok) throw new Error("Failed to delete");
     } catch (e) {
       console.error("Failed to delete todo:", e);
-      setErrorToast("할 일 삭제에 실패했습니다");
-      setTimeout(() => setErrorToast(null), 3000);
+      showErrorToast("할 일 삭제에 실패했습니다");
       fetchTodos();
     }
   };
@@ -281,18 +288,22 @@ export function TodoList({ workspaceId }: TodoListProps) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    const oldIndex = sortedTodos.findIndex((t) => t.id === active.id);
-    const newIndex = sortedTodos.findIndex((t) => t.id === over.id);
-    if (oldIndex === -1 || newIndex === -1) return;
+    const filtered = sortedTodos; // 현재 보이는 목록
+    const oldIdx = filtered.findIndex((t) => t.id === active.id);
+    const newIdx = filtered.findIndex((t) => t.id === over.id);
+    if (oldIdx === -1 || newIdx === -1) return;
 
-    // Optimistic reorder
-    const reordered = [...sortedTodos];
-    const [moved] = reordered.splice(oldIndex, 1);
-    reordered.splice(newIndex, 0, moved);
+    setTodos((prev) => {
+      // 보이는 목록에서의 순서만 변경
+      const reordered = [...filtered];
+      const [moved] = reordered.splice(oldIdx, 1);
+      reordered.splice(newIdx, 0, moved);
 
-    // Update sortOrder for all items
-    const updated = reordered.map((t, i) => ({ ...t, sortOrder: i }));
-    setTodos(updated);
+      // 전체 목록에서 보이지 않는 항목은 유지
+      const hiddenItems = prev.filter((t) => !filtered.some((f) => f.id === t.id));
+      const result = [...reordered.map((item, i) => ({ ...item, sortOrder: i })), ...hiddenItems];
+      return result;
+    });
 
     // Persist the moved item's new sortOrder
     try {
@@ -301,14 +312,13 @@ export function TodoList({ workspaceId }: TodoListProps) {
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sortOrder: newIndex }),
+          body: JSON.stringify({ sortOrder: newIdx }),
         }
       );
       if (!res.ok) throw new Error("Failed to update sort order");
     } catch (e) {
       console.error("Failed to update sort order:", e);
-      setErrorToast("순서 변경에 실패했습니다");
-      setTimeout(() => setErrorToast(null), 3000);
+      showErrorToast("순서 변경에 실패했습니다");
       fetchTodos();
     }
   };

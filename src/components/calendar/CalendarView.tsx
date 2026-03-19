@@ -182,6 +182,11 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
     }
   }, [successToast]);
 
+  // 삭제 확인 타이머 cleanup
+  useEffect(() => {
+    return () => { if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current); };
+  }, []);
+
   function handleGoogleConnect() {
     window.location.href = `/api/workspaces/${workspaceId}/google-calendar/connect`;
   }
