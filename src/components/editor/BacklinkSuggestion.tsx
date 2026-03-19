@@ -104,6 +104,7 @@ export function BacklinkSuggestion({
         const data = await res.json();
         setSuggestions(Array.isArray(data) ? data : data.results ?? []);
       } catch (error) {
+        console.error("[BacklinkSuggestion] search failed:", error);
         setSuggestions([]);
       }
     }, 150);

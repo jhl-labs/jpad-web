@@ -30,7 +30,7 @@ export function BacklinkPanel({
         setIncoming(data.incoming || []);
         setOutgoing(data.outgoing || []);
       })
-      .catch(() => {});
+      .catch((error) => { console.error("[BacklinkPanel] fetch failed:", error); });
   }, [pageId, workspaceId]);
 
   const total = incoming.length + outgoing.length;

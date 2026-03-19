@@ -65,7 +65,7 @@ export function HistoryPanel({
     fetch(`/api/pages/${pageId}/history`)
       .then((r) => r.json())
       .then(setHistory)
-      .catch(() => {});
+      .catch((error) => { console.error("[HistoryPanel] fetch failed:", error); });
   }, [pageId]);
 
   async function viewVersion(oid: string) {
@@ -110,8 +110,8 @@ export function HistoryPanel({
         const newContent = idxA > idxB ? dataB.content : dataA.content;
         setDiffResult(computeLineDiff(oldContent as string, newContent as string));
       }
-    } catch {
-      // ignore fetch errors
+    } catch (error) {
+      console.error("[HistoryPanel] compare failed:", error);
     } finally {
       setDiffLoading(false);
     }

@@ -589,6 +589,7 @@ function InnerEditor({
         updateSaveStatus("saved");
         savedTimeout.current = setTimeout(() => updateSaveStatus("idle"), SAVED_STATUS_RESET_MS);
       } catch (error) {
+        console.error("[Editor] save failed:", error);
         updateSaveStatus("error");
       }
     }, AUTO_SAVE_DEBOUNCE_MS);

@@ -95,7 +95,7 @@ export function AttachmentPanel({
       .then((data) => {
         if (Array.isArray(data)) setAttachments(data);
       })
-      .catch(() => {});
+      .catch((error) => { console.error("[AttachmentPanel] fetch failed:", error); });
   }, [pageId]);
 
   useEffect(() => {

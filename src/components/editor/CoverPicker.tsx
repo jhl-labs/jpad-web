@@ -69,8 +69,8 @@ export function CoverPicker({ pageId, workspaceId, onSelect, onClose }: CoverPic
         onSelect(data.url);
         onClose();
       }
-    } catch (_error) {
-      // ignore
+    } catch (error) {
+      console.error("[CoverPicker] upload failed:", error);
     } finally {
       setUploading(false);
     }
