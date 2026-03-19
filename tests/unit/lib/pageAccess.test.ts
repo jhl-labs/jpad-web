@@ -1,9 +1,20 @@
-import { describe, it, expect } from "bun:test";
-import {
+import { describe, it, expect, mock } from "bun:test";
+
+// pageAccess.ts imports prisma and auth/helpers, mock them
+mock.module("@/lib/prisma", () => ({ prisma: {} }));
+mock.module("@/lib/auth/helpers", () => ({
+  checkWorkspaceAccess: async () => null,
+  requireAuth: async () => { throw new Error("Unauthorized"); },
+  getCurrentUser: async () => null,
+  getPlatformAdminEmails: () => [],
+  isPlatformAdminEmail: () => false,
+}));
+
+const {
   isWorkspaceRole,
   hasWorkspaceAccess,
   normalizePageAccessMode,
-} from "@/lib/pageAccess";
+} = await import("@/lib/pageAccess");
 
 // pageAccess.ts에서 export된 순수 함수를 직접 import하여 테스트합니다.
 // DB 의존 함수(getPageAccessContext 등)는 통합테스트에서 다룹니다.

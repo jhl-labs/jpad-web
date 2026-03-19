@@ -54,6 +54,7 @@ export function ShareDialog({
   const [pageAccessMode, setPageAccessMode] = useState<"workspace" | "restricted">("workspace");
   const [pageAllowedUserIds, setPageAllowedUserIds] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const [shareExpiry, setShareExpiry] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
 
@@ -208,8 +209,18 @@ export function ShareDialog({
     setError("");
 
     try {
+      const body: Record<string, unknown> = {};
+      if (shareExpiry) {
+        const now = new Date();
+        const days = parseInt(shareExpiry, 10);
+        if (!isNaN(days) && days > 0) {
+          body.expiresAt = new Date(now.getTime() + days * 24 * 60 * 60 * 1000).toISOString();
+        }
+      }
       const res = await fetch(`/api/pages/${pageId}/share`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
       });
 
       if (!res.ok) {
@@ -442,6 +453,23 @@ export function ShareDialog({
               <p className="text-sm mb-3" style={{ color: "var(--muted)" }}>
                 이 링크는 로그인 없이 읽기 전용으로 페이지를 열 수 있습니다.
               </p>
+              <div className="mb-3">
+                <label className="text-xs font-medium mb-1 block" style={{ color: "var(--muted)" }}>
+                  공유 링크 만료
+                </label>
+                <select
+                  value={shareExpiry}
+                  onChange={(e) => setShareExpiry(e.target.value)}
+                  className="px-3 py-2 rounded-md text-sm"
+                  style={{ border: "1px solid var(--border)", background: "var(--background)" }}
+                >
+                  <option value="">만료 없음</option>
+                  <option value="1">1일</option>
+                  <option value="7">7일</option>
+                  <option value="30">30일</option>
+                </select>
+              </div>
+
               {pageShare ? (
                 <div className="space-y-2">
                   <div className="flex gap-2">

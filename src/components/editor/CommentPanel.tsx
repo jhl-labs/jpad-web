@@ -160,6 +160,9 @@ function CommentItem({
               <span className="text-sm font-medium truncate">{comment.user.name}</span>
               <span className="text-xs shrink-0" style={{ color: "var(--muted)" }}>
                 {getRelativeTime(comment.createdAt)}
+                {comment.updatedAt && comment.updatedAt !== comment.createdAt && (
+                  <span title={`수정: ${new Date(comment.updatedAt).toLocaleString("ko-KR")}`}> (수정됨)</span>
+                )}
               </span>
             </div>
             {editingComment ? (

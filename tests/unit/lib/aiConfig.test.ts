@@ -1,4 +1,4 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect, mock } from "bun:test";
 import {
   buildDefaultAiProfile,
   getAiProviderLabel,
@@ -7,9 +7,16 @@ import {
   AI_TASK_VALUES,
   type AiProviderType,
   type AiTaskType,
+  type WorkspaceAiProfile,
+  type WorkspaceAiTaskRouting,
 } from "@/lib/aiConfig";
-import { resolveAiProfileForTask } from "@/lib/aiSettings";
-import type { WorkspaceAiProfile, WorkspaceAiTaskRouting } from "@/lib/aiConfig";
+
+// Set encryption key so secrets module can load without mocking
+if (!process.env.APP_ENCRYPTION_KEY) {
+  process.env.APP_ENCRYPTION_KEY = "test-encryption-key-for-unit-tests";
+}
+
+const { resolveAiProfileForTask } = await import("@/lib/aiSettings");
 
 describe("aiConfig", () => {
   describe("buildDefaultAiProfile", () => {

@@ -1,9 +1,20 @@
-import { describe, it, expect } from "bun:test";
-import {
+import { describe, it, expect, mock } from "bun:test";
+
+// pages.ts imports prisma, mock it
+mock.module("@/lib/prisma", () => ({ prisma: {} }));
+
+const {
   collectPageSubtree,
   collectPageAncestors,
-  type WorkspacePageRecord,
-} from "@/lib/pages";
+} = await import("@/lib/pages");
+
+type WorkspacePageRecord = {
+  id: string;
+  title: string;
+  slug: string;
+  parentId: string | null;
+  isDeleted: boolean;
+};
 
 // pages.ts의 순수 함수(collectPageSubtree, collectPageAncestors)를 테스트합니다.
 // DB 의존 함수(getWorkspacePages)는 통합테스트에서 다룹니다.
@@ -19,7 +30,7 @@ const samplePages: WorkspacePageRecord[] = [
 describe("pages - collectPageSubtree", () => {
   it("루트에서 모든 하위 페이지를 수집한다", () => {
     const subtree = collectPageSubtree(samplePages, "root");
-    const ids = subtree.map((p) => p.id);
+    const ids = subtree.map((p: WorkspacePageRecord) => p.id);
     expect(ids).toContain("root");
     expect(ids).toContain("child-1");
     expect(ids).toContain("child-2");
@@ -29,7 +40,7 @@ describe("pages - collectPageSubtree", () => {
 
   it("중간 노드에서 하위만 수집한다", () => {
     const subtree = collectPageSubtree(samplePages, "child-1");
-    const ids = subtree.map((p) => p.id);
+    const ids = subtree.map((p: WorkspacePageRecord) => p.id);
     expect(ids).toContain("child-1");
     expect(ids).toContain("grandchild-1");
     expect(ids).not.toContain("root");
@@ -61,7 +72,7 @@ describe("pages - collectPageSubtree", () => {
 describe("pages - collectPageAncestors", () => {
   it("하위 페이지에서 조상을 수집한다", () => {
     const ancestors = collectPageAncestors(samplePages, "grandchild-1");
-    const ids = ancestors.map((p) => p.id);
+    const ids = ancestors.map((p: WorkspacePageRecord) => p.id);
     expect(ids).toContain("child-1");
     expect(ids).toContain("root");
   });

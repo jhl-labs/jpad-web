@@ -103,17 +103,31 @@ export async function POST(
       );
     }
 
+    let expiresAt: Date | null = null;
+    try {
+      const body = await _req.json().catch(() => ({}));
+      if (body.expiresAt) {
+        const parsed = new Date(body.expiresAt);
+        if (!isNaN(parsed.getTime()) && parsed.getTime() > Date.now()) {
+          expiresAt = parsed;
+        }
+      }
+    } catch {
+      // no body — expiresAt stays null
+    }
+
     const token = randomBytes(24).toString("base64url");
     const shareLink = await prisma.pageShareLink.upsert({
       where: { pageId },
       update: {
         token,
         revokedAt: null,
-        expiresAt: null,
+        expiresAt,
       },
       create: {
         pageId,
         token,
+        expiresAt,
       },
       select: {
         token: true,

@@ -2,23 +2,45 @@ import { describe, it, expect } from "bun:test";
 import { mock } from "bun:test";
 
 // ai.ts가 여러 모듈을 import하므로 mock 처리
+// IMPORTANT: @/lib/aiSettings, @/lib/pageAccess, @/lib/secrets는 mock하지 않음
+// (다른 테스트 파일에서 실제 모듈이 필요하므로 전역 mock 오염 방지)
 mock.module("@/lib/prisma", () => ({ prisma: {} }));
 mock.module("@/lib/auth/helpers", () => ({
   checkWorkspaceAccess: async () => null,
-}));
-mock.module("@/lib/pageAccess", () => ({
-  getPageAccessContext: async () => null,
+  requireAuth: async () => { throw new Error("Unauthorized"); },
+  getCurrentUser: async () => null,
+  getPlatformAdminEmails: () => [],
+  isPlatformAdminEmail: () => false,
 }));
 mock.module("@/lib/llmProviders", () => ({
   completeWithProfile: async () => "",
   streamWithProfile: async () => null,
   resolveAiProfileRuntime: () => ({}),
-}));
-mock.module("@/lib/aiSettings", () => ({
-  resolveAiProfileForTask: () => null,
+  supportsEmbeddings: () => false,
 }));
 mock.module("@/lib/workspaceSettings", () => ({
-  getEffectiveWorkspaceSettings: async () => ({ aiProfiles: [], aiTaskRouting: {} }),
+  getEffectiveWorkspaceSettings: async () => ({
+    aiEnabled: true, aiModel: "claude-sonnet-4-20250514", aiApiKey: null,
+    aiMaxTokens: 2048, aiProfiles: [], aiTaskRouting: {
+      general: null, write: null, chat: null, summary: null,
+      autocomplete: null, embedding: null,
+    },
+    allowPublicPages: true, allowMemberInvite: true,
+    defaultPageAccess: "workspace", maxFileUploadMb: 10,
+    uploadDlpScanMode: null, uploadDlpDetectors: null,
+    uploadDlpMaxExtractedCharacters: null,
+  }),
+  DEFAULT_WORKSPACE_SETTINGS: {
+    aiEnabled: true, aiModel: "claude-sonnet-4-20250514", aiApiKey: null,
+    aiMaxTokens: 2048, aiProfiles: [], aiTaskRouting: {
+      general: null, write: null, chat: null, summary: null,
+      autocomplete: null, embedding: null,
+    },
+    allowPublicPages: true, allowMemberInvite: true,
+    defaultPageAccess: "workspace", maxFileUploadMb: 10,
+    uploadDlpScanMode: null, uploadDlpDetectors: null,
+    uploadDlpMaxExtractedCharacters: null,
+  },
 }));
 
 const { AiError } = await import("@/lib/ai");

@@ -38,8 +38,8 @@ export function WordCount({ content }: WordCountProps) {
 
   return (
     <div
-      className="flex items-center px-4 py-2 text-xs"
-      style={{ color: "var(--muted)", borderTop: "1px solid var(--border)" }}
+      className="sticky bottom-0 flex items-center px-4 py-2 text-xs"
+      style={{ color: "var(--muted)", borderTop: "1px solid var(--border)", background: "var(--background)" }}
     >
       <span>
         {stats.chars.toLocaleString()}자 &middot; {stats.words.toLocaleString()}단어 &middot; 약 {stats.readingMinutes}분

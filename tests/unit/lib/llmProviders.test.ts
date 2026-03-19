@@ -1,12 +1,11 @@
 import { describe, it, expect, mock } from "bun:test";
 import { buildDefaultAiProfile, type WorkspaceAiProfile } from "@/lib/aiConfig";
 
-// Mock secrets module to avoid encryption dependencies (used transitively by aiSettings)
-mock.module("@/lib/secrets", () => ({
-  encryptSecret: (value: string) => `encrypted:${value}`,
-  decryptSecret: (value: string | null) =>
-    value?.startsWith("encrypted:") ? value.slice(10) : null,
-}));
+// Set encryption key so secrets module can load without mocking
+// (mocking @/lib/secrets globally would break secrets.test.ts)
+if (!process.env.APP_ENCRYPTION_KEY) {
+  process.env.APP_ENCRYPTION_KEY = "test-encryption-key-for-unit-tests";
+}
 
 const {
   resolveAiProfileRuntime,

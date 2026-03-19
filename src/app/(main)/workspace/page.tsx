@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Building2, Globe, Lock, Plus, ShieldCheck } from "lucide-react";
+import { Building2, FolderPlus, Globe, Lock, Plus, ShieldCheck } from "lucide-react";
 import { AppLogo } from "@/components/ui/AppLogo";
 
 interface Workspace {
@@ -257,9 +257,25 @@ export default function WorkspaceListPage() {
           </button>
         ))}
         {workspaces.length === 0 && !creating && (
-          <p className="text-center py-12" style={{ color: "var(--muted)" }}>
-            워크스페이스가 없습니다. 새로 만들어 보세요.
-          </p>
+          <div className="flex flex-col items-center justify-center py-16 gap-4">
+            <FolderPlus size={48} strokeWidth={1.2} style={{ color: "var(--muted)" }} />
+            <div className="text-center space-y-1">
+              <p className="font-medium text-lg">첫 워크스페이스를 만들어보세요</p>
+              <p className="text-sm" style={{ color: "var(--muted)" }}>
+                워크스페이스에서 페이지를 만들고 팀과 협업할 수 있습니다.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setCreating(true);
+                setCreateError("");
+              }}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-md text-white text-sm"
+              style={{ background: "var(--primary)" }}
+            >
+              <Plus size={16} /> 워크스페이스 만들기
+            </button>
+          </div>
         )}
       </div>
     </div>

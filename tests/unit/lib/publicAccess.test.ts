@@ -5,7 +5,10 @@ import { beforeAll } from "bun:test";
 mock.module("@/lib/prisma", () => ({ prisma: {} }));
 mock.module("@/lib/auth/helpers", () => ({
   checkWorkspaceAccess: async () => null,
+  requireAuth: async () => { throw new Error("Unauthorized"); },
   getCurrentUser: async () => null,
+  getPlatformAdminEmails: () => [],
+  isPlatformAdminEmail: () => false,
 }));
 
 // mock 설정 후 dynamic import

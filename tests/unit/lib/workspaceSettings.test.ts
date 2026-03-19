@@ -1,5 +1,14 @@
-import { describe, it, expect } from "bun:test";
-import { DEFAULT_WORKSPACE_SETTINGS } from "@/lib/workspaceSettings";
+import { describe, it, expect, mock } from "bun:test";
+
+// workspaceSettings.ts imports prisma and aiSettings (which imports secrets)
+mock.module("@/lib/prisma", () => ({ prisma: {} }));
+mock.module("@/lib/secrets", () => ({
+  encryptSecret: (value: string) => value,
+  decryptSecret: (value: string | null) => value,
+  SecretEncryptionError: class SecretEncryptionError extends Error {},
+}));
+
+const { DEFAULT_WORKSPACE_SETTINGS } = await import("@/lib/workspaceSettings");
 
 describe("workspaceSettings", () => {
   describe("DEFAULT_WORKSPACE_SETTINGS", () => {

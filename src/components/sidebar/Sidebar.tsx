@@ -726,6 +726,7 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
   const { data: session } = useSession();
   const [showTrash, setShowTrash] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [pageFilter, setPageFilter] = useState("");
   const [sectionCollapse, setSectionCollapse] = useState<SectionCollapseState>(() => getSavedSectionState(workspace.id));
 
   const toggleSection = useCallback((section: keyof SectionCollapseState) => {
@@ -864,11 +865,15 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
   }, [fetchTrashCount, pages]);
 
   const rootPages = useMemo(() => {
-    const roots = pages.filter((p) => !p.parentId);
+    let roots = pages.filter((p) => !p.parentId);
+    if (pageFilter && pages.length > 10) {
+      const lower = pageFilter.toLowerCase();
+      roots = roots.filter((p) => p.title.toLowerCase().includes(lower));
+    }
     if (sortMode === "name") return [...roots].sort((a, b) => a.title.localeCompare(b.title, "ko"));
     if (sortMode === "updated") return [...roots].sort((a, b) => new Date(b.updatedAt ?? 0).getTime() - new Date(a.updatedAt ?? 0).getTime());
     return roots.sort((a, b) => a.position - b.position);
-  }, [pages, sortMode]);
+  }, [pages, sortMode, pageFilter]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -1219,6 +1224,16 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
               )}
             </div>
           </div>
+
+        {!sectionCollapse.pages && pages.length > 10 && (
+          <input
+            value={pageFilter}
+            onChange={(e) => setPageFilter(e.target.value)}
+            placeholder="페이지 필터..."
+            className="w-full px-2 py-1 rounded text-xs bg-transparent outline-none mb-1"
+            style={{ border: "1px solid var(--border)" }}
+          />
+        )}
 
         {!sectionCollapse.pages && (
         <DndContext

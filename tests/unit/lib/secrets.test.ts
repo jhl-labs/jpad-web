@@ -1,5 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from "bun:test";
-import { encryptSecret, decryptSecret, SecretEncryptionError } from "@/lib/secrets";
+import { describe, it, expect, beforeEach, afterEach, mock } from "bun:test";
+
+// Re-establish the real secrets module (other tests may have mocked it)
+// secrets.ts only depends on node:crypto which doesn't need mocking
+const { encryptSecret, decryptSecret, SecretEncryptionError } = await import("@/lib/secrets");
 
 describe("secrets", () => {
   const originalKey = process.env.APP_ENCRYPTION_KEY;

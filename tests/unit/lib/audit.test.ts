@@ -27,6 +27,9 @@ mock.module("@/lib/auditWebhook", () => ({
 const mockLogError = mock(() => {});
 mock.module("@/lib/logger", () => ({
   logError: mockLogError,
+  logWarn: () => {},
+  logInfo: () => {},
+  logRequest: () => {},
 }));
 
 // Mock requestContext
