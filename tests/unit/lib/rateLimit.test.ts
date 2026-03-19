@@ -65,11 +65,12 @@ describe("rateLimit", () => {
 });
 
 describe("extractClientIp", () => {
-  it("x-forwarded-for 헤더에서 첫 번째 IP를 추출한다", () => {
+  it("x-forwarded-for 헤더에서 신뢰 프록시 기준 클라이언트 IP를 추출한다", () => {
+    // TRUSTED_PROXY_COUNT=1(기본값): ips[length - 1] = 마지막 프록시가 추가한 IP
     const headers = new Headers({
       "x-forwarded-for": "1.2.3.4, 5.6.7.8",
     });
-    expect(extractClientIp(headers)).toBe("1.2.3.4");
+    expect(extractClientIp(headers)).toBe("5.6.7.8");
   });
 
   it("x-real-ip 헤더를 사용한다", () => {

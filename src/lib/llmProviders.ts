@@ -86,7 +86,7 @@ function resolveMaxTokens(profile: ResolvedAiProfile, requestedMaxTokens?: numbe
 function stripThinkingProcess(text: string): string {
   if (!text) return "";
   // <think>...</think> 태그 제거
-  let cleaned = text.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+  const cleaned = text.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
 
   // "Final Version:", "Final Output:", "Output:" 등의 마커 뒤의 실제 답변 추출
   const finalMarkers = [
