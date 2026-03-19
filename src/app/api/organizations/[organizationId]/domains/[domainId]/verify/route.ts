@@ -57,7 +57,7 @@ export async function POST(
       logError("organization.domain.dns_resolve_failed", error, { domainId });
       return NextResponse.json(
         {
-          error: "DNS TXT 레코드를 확인할 수 없습니다.",
+          error: "DNS TXT record not found",
           verification: {
             txtRecordName: instructions.name,
             txtRecordValue: expectedValue,
@@ -70,7 +70,7 @@ export async function POST(
     if (!resolvedRecords.includes(expectedValue)) {
       return NextResponse.json(
         {
-          error: "TXT 레코드가 아직 전파되지 않았거나 값이 일치하지 않습니다.",
+          error: "TXT record not yet propagated or value mismatch",
           verification: {
             txtRecordName: instructions.name,
             txtRecordValue: expectedValue,

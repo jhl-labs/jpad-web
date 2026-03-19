@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, checkWorkspaceAccess } from "@/lib/auth/helpers";
 import { createAuditActor, getAuditRequestContext, recordAuditLog } from "@/lib/audit";
+import { logError } from "@/lib/logger";
 import { listAccessiblePages } from "@/lib/pageAccess";
 import { rateLimitRedis } from "@/lib/rateLimit";
 
@@ -83,6 +84,7 @@ export async function GET(
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    logError("workspace.get", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
@@ -163,6 +165,7 @@ export async function PATCH(
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    logError("workspace.patch", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

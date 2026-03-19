@@ -45,7 +45,7 @@ export async function POST(
 
     logError("workspace.ai.test_connection.failed", error, { workspaceId }, req);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "연결 테스트에 실패했습니다." },
+      { error: error instanceof Error ? error.message : "Connection test failed" },
       { status: 500 }
     );
   }

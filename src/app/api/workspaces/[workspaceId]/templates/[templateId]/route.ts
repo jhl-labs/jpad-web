@@ -46,7 +46,7 @@ export async function PATCH(
     }
     if (template.isBuiltIn) {
       return NextResponse.json(
-        { error: "기본 제공 템플릿은 수정할 수 없습니다" },
+        { error: "Built-in templates cannot be modified" },
         { status: 403 }
       );
     }
@@ -105,7 +105,7 @@ export async function DELETE(
     }
     if (template.isBuiltIn) {
       return NextResponse.json(
-        { error: "기본 제공 템플릿은 삭제할 수 없습니다" },
+        { error: "Built-in templates cannot be deleted" },
         { status: 403 }
       );
     }

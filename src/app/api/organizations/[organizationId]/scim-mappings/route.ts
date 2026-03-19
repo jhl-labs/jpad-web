@@ -64,7 +64,7 @@ export async function POST(
     });
     if (existing) {
       return NextResponse.json(
-        { error: "이 그룹은 이미 해당 워크스페이스에 매핑되어 있습니다." },
+        { error: "This group is already mapped to the workspace" },
         { status: 409 }
       );
     }

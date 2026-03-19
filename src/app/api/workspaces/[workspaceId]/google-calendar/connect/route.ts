@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, checkWorkspaceAccess } from "@/lib/auth/helpers";
 import { getGoogleAuthUrl } from "@/lib/googleCalendar";
 import { getWorkspaceGoogleCredentials } from "@/lib/googleCalendarSync";
+import { logError } from "@/lib/logger";
 
 export async function GET(
   _req: NextRequest,
@@ -18,7 +19,7 @@ export async function GET(
     const credentials = await getWorkspaceGoogleCredentials(workspaceId);
     if (!credentials) {
       return NextResponse.json(
-        { error: "Google Calendar이 설정되지 않았습니다. 워크스페이스 설정에서 Client ID와 Secret을 입력해주세요." },
+        { error: "Google Calendar is not configured for this workspace" },
         { status: 400 }
       );
     }
@@ -33,6 +34,7 @@ export async function GET(
     if (message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    logError("google-calendar.connect", err);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

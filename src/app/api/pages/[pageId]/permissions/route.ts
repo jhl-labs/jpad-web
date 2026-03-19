@@ -44,6 +44,7 @@ export async function GET(
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    logError("page.permissions.get", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

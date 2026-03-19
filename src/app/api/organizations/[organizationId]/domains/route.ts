@@ -9,6 +9,7 @@ import {
   normalizeOrganizationDomain,
 } from "@/lib/organizations";
 import { createAuditActor, getAuditRequestContext, recordAuditLog } from "@/lib/audit";
+import { logError } from "@/lib/logger";
 import { rateLimitRedis } from "@/lib/rateLimit";
 
 const createDomainSchema = z.object({
@@ -55,7 +56,7 @@ export async function POST(
 
     if (existing) {
       return NextResponse.json(
-        { error: "이 도메인은 이미 다른 조직에서 사용 중입니다." },
+        { error: "This domain is already in use by another organization" },
         { status: 409 }
       );
     }
@@ -98,6 +99,7 @@ export async function POST(
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    logError("organization.domain.create", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
