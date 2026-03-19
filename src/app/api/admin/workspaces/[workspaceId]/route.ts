@@ -14,7 +14,10 @@ export async function DELETE(
     const admin = await requirePlatformAdmin();
     const { workspaceId } = await params;
 
-    await rateLimitRedis(`admin.workspace.delete:${admin.id}`, 10, 60_000);
+    const allowed = await rateLimitRedis(`admin.workspace.delete:${admin.id}`, 10, 60_000);
+    if (!allowed) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
 
     const workspace = await prisma.workspace.findUnique({
       where: { id: workspaceId },

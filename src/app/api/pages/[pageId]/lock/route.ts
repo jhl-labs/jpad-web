@@ -65,8 +65,8 @@ export async function POST(
     const user = await requireAuth();
     const { pageId } = await params;
 
-    const limited = await rateLimitRedis(`page-lock:${user.id}`, 30, 60_000);
-    if (limited) {
+    const allowed = await rateLimitRedis(`page-lock:${user.id}`, 30, 60_000);
+    if (!allowed) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 
@@ -114,8 +114,8 @@ export async function DELETE(
     const user = await requireAuth();
     const { pageId } = await params;
 
-    const limited = await rateLimitRedis(`page-unlock:${user.id}`, 30, 60_000);
-    if (limited) {
+    const allowed = await rateLimitRedis(`page-unlock:${user.id}`, 30, 60_000);
+    if (!allowed) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 
