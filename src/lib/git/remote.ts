@@ -72,16 +72,26 @@ export async function pushToRemote(
 
     await configureRemote(workspaceId, settings.gitRemoteUrl);
 
-    const branch = settings.gitRemoteBranch || "main";
+    const remoteBranch = settings.gitRemoteBranch || "main";
     const onAuth = makeOnAuth(settings.gitRemoteToken);
+
+    // Detect local branch name (may be "master" or "main")
+    let localBranch = "main";
+    try {
+      const head = await fs.promises.readFile(path.join(dir, ".git", "HEAD"), "utf-8");
+      const match = head.trim().match(/^ref: refs\/heads\/(.+)$/);
+      if (match) localBranch = match[1];
+    } catch { /* use default */ }
 
     const pushResult = await git.push({
       fs,
       http,
       dir,
       remote: "origin",
-      ref: branch,
+      ref: localBranch,
+      remoteRef: remoteBranch,
       onAuth,
+      force: false,
     });
 
     // pushResult.ok indicates success
@@ -105,16 +115,25 @@ export async function pullFromRemote(
     const branch = settings.gitRemoteBranch || "main";
     const onAuth = makeOnAuth(settings.gitRemoteToken);
 
-    // Fetch from remote
-    await git.fetch({
-      fs,
-      http,
-      dir,
-      remote: "origin",
-      ref: branch,
-      onAuth,
-      singleBranch: true,
-    });
+    // Fetch from remote (may fail on empty repos)
+    try {
+      await git.fetch({
+        fs,
+        http,
+        dir,
+        remote: "origin",
+        ref: branch,
+        onAuth,
+        singleBranch: true,
+      });
+    } catch (fetchErr: unknown) {
+      const msg = fetchErr instanceof Error ? fetchErr.message : "";
+      // Empty remote repo or branch not found — nothing to pull
+      if (msg.includes("could not find") || msg.includes("not found") || msg.includes("HttpError")) {
+        return { filesChanged: 0 };
+      }
+      throw fetchErr;
+    }
 
     // Fast-forward merge: get remote ref
     const remoteRef = `refs/remotes/origin/${branch}`;
