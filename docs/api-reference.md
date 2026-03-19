@@ -844,6 +844,36 @@ Base URL: `/api/scim/v2`
 
 ---
 
+## 플랫폼 사용자 관리 (Platform Admin)
+
+### `GET /api/admin/users`
+전체 사용자 목록 조회. 검색, 페이지네이션 지원.
+
+### `DELETE /api/admin/users/[userId]`
+사용자 삭제 (관리자는 삭제 불가).
+
+### `PATCH /api/admin/users/[userId]`
+사용자 플랫폼 관리자 권한 변경.
+
+---
+
+## 플랫폼 워크스페이스 관리 (Platform Admin)
+
+### `GET /api/admin/workspaces`
+전체 워크스페이스 목록 조회.
+
+### `DELETE /api/admin/workspaces/[workspaceId]`
+워크스페이스 삭제.
+
+---
+
+## 플랫폼 감사 로그 (Platform Admin)
+
+### `GET /api/admin/audit-logs`
+전체 감사 로그 조회. 필터: q, action, status, from, to.
+
+---
+
 ## 플랫폼 운영 API
 
 ### `GET /api/admin/ops/overview`

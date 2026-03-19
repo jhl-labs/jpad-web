@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import type { CursorContext } from "@/components/editor/CollaborativeEditor";
-import { AI_EVENTS, SEARCH_EVENTS, SIDEBAR_EVENTS } from "@/lib/events";
+import { AI_EVENTS, SEARCH_EVENTS, SIDEBAR_EVENTS, ZEN_EVENTS } from "@/lib/events";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { BacklinkPanel } from "@/components/editor/BacklinkPanel";
 import { AttachmentPanel } from "@/components/editor/AttachmentPanel";
@@ -677,6 +677,19 @@ export default function PageEditorPage() {
     };
   }, [handleAutocomplete]);
 
+  // 내보내기 메뉴 외부 클릭 닫기
+  useEffect(() => {
+    if (!showExportMenu) return;
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-export-menu]')) {
+        setShowExportMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showExportMenu]);
+
   if (loadError) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -803,7 +816,7 @@ export default function PageEditorPage() {
           >
             <Network size={14} />
           </button>
-          <div className="relative hidden md:block">
+          <div className="relative hidden md:block" data-export-menu>
             <button
               onClick={() => setShowExportMenu(!showExportMenu)}
               className="flex items-center px-2 py-1 rounded text-sm hover:opacity-70"

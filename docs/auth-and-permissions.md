@@ -53,7 +53,7 @@
 ### 헬퍼 함수 (`src/lib/auth/helpers.ts`)
 - `getCurrentUser()`: 현재 세션의 `userId` 우선, 없으면 email fallback으로 사용자 조회
 - `requireAuth()`: 인증 가드. 미인증 시 `Unauthorized` 에러
-- `requirePlatformAdmin()`: 전역 운영 관리자 가드. `PLATFORM_ADMIN_EMAILS` 환경변수에 등록된 이메일만 허용
+- `requirePlatformAdmin()`: 전역 운영 관리자 가드. `User.isPlatformAdmin` 필드 또는 `PLATFORM_ADMIN_EMAILS` 환경변수에 등록된 이메일 허용. 최초 가입자는 자동으로 관리자로 설정됨
 - `checkWorkspaceAccess(userId, workspaceId, requiredRole?)`: 워크스페이스 멤버십 확인. 멤버가 아닌 경우 public workspace이면 `viewer` + `isPublicViewer: true`로 반환
 
 ---

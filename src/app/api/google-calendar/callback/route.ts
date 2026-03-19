@@ -82,11 +82,13 @@ export async function GET(req: NextRequest) {
         accessToken: encryptSecret(tokens.accessToken),
         refreshToken: encryptSecret(tokens.refreshToken),
         tokenExpiry: tokens.expiresAt,
+        calendarId: "primary",
       },
       update: {
         accessToken: encryptSecret(tokens.accessToken),
         refreshToken: encryptSecret(tokens.refreshToken),
         tokenExpiry: tokens.expiresAt,
+        calendarId: "primary",
         syncEnabled: true,
       },
     });

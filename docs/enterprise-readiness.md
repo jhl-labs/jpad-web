@@ -138,6 +138,7 @@ JPAD의 엔터프라이즈 수준 보안, 운영, 통합 기능 구현 현황을
 | AI 대화 보존 | `AI_CHAT_RETENTION_DAYS` | 90일 |
 | 폐기 공유 링크 보존 | `REVOKED_SHARE_RETENTION_DAYS` | 30일 |
 | 감사 로그 보존 | `AUDIT_LOG_RETENTION_DAYS` | 365일 |
+| 알림 보존 | `NOTIFICATION_RETENTION_DAYS` | 90일 |
 
 - 삭제 대상: 휴지통 페이지, 첨부파일, 공유 링크, AI 대화, 감사 로그
 - 워크스페이스 단위 삭제 집계 제공 (`WorkspaceRetentionSummary`)

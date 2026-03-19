@@ -26,7 +26,11 @@ function SamlCompleteInner() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    let cancelled = false;
+
     async function finishSamlLogin() {
+      if (cancelled) return;
+
       const token = searchParams.get("token");
       const rawCallback = searchParams.get("callbackUrl");
 
@@ -55,6 +59,8 @@ function SamlCompleteInner() {
           redirect: false,
         });
 
+        if (cancelled) return;
+
         if (result?.error) {
           router.replace(`/login?error=${encodeURIComponent(result.error)}`);
           return;
@@ -62,12 +68,15 @@ function SamlCompleteInner() {
 
         router.replace(callbackUrl);
       } catch (err) {
+        if (cancelled) return;
         console.error("Failed to complete SAML login session:", err);
         setError("SAML 로그인 세션을 마무리하지 못했습니다.");
       }
     }
 
     finishSamlLogin();
+
+    return () => { cancelled = true; };
   }, [router, searchParams]);
 
   return (

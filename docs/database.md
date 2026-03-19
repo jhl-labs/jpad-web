@@ -43,6 +43,7 @@ User ──┬── WorkspaceMember ──── Workspace ──── Workspa
 | oidcSubject | String? | 연결된 OIDC subject |
 | samlIssuer | String? | 연결된 SAML issuer |
 | samlSubject | String? | 연결된 SAML subject / NameID |
+| isPlatformAdmin | Boolean | 플랫폼 관리자 여부 (기본: false, 최초 가입자 자동 설정) |
 | lastLoginAt | DateTime? | 마지막 로그인 시각 |
 | createdAt | DateTime | 생성일 |
 | updatedAt | DateTime | 수정일 |
