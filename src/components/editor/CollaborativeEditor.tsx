@@ -220,10 +220,10 @@ function getCustomSlashMenuItems(
       },
     },
     {
-      title: "인용",
-      subtext: "인용 블록을 삽입합니다",
+      title: "인용 (텍스트)",
+      subtext: "인용 스타일 텍스트를 삽입합니다",
       group: "기본 블록",
-      aliases: ["quote", "blockquote", "인용문"],
+      aliases: ["quote", "blockquote", "인용문", "인용"],
       onItemClick: () => {
         const cursor = editor.getTextCursorPosition();
         if (cursor?.block) {
@@ -236,8 +236,8 @@ function getCustomSlashMenuItems(
       },
     },
     {
-      title: "코드 블록",
-      subtext: "코드 블록을 삽입합니다",
+      title: "코드 블록 (인라인)",
+      subtext: "코드 스타일 텍스트를 삽입합니다",
       group: "기본 블록",
       aliases: ["code", "codeblock", "코드"],
       onItemClick: () => {
@@ -776,29 +776,34 @@ function InnerEditor({
   const [selectionRect, setSelectionRect] = useState<DOMRect | null>(null);
   const editorContainerRef = useRef<HTMLDivElement>(null);
 
+  const selectionTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
   useEffect(() => {
     const handleSelectionChange = () => {
-      const sel = window.getSelection();
-      if (
-        !sel ||
-        sel.isCollapsed ||
-        !sel.anchorNode ||
-        !editorContainerRef.current?.contains(sel.anchorNode)
-      ) {
-        setSelectedText("");
-        setSelectionRect(null);
-        return;
-      }
-      const text = sel.toString().trim();
-      if (text.length < 2) {
-        setSelectedText("");
-        setSelectionRect(null);
-        return;
-      }
-      const range = sel.getRangeAt(0);
-      const rect = range.getBoundingClientRect();
-      setSelectedText(text);
-      setSelectionRect(rect);
+      if (selectionTimer.current) clearTimeout(selectionTimer.current);
+      selectionTimer.current = setTimeout(() => {
+        const sel = window.getSelection();
+        if (
+          !sel ||
+          sel.isCollapsed ||
+          !sel.anchorNode ||
+          !editorContainerRef.current?.contains(sel.anchorNode)
+        ) {
+          setSelectedText("");
+          setSelectionRect(null);
+          return;
+        }
+        const text = sel.toString().trim();
+        if (text.length < 2) {
+          setSelectedText("");
+          setSelectionRect(null);
+          return;
+        }
+        const range = sel.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        setSelectedText(text);
+        setSelectionRect(rect);
+      }, 100);
     };
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -811,6 +816,7 @@ function InnerEditor({
     return () => {
       document.removeEventListener("selectionchange", handleSelectionChange);
       document.removeEventListener("keydown", handleKeyDown);
+      if (selectionTimer.current) clearTimeout(selectionTimer.current);
     };
   }, []);
 

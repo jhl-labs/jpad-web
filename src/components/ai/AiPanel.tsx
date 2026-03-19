@@ -24,6 +24,7 @@ import {
   WandSparkles,
 } from "lucide-react";
 import { parseSSEStream } from "@/lib/sseUtils";
+import { renderMarkdown } from "@/lib/utils/renderMarkdown";
 
 interface AiPanelProps {
   workspaceId: string;
@@ -161,6 +162,7 @@ export function AiPanel({
   const [expandedAction, setExpandedAction] = useState<WritingAction | null>(null);
   const [copyFeedback, setCopyFeedback] = useState(false);
   const [streamingDone, setStreamingDone] = useState(false);
+  const [resultHtml, setResultHtml] = useState("");
   const resultRef = useRef<HTMLDivElement>(null);
   const lastActionRef = useRef<WritingAction | null>(null);
 
@@ -178,10 +180,36 @@ export function AiPanel({
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
+  const [messagesHtml, setMessagesHtml] = useState<Record<number, string>>({});
   const [usePageContext, setUsePageContext] = useState(true);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const dbHistoryLoaded = useRef(false);
+
+  // Render writing result as markdown HTML when streaming completes
+  useEffect(() => {
+    if (streamingDone && result) {
+      renderMarkdown(result).then(setResultHtml).catch(() => setResultHtml(""));
+    } else if (!result) {
+      setResultHtml("");
+    }
+  }, [streamingDone, result]);
+
+  // Render assistant messages as markdown HTML
+  useEffect(() => {
+    const newHtmlMap: Record<number, string> = {};
+    let cancelled = false;
+    const tasks = messages.map(async (msg, idx) => {
+      if (msg.role === "assistant") {
+        const html = await renderMarkdown(msg.content);
+        if (!cancelled) newHtmlMap[idx] = html;
+      }
+    });
+    Promise.all(tasks).then(() => {
+      if (!cancelled) setMessagesHtml(newHtmlMap);
+    });
+    return () => { cancelled = true; };
+  }, [messages]);
 
   // Persist chat messages to sessionStorage
   useEffect(() => {
@@ -789,6 +817,14 @@ export function AiPanel({
 
               {result && (
                 <>
+                  {streamingDone && resultHtml ? (
+                    <div
+                      ref={resultRef}
+                      className="px-3 py-2.5 text-sm overflow-auto leading-relaxed prose prose-sm max-w-none"
+                      style={{ maxHeight: 280 }}
+                      dangerouslySetInnerHTML={{ __html: resultHtml }}
+                    />
+                  ) : (
                   <div
                     ref={resultRef}
                     className="px-3 py-2.5 text-sm whitespace-pre-wrap overflow-auto leading-relaxed"
@@ -805,6 +841,7 @@ export function AiPanel({
                       />
                     )}
                   </div>
+                  )}
 
                   {/* Streaming status + character count */}
                   <div
@@ -946,6 +983,16 @@ export function AiPanel({
                     <Bot size={13} />
                   </div>
                 )}
+                {msg.role === "assistant" && messagesHtml[idx] ? (
+                  <div
+                    className="max-w-[80%] px-3 py-2 rounded-2xl text-sm leading-relaxed prose prose-sm max-w-none"
+                    style={{
+                      background: "var(--sidebar-bg)",
+                      borderBottomLeftRadius: "4px",
+                    }}
+                    dangerouslySetInnerHTML={{ __html: messagesHtml[idx] }}
+                  />
+                ) : (
                 <div
                   className="max-w-[80%] px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap leading-relaxed"
                   style={{
@@ -958,6 +1005,7 @@ export function AiPanel({
                 >
                   {msg.content}
                 </div>
+                )}
                 {msg.role === "user" && (
                   <div
                     className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5"
