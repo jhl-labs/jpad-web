@@ -1,11 +1,15 @@
-function sanitizeHtml(html: string): string {
-  return html
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-    .replace(/\son\w+\s*=/gi, ' data-removed=')
-    .replace(/<iframe\b[^>]*>/gi, '')
-    .replace(/<object\b[^>]*>/gi, '')
-    .replace(/<embed\b[^>]*>/gi, '')
-    .replace(/javascript:/gi, 'removed:');
+import { unified } from "unified";
+import rehypeParse from "rehype-parse";
+import rehypeSanitize from "rehype-sanitize";
+import rehypeStringify from "rehype-stringify";
+
+async function sanitizeHtml(html: string): Promise<string> {
+  const result = await unified()
+    .use(rehypeParse, { fragment: true })
+    .use(rehypeSanitize)
+    .use(rehypeStringify)
+    .process(html);
+  return String(result);
 }
 
 interface NavItem {
@@ -14,7 +18,7 @@ interface NavItem {
   active?: boolean;
 }
 
-export function ReadOnlyDocument({
+export async function ReadOnlyDocument({
   workspaceName,
   title,
   html,
@@ -77,7 +81,7 @@ export function ReadOnlyDocument({
             {title}
           </h1>
         </div>
-        <article className="prose max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(html) }} />
+        <article className="prose max-w-none" dangerouslySetInnerHTML={{ __html: await sanitizeHtml(html) }} />
       </main>
     </div>
   );
