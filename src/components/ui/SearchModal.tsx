@@ -110,6 +110,12 @@ export function SearchModal({ workspaceId, isOpen, onClose }: SearchModalProps) 
     }
   }, [isOpen, doSearch]);
 
+  // 키보드 선택 시 해당 항목이 보이도록 스크롤
+  useEffect(() => {
+    const el = document.querySelector(`[data-search-index="${selectedIndex}"]`);
+    el?.scrollIntoView({ block: "nearest" });
+  }, [selectedIndex]);
+
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === "ArrowDown") {
       e.preventDefault();
@@ -185,6 +191,7 @@ export function SearchModal({ workspaceId, isOpen, onClose }: SearchModalProps) 
           {results.map((result, i) => (
             <button
               key={result.id}
+              data-search-index={i}
               onClick={() => navigateTo(result)}
               className="w-full flex items-start gap-3 px-4 py-3 text-sm text-left"
               style={{

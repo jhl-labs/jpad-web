@@ -29,7 +29,21 @@ export default function RootLayout({
   // next-intl 등으로 다국어(en, ja, zh 등) 지원 예정.
   // 클라이언트에서 locale 감지: typeof window !== "undefined" ? navigator.language : "ko"
   return (
-    <html lang="ko">
+    <html lang="ko" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `
+          (function() {
+            try {
+              var theme = localStorage.getItem('theme');
+              if (theme === 'dark' || theme === 'light') {
+                document.documentElement.setAttribute('data-theme', theme);
+              } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+              }
+            } catch(e) {}
+          })();
+        `}} />
+      </head>
       <body>
         <Providers>{children}</Providers>
         <ServiceWorkerRegistration />

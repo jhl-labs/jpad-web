@@ -195,22 +195,16 @@ export default function PageEditorPage() {
 
   useEffect(() => {
     fetchPage();
-    // 브레드크럼을 위한 페이지 목록 및 워크스페이스 정보 가져오기
-    fetch(`/api/pages?workspaceId=${workspaceId}`)
-      .then((r) => r.json())
-      .then((pages: BreadcrumbPage[]) => setAllPages(pages))
-      .catch((error: unknown) => { console.warn("[PageEditor] pages list fetch failed:", error); });
-    fetch(`/api/workspaces/${workspaceId}`)
-      .then((r) => r.json())
-      .then((ws: WorkspaceInfo) => setWorkspaceInfo(ws))
-      .catch((error: unknown) => { console.warn("[PageEditor] workspace info fetch failed:", error); });
-    // 즐겨찾기 상태 확인
-    fetch(`/api/favorites?workspaceId=${workspaceId}`)
-      .then((r) => r.json())
-      .then((favs: { id: string }[]) => {
-        setIsFavorited(favs.some((f) => f.id === pageId));
-      })
-      .catch((error: unknown) => { console.warn("[PageEditor] favorites fetch failed:", error); });
+    // 브레드크럼을 위한 페이지 목록, 워크스페이스 정보, 즐겨찾기 상태를 병렬로 가져오기
+    Promise.all([
+      fetch(`/api/pages?workspaceId=${workspaceId}`).then((r) => r.json()).catch((error: unknown) => { console.warn("[PageEditor] pages list fetch failed:", error); return []; }),
+      fetch(`/api/workspaces/${workspaceId}`).then((r) => r.json()).catch((error: unknown) => { console.warn("[PageEditor] workspace info fetch failed:", error); return null; }),
+      fetch(`/api/favorites?workspaceId=${workspaceId}`).then((r) => r.json()).catch((error: unknown) => { console.warn("[PageEditor] favorites fetch failed:", error); return []; }),
+    ]).then(([pages, ws, favs]: [BreadcrumbPage[], WorkspaceInfo | null, { id: string }[]]) => {
+      setAllPages(pages);
+      if (ws) setWorkspaceInfo(ws);
+      setIsFavorited(favs.some((f) => f.id === pageId));
+    });
 
     return () => {
       if (titleTimeout.current) clearTimeout(titleTimeout.current);
@@ -577,11 +571,12 @@ export default function PageEditorPage() {
   }, [showMoreMenu]);
 
   function handleExportMarkdown() {
+    const safeFilename = (title || "문서").replace(/[/\\?%*:|"<>]/g, "_");
     const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${title || "문서"}.md`;
+    a.download = `${safeFilename}.md`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -655,7 +650,8 @@ export default function PageEditorPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${title || "문서"}.html`;
+    const safeDownloadName = (title || "문서").replace(/[/\\?%*:|"<>]/g, "_");
+    a.download = `${safeDownloadName}.html`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
