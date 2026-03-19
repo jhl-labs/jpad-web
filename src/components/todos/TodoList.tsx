@@ -117,7 +117,16 @@ export function TodoList({ workspaceId }: TodoListProps) {
   const [filterCompleted, setFilterCompleted] = useState<"all" | "active" | "completed">("all");
   const [sortBy, setSortBy] = useState<"priority" | "dueDate" | "created">("created");
   const [submitting, setSubmitting] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [errorToast, setErrorToast] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // 삭제 확인 3초 후 자동 취소
+  useEffect(() => {
+    if (!confirmDeleteId) return;
+    const timer = setTimeout(() => setConfirmDeleteId(null), 3000);
+    return () => clearTimeout(timer);
+  }, [confirmDeleteId]);
 
   const fetchTodos = useCallback(async () => {
     try {
@@ -176,6 +185,8 @@ export function TodoList({ workspaceId }: TodoListProps) {
       inputRef.current?.focus();
     } catch (e) {
       console.error("Failed to create todo:", e);
+      setErrorToast("할 일 추가에 실패했습니다");
+      setTimeout(() => setErrorToast(null), 3000);
     } finally {
       setSubmitting(false);
     }
@@ -205,6 +216,8 @@ export function TodoList({ workspaceId }: TodoListProps) {
       setTodos((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
     } catch (e) {
       console.error("Failed to toggle todo:", e);
+      setErrorToast("할 일 상태 변경에 실패했습니다");
+      setTimeout(() => setErrorToast(null), 3000);
       setTodos((prev) =>
         prev.map((t) => (t.id === todo.id ? todo : t))
       );
@@ -226,11 +239,17 @@ export function TodoList({ workspaceId }: TodoListProps) {
       setTodos((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
     } catch (e) {
       console.error("Failed to update todo:", e);
+      setErrorToast("할 일 수정에 실패했습니다");
+      setTimeout(() => setErrorToast(null), 3000);
     }
   };
 
   const deleteTodo = async (todoId: string) => {
-    if (!confirm("이 할 일을 삭제하시겠습니까?")) return;
+    if (confirmDeleteId !== todoId) {
+      setConfirmDeleteId(todoId);
+      return;
+    }
+    setConfirmDeleteId(null);
     setTodos((prev) => prev.filter((t) => t.id !== todoId));
 
     try {
@@ -241,6 +260,8 @@ export function TodoList({ workspaceId }: TodoListProps) {
       if (!res.ok) throw new Error("Failed to delete");
     } catch (e) {
       console.error("Failed to delete todo:", e);
+      setErrorToast("할 일 삭제에 실패했습니다");
+      setTimeout(() => setErrorToast(null), 3000);
       fetchTodos();
     }
   };
@@ -286,6 +307,8 @@ export function TodoList({ workspaceId }: TodoListProps) {
       if (!res.ok) throw new Error("Failed to update sort order");
     } catch (e) {
       console.error("Failed to update sort order:", e);
+      setErrorToast("순서 변경에 실패했습니다");
+      setTimeout(() => setErrorToast(null), 3000);
       fetchTodos();
     }
   };
@@ -509,14 +532,23 @@ export function TodoList({ workspaceId }: TodoListProps) {
                 members={members}
                 onToggle={() => toggleTodo(todo)}
                 onDelete={() => deleteTodo(todo.id)}
+                onCancelDelete={() => setConfirmDeleteId(null)}
                 onUpdate={(updates) => updateTodo(todo.id, updates)}
                 isOverdue={isOverdue(todo.dueDate)}
                 formatDate={formatDate}
+                isConfirmingDelete={confirmDeleteId === todo.id}
               />
             ))}
           </div>
         </SortableContext>
       </DndContext>
+
+      {errorToast && (
+        <div className="fixed bottom-4 right-4 z-[100] px-4 py-2.5 rounded-lg shadow-lg text-sm"
+          style={{ background: "var(--foreground)", color: "var(--background)" }}>
+          {errorToast}
+        </div>
+      )}
     </div>
   );
 }
@@ -526,9 +558,11 @@ function SortableTodoItem(props: {
   members: WorkspaceMember[];
   onToggle: () => void;
   onDelete: () => void;
+  onCancelDelete: () => void;
   onUpdate: (updates: Partial<Pick<Todo, "title" | "dueDate">> & { assigneeId?: string | null }) => void;
   isOverdue: boolean;
   formatDate: (d: string) => string;
+  isConfirmingDelete: boolean;
 }) {
   const {
     attributes,
@@ -557,19 +591,23 @@ function TodoItem({
   members,
   onToggle,
   onDelete,
+  onCancelDelete,
   onUpdate,
   isOverdue: overdue,
   formatDate,
   dragHandleProps,
+  isConfirmingDelete,
 }: {
   todo: Todo;
   members: WorkspaceMember[];
   onToggle: () => void;
   onDelete: () => void;
+  onCancelDelete: () => void;
   onUpdate: (updates: Partial<Pick<Todo, "title" | "dueDate">> & { assigneeId?: string | null }) => void;
   isOverdue: boolean;
   formatDate: (d: string) => string;
   dragHandleProps?: Record<string, unknown>;
+  isConfirmingDelete: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -857,20 +895,46 @@ function TodoItem({
       </div>
 
       {/* Delete */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onDelete();
-        }}
-        className="border-none bg-transparent cursor-pointer p-1 rounded shrink-0 transition-opacity"
-        style={{
-          color: "var(--danger, #ef4444)",
-          opacity: hovered ? 0.7 : 0,
-        }}
-        title="삭제"
-      >
-        <Trash2 size={14} />
-      </button>
+      {isConfirmingDelete ? (
+        <div className="flex items-center gap-1 shrink-0">
+          <span className="text-xs" style={{ color: "var(--danger, #ef4444)" }}>정말 삭제?</span>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            className="border-none bg-transparent cursor-pointer px-1.5 py-0.5 rounded text-xs font-medium"
+            style={{ color: "white", background: "var(--danger, #ef4444)" }}
+          >
+            삭제
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onCancelDelete();
+            }}
+            className="border-none bg-transparent cursor-pointer px-1.5 py-0.5 rounded text-xs"
+            style={{ color: "var(--muted)", border: "1px solid var(--border)" }}
+          >
+            취소
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          className="border-none bg-transparent cursor-pointer p-1 rounded shrink-0 transition-opacity"
+          style={{
+            color: "var(--danger, #ef4444)",
+            opacity: hovered ? 0.7 : 0,
+          }}
+          title="삭제"
+        >
+          <Trash2 size={14} />
+        </button>
+      )}
     </div>
   );
 }

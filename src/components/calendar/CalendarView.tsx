@@ -118,6 +118,7 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
   const [formLocation, setFormLocation] = useState("");
   const [formRecurrence, setFormRecurrence] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successToast, setSuccessToast] = useState<string | null>(null);
 
   // Google Calendar 연동 상태
   const [googleConnected, setGoogleConnected] = useState(false);
@@ -170,6 +171,14 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
       return () => clearTimeout(timer);
     }
   }, [syncResult]);
+
+  // 성공 토스트 자동 숨김
+  useEffect(() => {
+    if (successToast) {
+      const timer = setTimeout(() => setSuccessToast(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [successToast]);
 
   function handleGoogleConnect() {
     window.location.href = `/api/workspaces/${workspaceId}/google-calendar/connect`;
@@ -354,6 +363,7 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
       setShowModal(false);
       resetForm();
       fetchEvents();
+      setSuccessToast("일정이 저장되었습니다");
     } catch (error) {
       setErrorMessage("일정 저장에 실패했습니다. 다시 시도해주세요.");
     }
@@ -378,6 +388,7 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
       setShowModal(false);
       resetForm();
       fetchEvents();
+      setSuccessToast("일정이 삭제되었습니다");
     } catch (error) {
       setErrorMessage("일정 삭제에 실패했습니다. 다시 시도해주세요.");
     }
@@ -406,6 +417,7 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
       setQuickAddDate(null);
       setQuickAddTitle("");
       fetchEvents();
+      setSuccessToast("일정이 저장되었습니다");
     } catch {
       setErrorMessage("일정 저장에 실패했습니다. 다시 시도해주세요.");
     }
@@ -1522,6 +1534,13 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {successToast && (
+        <div className="fixed bottom-4 right-4 z-[100] px-4 py-2.5 rounded-lg shadow-lg text-sm"
+          style={{ background: "var(--foreground)", color: "var(--background)" }}>
+          {successToast}
         </div>
       )}
     </div>

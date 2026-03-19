@@ -59,6 +59,7 @@ export function KnowledgeGraph({ workspaceId, currentPageId }: KnowledgeGraphPro
   const [nodeCount, setNodeCount] = useState(0);
   const [edgeCount, setEdgeCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(0);
 
   // Camera state
@@ -101,10 +102,14 @@ export function KnowledgeGraph({ workspaceId, currentPageId }: KnowledgeGraphPro
   }, []);
 
   // Fetch data
-  useEffect(() => {
+  const fetchData = useCallback(() => {
     setLoading(true);
+    setError(null);
     fetch(`/api/workspaces/${workspaceId}/graph`)
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
       .then((data) => {
         // Count connections per node
         const connectionMap = new Map<string, number>();
@@ -140,10 +145,16 @@ export function KnowledgeGraph({ workspaceId, currentPageId }: KnowledgeGraphPro
         setEdgeCount(data.edges.length);
         setLoading(false);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error("[KnowledgeGraph] fetch failed:", err);
+        setError("그래프 데이터를 불러올 수 없습니다");
         setLoading(false);
       });
   }, [workspaceId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   // Screen to world coordinates
   const screenToWorld = useCallback((sx: number, sy: number) => {
@@ -563,11 +574,31 @@ export function KnowledgeGraph({ workspaceId, currentPageId }: KnowledgeGraphPro
       cam.scale = newScale;
     }
 
+    function handleTouchStart(e: TouchEvent) {
+      const touch = e.touches[0];
+      if (!touch) return;
+      handleMouseDown({ clientX: touch.clientX, clientY: touch.clientY, button: 0 } as MouseEvent);
+    }
+
+    function handleTouchMove(e: TouchEvent) {
+      e.preventDefault();
+      const touch = e.touches[0];
+      if (!touch) return;
+      handleMouseMove({ clientX: touch.clientX, clientY: touch.clientY } as MouseEvent);
+    }
+
+    function handleTouchEnd() {
+      handleMouseUp({} as MouseEvent);
+    }
+
     canvas.addEventListener("mousedown", handleMouseDown);
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("mouseup", handleMouseUp);
     canvas.addEventListener("mouseleave", handleMouseLeave);
     canvas.addEventListener("wheel", handleWheel, { passive: false });
+    canvas.addEventListener("touchstart", handleTouchStart, { passive: true });
+    canvas.addEventListener("touchmove", handleTouchMove, { passive: false });
+    canvas.addEventListener("touchend", handleTouchEnd);
 
     return () => {
       canvas.removeEventListener("mousedown", handleMouseDown);
@@ -575,6 +606,9 @@ export function KnowledgeGraph({ workspaceId, currentPageId }: KnowledgeGraphPro
       window.removeEventListener("mouseup", handleMouseUp);
       canvas.removeEventListener("mouseleave", handleMouseLeave);
       canvas.removeEventListener("wheel", handleWheel);
+      canvas.removeEventListener("touchstart", handleTouchStart);
+      canvas.removeEventListener("touchmove", handleTouchMove);
+      canvas.removeEventListener("touchend", handleTouchEnd);
     };
   }, [workspaceId, router, screenToWorld, findNodeAt]);
 
@@ -666,8 +700,20 @@ export function KnowledgeGraph({ workspaceId, currentPageId }: KnowledgeGraphPro
         </div>
       )}
 
+      {/* Error state */}
+      {!loading && error && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="flex flex-col items-center justify-center h-full" style={{ color: "var(--muted)" }}>
+            <p className="text-sm">{error}</p>
+            <button onClick={fetchData} className="mt-2 text-xs underline" style={{ color: "var(--primary)" }}>
+              다시 시도
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Empty state */}
-      {!loading && nodeCount === 0 && (
+      {!loading && !error && nodeCount === 0 && (
         <div className="absolute inset-0 flex items-center justify-center">
           <div
             className="px-6 py-4 rounded-lg text-sm text-center"
