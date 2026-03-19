@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePlatformAdmin } from "@/lib/auth/helpers";
 import { logError } from "@/lib/logger";
+import { rateLimitRedis } from "@/lib/rateLimit";
 import { recordAuditLog, createAuditActor } from "@/lib/audit";
 
 // DELETE — 사용자 삭제
@@ -12,6 +13,11 @@ export async function DELETE(
   try {
     const admin = await requirePlatformAdmin();
     const { userId } = await params;
+
+    const allowed = await rateLimitRedis(`admin-user:${admin.id}`, 30, 60_000);
+    if (!allowed) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
 
     if (userId === admin.id) {
       return NextResponse.json({ error: "Cannot delete yourself" }, { status: 400 });
@@ -61,6 +67,12 @@ export async function PATCH(
   try {
     const admin = await requirePlatformAdmin();
     const { userId } = await params;
+
+    const allowed = await rateLimitRedis(`admin-user:${admin.id}`, 30, 60_000);
+    if (!allowed) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     const body = await req.json();
 
     if (userId === admin.id) {

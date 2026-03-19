@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth/helpers";
 import { getPageAccessContext } from "@/lib/pageAccess";
+import { recordAuditLog, createAuditActor } from "@/lib/audit";
 import { logError } from "@/lib/logger";
 import { rateLimitRedis } from "@/lib/rateLimit";
 
@@ -90,6 +91,12 @@ export async function POST(
       },
     });
 
+    await recordAuditLog({
+      action: "page.locked",
+      actor: createAuditActor(user),
+      pageId,
+    });
+
     return NextResponse.json({
       isLocked: page.isLocked,
       lockedById: page.lockedById,
@@ -147,6 +154,12 @@ export async function DELETE(
         lockedById: null,
         lockedAt: null,
       },
+    });
+
+    await recordAuditLog({
+      action: "page.unlocked",
+      actor: createAuditActor(user),
+      pageId,
     });
 
     return NextResponse.json({ isLocked: false });

@@ -35,6 +35,18 @@ export async function PATCH(req: NextRequest) {
 
     const { currentPassword, newPassword } = parsed.data;
 
+    // Password strength validation
+    const hasUppercase = /[A-Z]/.test(newPassword);
+    const hasLowercase = /[a-z]/.test(newPassword);
+    const hasNumber = /[0-9]/.test(newPassword);
+    const hasSpecial = /[!@#$%^&*()_+\-=]/.test(newPassword);
+    if (!hasUppercase || !hasLowercase || !hasNumber || !hasSpecial) {
+      return NextResponse.json(
+        { error: "Password must contain uppercase, lowercase, number, and special character" },
+        { status: 400 }
+      );
+    }
+
     // Fetch user with hashedPassword
     const dbUser = await prisma.user.findUnique({
       where: { id: user.id },

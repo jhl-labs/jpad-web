@@ -4,6 +4,7 @@ import { requireAuth, checkWorkspaceAccess } from "@/lib/auth/helpers";
 import { createAuditActor, getAuditRequestContext, recordAuditLog } from "@/lib/audit";
 import { initRepo, savePage } from "@/lib/git/repository";
 import { handleApiError } from "@/lib/apiErrorHandler";
+import { rateLimitRedis } from "@/lib/rateLimit";
 import { getPageAccessContext, listAccessiblePages } from "@/lib/pageAccess";
 import {
   enqueuePageReindexJob,
@@ -74,6 +75,12 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const user = await requireAuth();
+
+    const allowed = await rateLimitRedis(`page-create:${user.id}`, 30, 60_000);
+    if (!allowed) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     const requestContext = getAuditRequestContext(req);
     const body = await req.json();
 
