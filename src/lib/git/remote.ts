@@ -193,11 +193,17 @@ export async function pullFromRemote(
     }
 
     if (!canFastForward) {
-      // Histories diverged — force reset local to remote state
-      const localRefPath = path.join(dir, ".git", "refs", "heads", localBranch);
-      await fs.promises.mkdir(path.dirname(localRefPath), { recursive: true });
-      await fs.promises.writeFile(localRefPath, remoteOid + "\n");
+      // Histories diverged — cannot auto-merge
+      // Instead of destroying local data, throw an actionable error
+      throw new Error(
+        "Pull failed: remote has diverged from local. Push first to sync your local changes, then pull."
+      );
     }
+
+    // Fast-forward: update local branch ref to remote oid
+    const localRefPath = path.join(dir, ".git", "refs", "heads", localBranch);
+    await fs.promises.mkdir(path.dirname(localRefPath), { recursive: true });
+    await fs.promises.writeFile(localRefPath, remoteOid + "\n");
 
     // Checkout the local branch to update working tree
     await git.checkout({
