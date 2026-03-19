@@ -796,6 +796,7 @@ function ThemeTab() {
 function DataTab({ workspaceId }: { workspaceId: string }) {
   const [exporting, setExporting] = useState(false);
   const [emptyingTrash, setEmptyingTrash] = useState(false);
+  const [confirmEmptyTrash, setConfirmEmptyTrash] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [stats, setStats] = useState<{ pageCount: number; attachmentCount: number } | null>(null);
 
@@ -950,9 +951,11 @@ function DataTab({ workspaceId }: { workspaceId: string }) {
   }
 
   async function handleEmptyTrash() {
-    if (!confirm("휴지통의 모든 페이지를 영구 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) {
+    if (!confirmEmptyTrash) {
+      setConfirmEmptyTrash(true);
       return;
     }
+    setConfirmEmptyTrash(false);
     setEmptyingTrash(true);
     try {
       // Get all trash items and delete each
@@ -1022,19 +1025,47 @@ function DataTab({ workspaceId }: { workspaceId: string }) {
 
       <Section title="휴지통">
         <Field label="휴지통 비우기" description="휴지통에 있는 모든 페이지를 영구 삭제합니다">
-          <button
-            onClick={handleEmptyTrash}
-            disabled={emptyingTrash}
-            className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50"
-            style={{ color: "var(--danger, #ef4444)", border: "1px solid rgba(239,68,68,0.5)" }}
-          >
-            {emptyingTrash ? (
-              <Loader2 size={14} className="animate-spin" />
-            ) : (
-              <Trash2 size={14} />
-            )}
-            {emptyingTrash ? "삭제 중..." : "전체 비우기"}
-          </button>
+          {confirmEmptyTrash ? (
+            <div className="flex items-center gap-2">
+              <span className="text-sm" style={{ color: "var(--danger, #ef4444)" }}>
+                정말 비우시겠습니까?
+              </span>
+              <button
+                onClick={handleEmptyTrash}
+                disabled={emptyingTrash}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors disabled:opacity-50"
+                style={{ background: "var(--danger, #ef4444)", color: "white" }}
+              >
+                {emptyingTrash ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <Check size={14} />
+                )}
+                {emptyingTrash ? "삭제 중..." : "확인"}
+              </button>
+              <button
+                onClick={() => setConfirmEmptyTrash(false)}
+                className="px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
+                style={{ border: "1px solid var(--border)" }}
+              >
+                취소
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={handleEmptyTrash}
+              disabled={emptyingTrash}
+              className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50"
+              style={{ color: "var(--danger, #ef4444)", border: "1px solid rgba(239,68,68,0.5)" }}
+            >
+              {emptyingTrash ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Trash2 size={14} />
+              )}
+              {emptyingTrash ? "삭제 중..." : "전체 비우기"}
+            </button>
+          )}
         </Field>
       </Section>
 

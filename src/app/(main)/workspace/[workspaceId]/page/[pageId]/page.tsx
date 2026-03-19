@@ -810,12 +810,20 @@ export default function PageEditorPage() {
               style={{ color: "var(--muted)" }}
               title="내보내기"
               aria-label="내보내기"
+              aria-expanded={showExportMenu}
+              aria-haspopup="true"
             >
               <Download size={14} />
             </button>
             {showExportMenu && (
               <div
                 className="absolute right-0 top-full mt-1 rounded-lg shadow-xl py-1 z-50"
+                role="menu"
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    setShowExportMenu(false);
+                  }
+                }}
                 style={{
                   background: "var(--background)",
                   border: "1px solid var(--border)",

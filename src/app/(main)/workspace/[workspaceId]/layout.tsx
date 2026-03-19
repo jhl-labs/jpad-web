@@ -243,6 +243,7 @@ export default function WorkspaceLayout({
           className="fixed top-3 left-3 z-30 p-2 rounded-lg"
           style={{ background: "var(--sidebar-hover)", zIndex: 30 }}
           title="사이드바 열기"
+          aria-label="사이드바 열기"
         >
           <Menu size={18} />
         </button>

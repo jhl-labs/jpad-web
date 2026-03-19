@@ -61,6 +61,7 @@ export function KnowledgeGraph({ workspaceId, currentPageId }: KnowledgeGraphPro
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(0);
+  const visibleCountRef = useRef(0);
 
   // Camera state
   const cameraRef = useRef({ x: 0, y: 0, scale: 1 });
@@ -155,6 +156,14 @@ export function KnowledgeGraph({ workspaceId, currentPageId }: KnowledgeGraphPro
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Debounced visibleCount sync (매 프레임 setState 방지)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setVisibleCount(visibleCountRef.current);
+    }, 500);
+    return () => clearInterval(timer);
+  }, []);
 
   // Screen to world coordinates
   const screenToWorld = useCallback((sx: number, sy: number) => {
@@ -334,7 +343,7 @@ export function KnowledgeGraph({ workspaceId, currentPageId }: KnowledgeGraphPro
           }
         }
       }
-      setVisibleCount(culledCount);
+      visibleCountRef.current = culledCount;
 
       const hoverId = hoverNodeRef.current;
       const highlightedIds = hoverId ? getConnectedIds(hoverId) : null;

@@ -21,7 +21,7 @@ export default async function WikiPage({
     notFound();
   }
 
-  const pageSlug = slug.join("/");
+  const pageSlug = slug.map(s => decodeURIComponent(s)).join("/");
 
   const page = await prisma.page.findFirst({
     where: {
