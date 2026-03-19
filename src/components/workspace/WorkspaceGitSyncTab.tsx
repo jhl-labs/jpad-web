@@ -94,6 +94,8 @@ export function WorkspaceGitSyncTab({ workspaceId, isOwner, showToast }: Props) 
         setSyncMode(data.gitSyncMode || "push_only");
         setSyncEnabled(data.gitSyncEnabled);
         setAutoSyncOnSave(data.gitAutoSyncOnSave);
+      } else {
+        console.error("[GitSync] fetch settings failed:", res.status);
       }
     } finally {
       setLoading(false);

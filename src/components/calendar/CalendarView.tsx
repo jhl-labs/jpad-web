@@ -123,6 +123,7 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
   // Google Calendar 연동 상태
   const [googleConnected, setGoogleConnected] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [confirmDisconnect, setConfirmDisconnect] = useState(false);
   const [syncResult, setSyncResult] = useState<{ created: number; updated: number } | null>(null);
   const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
 
@@ -204,7 +205,6 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
   }
 
   async function handleDisconnect() {
-    if (!confirm("Google Calendar 연결을 해제하시겠습니까?")) return;
     try {
       await fetch(`/api/workspaces/${workspaceId}/google-calendar`, {
         method: "DELETE",
@@ -219,10 +219,19 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
 
   const eventsByDate = useMemo(() => {
     const map: Record<string, CalendarEvent[]> = {};
-    for (const ev of events) {
-      const key = formatDate(new Date(ev.startAt));
-      if (!map[key]) map[key] = [];
-      map[key].push(ev);
+    for (const event of events) {
+      const start = new Date(event.startAt);
+      const end = event.endAt ? new Date(event.endAt) : start;
+      const current = new Date(start);
+      current.setHours(0, 0, 0, 0);
+      const endDay = new Date(end);
+      endDay.setHours(0, 0, 0, 0);
+      while (current <= endDay) {
+        const dateStr = current.toISOString().split("T")[0];
+        if (!map[dateStr]) map[dateStr] = [];
+        map[dateStr].push(event);
+        current.setDate(current.getDate() + 1);
+      }
     }
     return map;
   }, [events]);
@@ -559,28 +568,51 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
                   >
                     <RefreshCw size={14} />
                   </button>
-                  <button
-                    onClick={handleDisconnect}
-                    title="연결 해제"
-                    style={{
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      color: "var(--foreground)",
-                      padding: 2,
-                      display: "flex",
-                      alignItems: "center",
-                      opacity: 0.5,
-                    }}
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLButtonElement).style.opacity = "1";
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLButtonElement).style.opacity = "0.5";
-                    }}
-                  >
-                    <Unlink size={14} />
-                  </button>
+                  {confirmDisconnect ? (
+                    <span className="flex items-center gap-1 text-xs">
+                      <span style={{ color: "#ef4444" }}>정말 해제?</span>
+                      <button
+                        onClick={() => { handleDisconnect(); setConfirmDisconnect(false); }}
+                        className="hover:opacity-70 px-1 rounded"
+                        style={{ color: "#ef4444", background: "none", border: "none", cursor: "pointer", fontSize: 12 }}
+                      >
+                        확인
+                      </button>
+                      <button
+                        onClick={() => setConfirmDisconnect(false)}
+                        className="hover:opacity-70 px-1 rounded"
+                        style={{ color: "var(--muted)", background: "none", border: "none", cursor: "pointer", fontSize: 12 }}
+                      >
+                        취소
+                      </button>
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setConfirmDisconnect(true);
+                        setTimeout(() => setConfirmDisconnect(false), 5000);
+                      }}
+                      title="연결 해제"
+                      style={{
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        color: "var(--foreground)",
+                        padding: 2,
+                        display: "flex",
+                        alignItems: "center",
+                        opacity: 0.5,
+                      }}
+                      onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLButtonElement).style.opacity = "1";
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLButtonElement).style.opacity = "0.5";
+                      }}
+                    >
+                      <Unlink size={14} />
+                    </button>
+                  )}
                 </>
               )}
             </div>
@@ -1034,6 +1066,7 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
           <div
             role="dialog"
             aria-modal="true"
+            aria-label={editingEvent ? "일정 수정" : "일정 추가"}
             onClick={(e) => e.stopPropagation()}
             style={{
               background: "var(--background)",

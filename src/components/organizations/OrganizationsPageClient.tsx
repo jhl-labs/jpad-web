@@ -985,7 +985,18 @@ export function OrganizationsPageClient() {
                             </div>
                             <div>
                               <div>Bearer Token</div>
-                              <div className="break-all mt-1">{createdScimToken.token}</div>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="break-all">{createdScimToken.token}</span>
+                                <button
+                                  onClick={() => {
+                                    void navigator.clipboard.writeText(createdScimToken.token);
+                                  }}
+                                  className="ml-2 px-2 py-1 rounded text-xs shrink-0"
+                                  style={{ background: "var(--sidebar-bg)", border: "1px solid var(--border)" }}
+                                >
+                                  복사
+                                </button>
+                              </div>
                             </div>
                           </div>
                         )}

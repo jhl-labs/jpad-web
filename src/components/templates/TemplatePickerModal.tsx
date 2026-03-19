@@ -82,8 +82,8 @@ export function TemplatePickerModal({
         setBuiltIn(data.builtIn || []);
         setCustom(data.custom || []);
       }
-    } catch (_error) {
-      // ignore
+    } catch (error) {
+      console.error("[TemplatePickerModal] fetch failed:", error);
     } finally {
       setLoading(false);
     }
@@ -170,8 +170,8 @@ export function TemplatePickerModal({
         setSaveIcon("");
         fetchTemplates();
       }
-    } catch (_error) {
-      // ignore
+    } catch (error) {
+      console.error("[TemplatePickerModal] save failed:", error);
     } finally {
       setSaving(false);
     }

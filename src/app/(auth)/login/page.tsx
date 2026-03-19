@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import {
   getSamlConfig,
   isCredentialsLoginEnabled,
@@ -11,10 +12,12 @@ export default function LoginPage() {
   const samlConfig = getSamlConfig();
 
   return (
-    <LoginPageClient
-      allowCredentialsLogin={isCredentialsLoginEnabled()}
-      allowSelfSignup={isSelfSignupEnabled()}
-      samlProviderName={samlConfig?.name || null}
-    />
+    <Suspense>
+      <LoginPageClient
+        allowCredentialsLogin={isCredentialsLoginEnabled()}
+        allowSelfSignup={isSelfSignupEnabled()}
+        samlProviderName={samlConfig?.name || null}
+      />
+    </Suspense>
   );
 }

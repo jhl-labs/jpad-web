@@ -59,7 +59,12 @@ export function RegisterPageClient({
       return;
     }
 
-    await signIn("credentials", { email, password, redirect: false });
+    const result = await signIn("credentials", { email, password, redirect: false });
+    if (result?.error) {
+      setError("계정이 생성되었지만 자동 로그인에 실패했습니다. 로그인 페이지에서 다시 시도해주세요.");
+      setLoading(false);
+      return;
+    }
     router.push("/workspace");
   }
 

@@ -55,6 +55,7 @@ export function ShareDialog({
   const [pageAllowedUserIds, setPageAllowedUserIds] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -160,7 +161,6 @@ export function ShareDialog({
 
   async function handleRemove(userId: string) {
     if (!canManageWorkspace) return;
-    if (!confirm("이 멤버를 워크스페이스에서 제거하시겠습니까?")) return;
 
     const res = await fetch(`/api/workspaces/${workspaceId}/members`, {
       method: "DELETE",
@@ -171,6 +171,7 @@ export function ShareDialog({
     if (res.ok) {
       setMembers((prev) => prev.filter((member) => member.user.id !== userId));
     }
+    setConfirmRemoveId(null);
   }
 
   async function handleTogglePublicWiki() {
@@ -371,6 +372,11 @@ export function ShareDialog({
                   제한된 멤버만
                 </button>
               </div>
+              {pageAccessMode === "restricted" && pageAllowedUserIds.length === 0 && (
+                <p className="text-xs mt-1" style={{ color: "#ef4444" }}>
+                  아래에서 접근 가능한 사용자를 선택하세요. 현재 관리자 외 접근 불가 상태입니다.
+                </p>
+              )}
               {pageAccessMode === "restricted" && (
                 <div
                   className="rounded-md p-3 mb-4"
@@ -636,13 +642,33 @@ export function ShareDialog({
                           IdP 관리
                         </span>
                       ) : canManageWorkspace && member.role !== "owner" && (
-                        <button
-                          onClick={() => handleRemove(member.user.id)}
-                          className="text-xs hover:underline"
-                          style={{ color: "var(--danger)" }}
-                        >
-                          제거
-                        </button>
+                        confirmRemoveId === member.user.id ? (
+                          <span className="flex items-center gap-1 text-xs">
+                            <span style={{ color: "#ef4444" }}>제거?</span>
+                            <button
+                              onClick={() => handleRemove(member.user.id)}
+                              className="hover:underline"
+                              style={{ color: "#ef4444" }}
+                            >
+                              확인
+                            </button>
+                            <button
+                              onClick={() => setConfirmRemoveId(null)}
+                              className="hover:underline"
+                              style={{ color: "var(--muted)" }}
+                            >
+                              취소
+                            </button>
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => setConfirmRemoveId(member.user.id)}
+                            className="text-xs hover:underline"
+                            style={{ color: "var(--danger)" }}
+                          >
+                            제거
+                          </button>
+                        )
                       )}
                     </div>
                   </div>
