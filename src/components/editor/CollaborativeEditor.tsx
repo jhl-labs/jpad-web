@@ -285,30 +285,17 @@ function getCustomSlashMenuItems(
       subtext: "추후 지원 예정입니다",
       group: "기본 블록",
       aliases: ["mention", "멘션", "@"],
-      onItemClick: () => {
-        alert("멘션 기능은 추후 지원 예정입니다");
-      },
+      hidden: true,
+      onItemClick: () => {},
     },
     {
       title: "임베드",
       subtext: "URL을 삽입합니다 (YouTube, 웹 링크 등)",
       group: "기본 블록",
       aliases: ["embed", "youtube", "링크", "임베드"],
+      hidden: true,
       onItemClick: () => {
-        const url = prompt("URL을 입력하세요:");
-        if (url) {
-          const cursor = editor.getTextCursorPosition();
-          if (cursor?.block) {
-            editor.insertBlocks(
-              [{
-                type: "paragraph",
-                content: [{ type: "link", href: url, content: [{ type: "text", text: url, styles: {} }] }],
-              }],
-              cursor.block,
-              "after"
-            );
-          }
-        }
+        window.dispatchEvent(new CustomEvent("editor:embed-prompt"));
       },
     },
   ];

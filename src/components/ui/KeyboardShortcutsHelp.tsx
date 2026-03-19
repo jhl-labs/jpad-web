@@ -60,6 +60,9 @@ export function KeyboardShortcutsHelp() {
       {/* Modal */}
       <div
         className="relative rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+        role="dialog"
+        aria-modal="true"
+        aria-label="키보드 단축키"
         style={{ background: "var(--background)", border: "1px solid var(--border)" }}
         onClick={(e) => e.stopPropagation()}
       >

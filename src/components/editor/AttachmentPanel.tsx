@@ -209,6 +209,7 @@ export function AttachmentPanel({
         onClick={() => setExpanded(!expanded)}
         className="flex items-center gap-1 text-sm"
         style={{ color: "var(--muted)" }}
+        aria-expanded={expanded}
       >
         <Paperclip size={14} />{" "}
         {attachments.length > 0

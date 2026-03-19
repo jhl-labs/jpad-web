@@ -45,6 +45,7 @@ export function BacklinkPanel({
         onClick={() => setExpanded(!expanded)}
         className="flex items-center gap-1 text-sm"
         style={{ color: "var(--muted)" }}
+        aria-expanded={expanded}
       >
         <Link2 size={14} /> {total}개 백링크
       </button>

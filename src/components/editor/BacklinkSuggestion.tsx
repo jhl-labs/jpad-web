@@ -158,6 +158,7 @@ export function BacklinkSuggestion({
   return (
     <div
       className="fixed z-[60] rounded-lg shadow-lg py-1 max-h-48 overflow-auto"
+      role="listbox"
       style={{
         top: position.top,
         left: position.left,
@@ -169,6 +170,8 @@ export function BacklinkSuggestion({
       {suggestions.map((s, i) => (
         <button
           key={s.id}
+          role="option"
+          aria-selected={i === selectedIndex}
           className="w-full text-left px-3 py-1.5 text-sm flex items-center gap-2"
           style={{
             background: i === selectedIndex ? "var(--sidebar-hover)" : undefined,
