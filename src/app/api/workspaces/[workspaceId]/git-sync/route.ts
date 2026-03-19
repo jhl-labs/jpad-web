@@ -63,7 +63,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const allowed = await rateLimitRedis(`git-sync:patch:${user.id}`, 10, 60_000);
+    const allowed = await rateLimitRedis(`git-sync:patch:${user.id}`, 30, 60_000);
     if (!allowed) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
