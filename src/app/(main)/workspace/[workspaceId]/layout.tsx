@@ -195,8 +195,7 @@ export default function WorkspaceLayout({
     fetchPages();
   }
 
-  async function handleDeletePage(pageId: string, title: string) {
-    if (!confirm(`"${title}" 페이지를 삭제하시겠습니까?\n하위 페이지도 함께 삭제될 수 있습니다.`)) return;
+  async function handleDeletePage(pageId: string, _title: string) {
     const res = await fetch(`/api/pages/${pageId}`, { method: "DELETE" });
     if (res.ok) {
       await fetchPages();

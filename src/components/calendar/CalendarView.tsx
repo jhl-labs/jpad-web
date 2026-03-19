@@ -103,6 +103,7 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
   const [showModal, setShowModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const deleteTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [, setSelectedDate] = useState<string | null>(null);
   const [quickAddDate, setQuickAddDate] = useState<string | null>(null);
   const [quickAddTitle, setQuickAddTitle] = useState("");
@@ -379,8 +380,9 @@ export default function CalendarView({ workspaceId }: CalendarViewProps) {
   }
 
   function requestDelete() {
+    if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
     setConfirmingDelete(true);
-    setTimeout(() => {
+    deleteTimerRef.current = setTimeout(() => {
       setConfirmingDelete(false);
     }, 4000);
   }

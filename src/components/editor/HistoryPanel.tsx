@@ -51,6 +51,8 @@ export function HistoryPanel({
   const [isVisible, setIsVisible] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
+  const [confirmRestore, setConfirmRestore] = useState(false);
+
   // Compare mode state
   const [compareMode, setCompareMode] = useState(false);
   const [compareSelections, setCompareSelections] = useState<[string | null, string | null]>([null, null]);
@@ -299,18 +301,41 @@ export function HistoryPanel({
           <pre className="text-xs max-h-40 overflow-auto p-2 rounded mb-2" style={{ background: "var(--sidebar-bg)" }}>
             {preview}
           </pre>
-          <button
-            onClick={() => {
-              if (confirm("현재 편집 중인 내용이 이 버전으로 대체됩니다. 계속하시겠습니까?")) {
-                onRestore(preview);
-                onClose();
-              }
-            }}
-            className="w-full py-2 rounded text-white text-sm"
-            style={{ background: "var(--primary)" }}
-          >
-            이 버전으로 복원
-          </button>
+          {confirmRestore ? (
+            <div className="flex gap-2">
+              <span className="flex items-center text-sm" style={{ color: "#ef4444" }}>
+                정말 복원하시겠습니까?
+              </span>
+              <button
+                onClick={() => {
+                  onRestore(preview);
+                  onClose();
+                }}
+                className="flex-1 py-2 rounded text-white text-sm"
+                style={{ background: "#ef4444" }}
+              >
+                확인
+              </button>
+              <button
+                onClick={() => setConfirmRestore(false)}
+                className="flex-1 py-2 rounded text-sm"
+                style={{ border: "1px solid var(--border)" }}
+              >
+                취소
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => {
+                setConfirmRestore(true);
+                setTimeout(() => setConfirmRestore(false), 5000);
+              }}
+              className="w-full py-2 rounded text-white text-sm"
+              style={{ background: "var(--primary)" }}
+            >
+              이 버전으로 복원
+            </button>
+          )}
         </div>
       )}
     </div>

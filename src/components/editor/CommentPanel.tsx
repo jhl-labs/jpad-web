@@ -66,6 +66,7 @@ function CommentItem({
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyContent, setReplyContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const isAuthor = currentUserId === comment.userId;
 
@@ -93,11 +94,16 @@ function CommentItem({
   }
 
   async function handleDelete() {
-    if (!confirm("이 댓글을 삭제하시겠습니까?")) return;
     const res = await fetch(`/api/pages/${pageId}/comments/${comment.id}`, {
       method: "DELETE",
     });
     if (res.ok) onRefresh();
+    setConfirmDelete(false);
+  }
+
+  function requestDelete() {
+    setConfirmDelete(true);
+    setTimeout(() => setConfirmDelete(false), 3000);
   }
 
   async function handleToggleResolved() {
@@ -155,13 +161,33 @@ function CommentItem({
                 </button>
               )}
               {isAuthor && !readOnly && (
-                <button
-                  onClick={handleDelete}
-                  className="flex items-center gap-1 text-xs hover:opacity-70"
-                  style={{ color: "var(--muted)" }}
-                >
-                  <Trash2 size={12} /> 삭제
-                </button>
+                confirmDelete ? (
+                  <span className="flex items-center gap-1 text-xs">
+                    <span style={{ color: "#ef4444" }}>삭제?</span>
+                    <button
+                      onClick={handleDelete}
+                      className="hover:opacity-70 px-1 rounded"
+                      style={{ color: "#ef4444" }}
+                    >
+                      확인
+                    </button>
+                    <button
+                      onClick={() => setConfirmDelete(false)}
+                      className="hover:opacity-70 px-1 rounded"
+                      style={{ color: "var(--muted)" }}
+                    >
+                      취소
+                    </button>
+                  </span>
+                ) : (
+                  <button
+                    onClick={requestDelete}
+                    className="flex items-center gap-1 text-xs hover:opacity-70"
+                    style={{ color: "var(--muted)" }}
+                  >
+                    <Trash2 size={12} /> 삭제
+                  </button>
+                )
               )}
             </div>
           </div>
