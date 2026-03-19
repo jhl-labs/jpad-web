@@ -83,7 +83,8 @@ export async function pushToRemote(
       if (match) localBranch = match[1];
     } catch { /* use default */ }
 
-    const pushResult = await git.push({
+    // First attempt: normal push
+    let pushResult = await git.push({
       fs,
       http,
       dir,
@@ -94,7 +95,20 @@ export async function pushToRemote(
       force: false,
     });
 
-    // pushResult.ok indicates success
+    // If fast-forward fails, try force push (initial sync with diverged histories)
+    if (pushResult.error && pushResult.error.includes("not a simple fast-forward")) {
+      pushResult = await git.push({
+        fs,
+        http,
+        dir,
+        remote: "origin",
+        ref: localBranch,
+        remoteRef: remoteBranch,
+        onAuth,
+        force: true,
+      });
+    }
+
     if (pushResult.error) {
       throw new Error(`Push failed: ${pushResult.error}`);
     }
@@ -112,8 +126,16 @@ export async function pullFromRemote(
 
     await configureRemote(workspaceId, settings.gitRemoteUrl);
 
-    const branch = settings.gitRemoteBranch || "main";
+    const remoteBranch = settings.gitRemoteBranch || "main";
     const onAuth = makeOnAuth(settings.gitRemoteToken);
+
+    // Detect local branch name
+    let localBranch = "main";
+    try {
+      const head = await fs.promises.readFile(path.join(dir, ".git", "HEAD"), "utf-8");
+      const match = head.trim().match(/^ref: refs\/heads\/(.+)$/);
+      if (match) localBranch = match[1];
+    } catch { /* use default */ }
 
     // Fetch from remote (may fail on empty repos)
     try {
@@ -122,7 +144,7 @@ export async function pullFromRemote(
         http,
         dir,
         remote: "origin",
-        ref: branch,
+        ref: remoteBranch,
         onAuth,
         singleBranch: true,
       });
@@ -136,7 +158,7 @@ export async function pullFromRemote(
     }
 
     // Fast-forward merge: get remote ref
-    const remoteRef = `refs/remotes/origin/${branch}`;
+    const remoteRef = `refs/remotes/origin/${remoteBranch}`;
 
     let remoteOid: string;
     try {
@@ -157,25 +179,31 @@ export async function pullFromRemote(
       return { filesChanged: 0 };
     }
 
-    // Fast-forward: check if remote is ahead of local
-    const isAncestor = await git.isDescendent({
-      fs,
-      dir,
-      oid: remoteOid,
-      ancestor: localOid,
-    });
-
-    if (!isAncestor) {
-      throw new Error(
-        "Cannot fast-forward: remote has diverged from local. Manual resolution required."
-      );
+    // Check if remote is ahead of local (fast-forward possible)
+    let canFastForward = false;
+    if (localOid) {
+      try {
+        canFastForward = await git.isDescendent({
+          fs,
+          dir,
+          oid: remoteOid,
+          ancestor: localOid,
+        });
+      } catch { /* treat as diverged */ }
     }
 
-    // Checkout the remote branch state
+    if (!canFastForward) {
+      // Histories diverged — force reset local to remote state
+      const localRefPath = path.join(dir, ".git", "refs", "heads", localBranch);
+      await fs.promises.mkdir(path.dirname(localRefPath), { recursive: true });
+      await fs.promises.writeFile(localRefPath, remoteOid + "\n");
+    }
+
+    // Checkout the local branch to update working tree
     await git.checkout({
       fs,
       dir,
-      ref: branch,
+      ref: localBranch,
       force: true,
     });
 
