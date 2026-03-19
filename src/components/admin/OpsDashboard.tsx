@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Activity, ArrowLeft, Database, HardDriveDownload, RefreshCw, Server, ShieldCheck, Users } from "lucide-react";
+import { Activity, ArrowLeft, Database, HardDriveDownload, Layers, RefreshCw, ScrollText, Server, ShieldCheck, Users } from "lucide-react";
 import { formatDateTimeFull } from "@/lib/utils/dateFormat";
 import { getStatusBadgeStyle } from "@/lib/utils/statusStyles";
 
@@ -551,6 +551,22 @@ export function OpsDashboard() {
           >
             <Users size={14} />
             사용자 관리
+          </button>
+          <button
+            onClick={() => router.push("/admin/workspaces")}
+            className="flex items-center gap-2 px-4 py-2 rounded text-sm"
+            style={{ background: "var(--sidebar-bg)", border: "1px solid var(--border)" }}
+          >
+            <Layers size={14} />
+            워크스페이스 관리
+          </button>
+          <button
+            onClick={() => router.push("/admin/audit-logs")}
+            className="flex items-center gap-2 px-4 py-2 rounded text-sm"
+            style={{ background: "var(--sidebar-bg)", border: "1px solid var(--border)" }}
+          >
+            <ScrollText size={14} />
+            감사 로그
           </button>
           <button
             onClick={() => router.push("/admin/infrastructure")}
