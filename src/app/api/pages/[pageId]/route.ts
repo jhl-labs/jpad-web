@@ -11,6 +11,8 @@ import {
   enqueuePageReindexJob,
   triggerBestEffortSearchIndexProcessing,
 } from "@/lib/semanticIndexQueue";
+import { slugify } from "@/lib/utils";
+import { savePage, readPage } from "@/lib/git/repository";
 // deletePageGit is used for permanent deletion in trash API
 
 export async function GET(
@@ -109,6 +111,38 @@ export async function PATCH(
         return NextResponse.json({ error: "title must be 500 characters or less" }, { status: 400 });
       }
       updateData.title = data.title;
+
+      // Update slug when title changes (skip for daily notes and untitled)
+      const newTitle = data.title.trim();
+      const currentSlug = access.page.slug;
+      if (newTitle && !currentSlug.startsWith("daily/")) {
+        const baseSlug = slugify(newTitle) || currentSlug;
+        if (baseSlug && baseSlug !== currentSlug) {
+          // Check slug uniqueness within workspace
+          const existing = await prisma.page.findFirst({
+            where: {
+              workspaceId: access.page.workspaceId,
+              slug: baseSlug,
+              id: { not: pageId },
+            },
+          });
+          const newSlug = existing ? `${baseSlug}-${pageId.slice(0, 8)}` : baseSlug;
+          updateData.slug = newSlug;
+
+          // Rename git file: read old, save new, delete old
+          try {
+            const content = await readPage(access.page.workspaceId, currentSlug);
+            if (content !== null) {
+              await savePage(access.page.workspaceId, newSlug, content, user.name || "system", `Rename ${currentSlug} → ${newSlug}`);
+              // Delete old file by saving empty and removing
+              const fs = await import("node:fs");
+              const path = await import("node:path");
+              const oldPath = path.join(process.cwd(), "data", "repos", access.page.workspaceId, `${currentSlug}.md`);
+              try { await fs.promises.unlink(oldPath); } catch { /* may not exist */ }
+            }
+          } catch { /* git rename best-effort */ }
+        }
+      }
     }
     if (data.icon !== undefined) {
       if (data.icon !== null && typeof data.icon !== "string") {
