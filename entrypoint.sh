@@ -7,8 +7,13 @@ until bunx prisma db push 2>/dev/null; do
 done
 echo "Database schema pushed."
 
-bun run prisma/seed.ts
-echo "Seed complete."
+if [ ! -f /app/data/.seeded ]; then
+  bun run prisma/seed.ts
+  touch /app/data/.seeded
+  echo "Seed complete."
+else
+  echo "Seed already done, skipping."
+fi
 
-bun run src/server/ws.ts &
+(while true; do bun run src/server/ws.ts; echo "WS server crashed, restarting in 2s..."; sleep 2; done) &
 bun run start

@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth/helpers";
 import { exchangeCodeForTokens } from "@/lib/googleCalendar";
@@ -34,10 +35,20 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Decode state
+    // Decode and verify state HMAC
+    const [payloadB64, sig] = stateRaw.split(".");
+    if (!payloadB64 || !sig) {
+      return NextResponse.json({ error: "Invalid state" }, { status: 400 });
+    }
+    const payload = Buffer.from(payloadB64, "base64url").toString();
+    const expectedSig = crypto.createHmac("sha256", process.env.NEXTAUTH_SECRET || "").update(payload).digest("base64url");
+    if (sig !== expectedSig) {
+      return NextResponse.json({ error: "Invalid state" }, { status: 400 });
+    }
+
     let state: { workspaceId: string; userId: string };
     try {
-      state = JSON.parse(Buffer.from(stateRaw, "base64url").toString("utf-8"));
+      state = JSON.parse(payload);
     } catch (error) {
       logError("google-calendar.callback.invalid_state", error);
       return NextResponse.json({ error: "Invalid state" }, { status: 400 });

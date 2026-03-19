@@ -35,4 +35,6 @@ COPY --from=build --chown=nextjs:nodejs /app/prisma.config.ts ./
 COPY --from=build --chown=nextjs:nodejs /app/src/server ./src/server
 COPY --chown=nextjs:nodejs entrypoint.sh ./
 EXPOSE 3000 1234
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD bun -e "fetch('http://localhost:3000/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
 CMD ["sh", "entrypoint.sh"]

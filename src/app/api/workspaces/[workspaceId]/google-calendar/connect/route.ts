@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, checkWorkspaceAccess } from "@/lib/auth/helpers";
 import { getGoogleAuthUrl } from "@/lib/googleCalendar";
@@ -24,8 +25,9 @@ export async function GET(
       );
     }
 
-    const state = JSON.stringify({ workspaceId, userId: user.id });
-    const stateEncoded = Buffer.from(state).toString("base64url");
+    const statePayload = JSON.stringify({ workspaceId, userId: user.id, ts: Date.now() });
+    const hmac = crypto.createHmac("sha256", process.env.NEXTAUTH_SECRET || "").update(statePayload).digest("base64url");
+    const stateEncoded = Buffer.from(statePayload).toString("base64url") + "." + hmac;
     const url = getGoogleAuthUrl(credentials, stateEncoded);
 
     return NextResponse.redirect(url);
