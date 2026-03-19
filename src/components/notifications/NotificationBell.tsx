@@ -205,7 +205,7 @@ export function NotificationBell({ workspaceId }: NotificationBellProps) {
       {open && (
         <div
           role="menu"
-          className="absolute left-0 top-full mt-1 z-[90] rounded-lg shadow-xl overflow-hidden"
+          className="absolute right-0 top-full mt-1 z-[90] rounded-lg shadow-xl overflow-hidden"
           style={{
             background: "var(--background)",
             border: "1px solid var(--border)",

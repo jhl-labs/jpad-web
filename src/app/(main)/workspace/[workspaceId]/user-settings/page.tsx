@@ -1075,6 +1075,11 @@ function NotificationsTab() {
     return parseInt(localStorage.getItem("notification-poll-interval") || "30", 10);
   });
 
+  const [notificationInterval, setNotificationInterval] = useState<string>(() => {
+    if (typeof window === "undefined") return "30000";
+    return localStorage.getItem("notification-poll-interval") || "30000";
+  });
+
   const [desktopPermission, setDesktopPermission] = useState<NotificationPermission | "unsupported">(
     () => {
       if (typeof window === "undefined" || !("Notification" in window)) return "unsupported";
@@ -1124,6 +1129,28 @@ function NotificationsTab() {
             ))}
           </div>
         </Field>
+        <div>
+          <label className="text-sm font-medium">알림 확인 간격</label>
+          <select
+            value={notificationInterval}
+            onChange={(e) => {
+              const val = e.target.value;
+              localStorage.setItem("notification-poll-interval", val);
+              setNotificationInterval(val);
+            }}
+            className="w-full mt-1 px-3 py-2 rounded-lg text-sm bg-transparent"
+            style={{ border: "1px solid var(--border)" }}
+          >
+            <option value="10000">10초</option>
+            <option value="30000">30초 (기본)</option>
+            <option value="60000">1분</option>
+            <option value="300000">5분</option>
+            <option value="off">비활성화</option>
+          </select>
+          <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>
+            변경 후 새로고침이 필요합니다
+          </p>
+        </div>
       </Section>
 
       <Section title="이메일 알림">

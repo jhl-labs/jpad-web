@@ -143,6 +143,7 @@ export function SearchModal({ workspaceId, isOpen, onClose }: SearchModalProps) 
       <div
         role="dialog"
         aria-modal="true"
+        aria-label="페이지 검색"
         className="w-full max-w-lg rounded-lg shadow-2xl overflow-hidden"
         style={{ background: "var(--background)", border: "1px solid var(--border)" }}
       >

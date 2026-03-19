@@ -29,6 +29,7 @@ function createWorkspaceAccumulator() {
     purgedShareLinkCount: 0,
     purgedAiChatCount: 0,
     purgedAuditLogCount: 0,
+    purgedNotificationCount: 0,
   };
 }
 
@@ -51,6 +52,7 @@ async function main() {
   const aiChatCutoff = subtractDays(now, config.aiChatRetentionDays);
   const revokedShareCutoff = subtractDays(now, config.revokedShareRetentionDays);
   const auditLogCutoff = subtractDays(now, config.auditLogRetentionDays);
+  const notificationCutoff = subtractDays(now, config.notificationRetentionDays);
 
   logInfo("retention.run.started", {
     retentionRunId: run.id,
@@ -86,6 +88,7 @@ async function main() {
     purgedShareLinkCount: 0,
     purgedAiChatCount: 0,
     purgedAuditLogCount: 0,
+    purgedNotificationCount: 0,
   };
 
   for (const page of purgeRoots) {
@@ -187,6 +190,33 @@ async function main() {
         where: { createdAt: { lte: auditLogCutoff } },
       })).count;
 
+  // ── 읽은 알림 보존 정책 ──
+  const notificationWhere = {
+    read: true,
+    createdAt: { lte: notificationCutoff },
+  };
+
+  const notificationsToPurge = await prisma.notification.groupBy({
+    by: ["workspaceId"],
+    where: {
+      ...notificationWhere,
+      workspaceId: { not: null },
+    },
+    _count: { _all: true },
+  });
+
+  for (const entry of notificationsToPurge) {
+    if (!entry.workspaceId) continue;
+    const ws =
+      workspaceSummaryMap.get(entry.workspaceId) || createWorkspaceAccumulator();
+    ws.purgedNotificationCount += entry._count._all;
+    workspaceSummaryMap.set(entry.workspaceId, ws);
+  }
+
+  summary.purgedNotificationCount = dryRun
+    ? await prisma.notification.count({ where: notificationWhere })
+    : (await prisma.notification.deleteMany({ where: notificationWhere })).count;
+
   const workspaceSummary: WorkspaceRetentionSummary[] = [...workspaceSummaryMap.entries()]
     .map(([workspaceId, value]) => ({
       workspaceId,
@@ -203,7 +233,8 @@ async function main() {
             entry.purgedAttachmentCount > 0 ||
             entry.purgedShareLinkCount > 0 ||
             entry.purgedAiChatCount > 0 ||
-            entry.purgedAuditLogCount > 0
+            entry.purgedAuditLogCount > 0 ||
+            entry.purgedNotificationCount > 0
         )
         .map((entry) =>
           recordAuditLog({
@@ -232,6 +263,7 @@ async function main() {
           purgedShareLinkCount: entry.purgedShareLinkCount,
           purgedAiChatCount: entry.purgedAiChatCount,
           purgedAuditLogCount: entry.purgedAuditLogCount,
+          purgedNotificationCount: entry.purgedNotificationCount,
         })),
         skipDuplicates: true,
       });

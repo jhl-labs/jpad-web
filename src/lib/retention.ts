@@ -17,6 +17,7 @@ export interface RetentionConfig {
   aiChatRetentionDays: number;
   revokedShareRetentionDays: number;
   auditLogRetentionDays: number;
+  notificationRetentionDays: number;
 }
 
 export interface RetentionSummary {
@@ -25,6 +26,7 @@ export interface RetentionSummary {
   purgedShareLinkCount: number;
   purgedAiChatCount: number;
   purgedAuditLogCount: number;
+  purgedNotificationCount: number;
 }
 
 export interface WorkspaceRetentionSummary {
@@ -34,6 +36,7 @@ export interface WorkspaceRetentionSummary {
   purgedShareLinkCount: number;
   purgedAiChatCount: number;
   purgedAuditLogCount: number;
+  purgedNotificationCount: number;
 }
 
 export function getRetentionConfig(): RetentionConfig {
@@ -47,6 +50,10 @@ export function getRetentionConfig(): RetentionConfig {
     auditLogRetentionDays: parseRetentionDays(
       process.env.AUDIT_LOG_RETENTION_DAYS,
       365
+    ),
+    notificationRetentionDays: parseRetentionDays(
+      process.env.NOTIFICATION_RETENTION_DAYS,
+      90
     ),
   };
 }

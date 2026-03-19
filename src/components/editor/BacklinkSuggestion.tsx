@@ -60,7 +60,17 @@ export function BacklinkSuggestion({
         caretRange.setStart(textNode, cursorPos);
         caretRange.setEnd(textNode, cursorPos);
         const rect = caretRange.getBoundingClientRect();
-        setPosition({ top: rect.bottom + 4, left: rect.left });
+        let top = rect.bottom + 4;
+        let left = rect.left;
+        // 하단 경계 검사 (메뉴 높이 약 200px)
+        if (top + 200 > window.innerHeight) {
+          top = rect.top - 200;
+        }
+        // 우측 경계 검사 (메뉴 너비 약 200px)
+        if (left + 200 > window.innerWidth) {
+          left = window.innerWidth - 210;
+        }
+        setPosition({ top, left });
       } else {
         setOpen(false);
       }
