@@ -197,7 +197,7 @@ export function TrashPanel({
                   {page.title}
                 </p>
                 <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
-                  {page.deletedAt ? relativeTime(new Date(page.deletedAt)) : ""}에 삭제됨
+                  {page.deletedAt ? getRelativeTime(page.deletedAt) : ""}에 삭제됨
                 </p>
               </div>
             </div>

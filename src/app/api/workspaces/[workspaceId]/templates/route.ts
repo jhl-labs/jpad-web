@@ -10,7 +10,7 @@ const createTemplateSchema = z.object({
   name: z.string().min(1, "이름은 필수입니다").max(100),
   description: z.string().max(500).optional(),
   icon: z.string().max(10).optional(),
-  content: z.string().min(1, "내용은 필수입니다"),
+  content: z.string().min(1, "내용은 필수입니다").max(100000),
   category: z.enum(["meeting", "project", "journal", "custom"]).default("custom"),
 });
 

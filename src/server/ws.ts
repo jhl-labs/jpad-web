@@ -311,8 +311,8 @@ const cachedAllowedOrigins = computeAllowedOrigins();
 function isOriginAllowed(origin: string | undefined): boolean {
   if (!origin) return true; // non-browser clients (curl, etc.)
   if (process.env.NODE_ENV !== "production") return true; // dev: allow all
-  // NEXTAUTH_URL이 미설정이면 모든 origin 허용 (Docker 배포 시 자동 감지 모드)
-  if (cachedAllowedOrigins.size === 0) return true;
+  // 허용 리스트가 비어있으면 production에서는 거부
+  if (cachedAllowedOrigins.size === 0) return process.env.NODE_ENV !== "production";
   return cachedAllowedOrigins.has(origin);
 }
 

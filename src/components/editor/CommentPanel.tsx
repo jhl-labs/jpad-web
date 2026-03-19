@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { X, MessageCircle, Send, Reply, Trash2, CheckCircle, Loader2, RefreshCw } from "lucide-react";
+import { getRelativeTime } from "@/lib/utils/relativeTime";
 
 interface CommentUser {
   id: string;
@@ -21,19 +22,6 @@ interface Comment {
   parentId: string | null;
   user: CommentUser;
   replies?: Comment[];
-}
-
-function relativeTime(date: Date): string {
-  const now = Date.now();
-  const diff = now - date.getTime();
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return "방금 전";
-  if (minutes < 60) return `${minutes}분 전`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}시간 전`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}일 전`;
-  return date.toLocaleDateString("ko");
 }
 
 function getAvatarColor(name: string): string {
@@ -132,7 +120,7 @@ function CommentItem({
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium truncate">{comment.user.name}</span>
               <span className="text-xs shrink-0" style={{ color: "var(--muted)" }}>
-                {relativeTime(new Date(comment.createdAt))}
+                {getRelativeTime(comment.createdAt)}
               </span>
             </div>
             <p

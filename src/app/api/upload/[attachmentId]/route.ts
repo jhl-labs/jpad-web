@@ -118,7 +118,7 @@ export async function GET(
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    logError("upload.delete.error", error);
+    logError("upload.get.error", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

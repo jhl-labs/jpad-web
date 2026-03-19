@@ -119,8 +119,15 @@ export async function PATCH(
     } else if (body.location === null) {
       updateData.location = body.location;
     }
-    if (typeof body.recurrence === "string" || body.recurrence === null)
+    if (typeof body.recurrence === "string" || body.recurrence === null) {
+      if (typeof body.recurrence === "string" && body.recurrence.length > 500) {
+        return NextResponse.json(
+          { error: "Recurrence must be 500 characters or less" },
+          { status: 400 }
+        );
+      }
       updateData.recurrence = body.recurrence;
+    }
     if (typeof body.pageId === "string" || body.pageId === null)
       updateData.pageId = body.pageId;
 

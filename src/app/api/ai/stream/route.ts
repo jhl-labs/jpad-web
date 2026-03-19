@@ -48,6 +48,10 @@ export async function POST(req: NextRequest) {
       pageId: body.pageId,
     });
 
+    if (body.text && body.text.length > 50000) {
+      return NextResponse.json({ error: "Text too long (max 50000)" }, { status: 400 });
+    }
+
     let text = typeof body.text === "string" ? body.text.trim() : "";
     if (!text && context.page) {
       text = (await readPage(context.workspaceId, context.page.slug))?.trim() || "";

@@ -36,10 +36,10 @@ model User {
   createdTodos  Todo[] @relation("TodoCreator")
   notifications Notification[]
   pageTemplates PageTemplate[]
+  aiChats     AiChat[]
 
   @@unique([oidcIssuer, oidcSubject])
   @@unique([samlIssuer, samlSubject])
-  @@index([email])
 }
 
 model SsoLoginToken {
@@ -71,8 +71,6 @@ model Organization {
   scimIdentities OrganizationScimIdentity[]
   scimGroups OrganizationScimGroup[]
   workspaces Workspace[]
-
-  @@index([slug])
 }
 
 model OrganizationMember {
@@ -216,8 +214,8 @@ model Workspace {
   notifications Notification[]
   pageTemplates PageTemplate[]
   gitSyncLogs   GitSyncLog[]
+  aiChats       AiChat[]
 
-  @@index([slug])
   @@index([organizationId])
 }
 
@@ -481,6 +479,9 @@ model AiChat {
   workspaceId String
   userId    String
   createdAt DateTime @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId, userId, createdAt])
   @@index([pageId])

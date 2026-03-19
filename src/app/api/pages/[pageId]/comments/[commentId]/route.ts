@@ -55,6 +55,9 @@ export async function PATCH(
       if (typeof content !== "string" || content.trim().length === 0) {
         return NextResponse.json({ error: "Content cannot be empty" }, { status: 400 });
       }
+      if (typeof content === "string" && content.length > 10000) {
+        return NextResponse.json({ error: "Comment too long" }, { status: 400 });
+      }
       updateData.content = content.trim();
     }
 
