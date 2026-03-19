@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useSession } from "next-auth/react";
-import { X, MessageCircle, Send, Reply, Trash2, CheckCircle, Loader2, RefreshCw } from "lucide-react";
+import { X, MessageCircle, Send, Reply, Trash2, CheckCircle, Loader2, RefreshCw, Edit3 } from "lucide-react";
 import { getRelativeTime } from "@/lib/utils/relativeTime";
 
 interface CommentUser {
@@ -67,6 +67,8 @@ function CommentItem({
   const [replyContent, setReplyContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [editingComment, setEditingComment] = useState(false);
+  const [editText, setEditText] = useState("");
 
   const isAuthor = currentUserId === comment.userId;
 
@@ -106,6 +108,33 @@ function CommentItem({
     setTimeout(() => setConfirmDelete(false), 3000);
   }
 
+  function startEdit() {
+    setEditingComment(true);
+    setEditText(comment.content);
+  }
+
+  async function handleSaveEdit() {
+    if (!editText.trim() || editText.trim() === comment.content) {
+      setEditingComment(false);
+      return;
+    }
+    try {
+      const res = await fetch(`/api/pages/${pageId}/comments/${comment.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: editText.trim() }),
+      });
+      if (res.ok) {
+        setEditingComment(false);
+        onRefresh();
+      } else {
+        console.error("[CommentPanel] edit failed:", res.status);
+      }
+    } catch (error) {
+      console.error("[CommentPanel] edit failed:", error);
+    }
+  }
+
   async function handleToggleResolved() {
     const res = await fetch(`/api/pages/${pageId}/comments/${comment.id}`, {
       method: "PATCH",
@@ -133,14 +162,55 @@ function CommentItem({
                 {getRelativeTime(comment.createdAt)}
               </span>
             </div>
-            <p
-              className="text-sm mt-1 whitespace-pre-wrap break-words"
-              style={{
-                textDecoration: comment.resolved ? "line-through" : undefined,
-              }}
-            >
-              {comment.content}
-            </p>
+            {editingComment ? (
+              <div className="mt-1">
+                <textarea
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  rows={3}
+                  className="w-full text-sm p-2 rounded resize-none outline-none"
+                  style={{
+                    background: "var(--sidebar-bg)",
+                    border: "1px solid var(--border)",
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                      handleSaveEdit();
+                    }
+                    if (e.key === "Escape") {
+                      setEditingComment(false);
+                    }
+                  }}
+                  autoFocus
+                />
+                <div className="flex items-center gap-2 mt-1">
+                  <button
+                    onClick={handleSaveEdit}
+                    disabled={!editText.trim()}
+                    className="text-xs px-2 py-1 rounded text-white disabled:opacity-50"
+                    style={{ background: "var(--primary)" }}
+                  >
+                    저장
+                  </button>
+                  <button
+                    onClick={() => setEditingComment(false)}
+                    className="text-xs px-2 py-1 rounded"
+                    style={{ border: "1px solid var(--border)" }}
+                  >
+                    취소
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <p
+                className="text-sm mt-1 whitespace-pre-wrap break-words"
+                style={{
+                  textDecoration: comment.resolved ? "line-through" : undefined,
+                }}
+              >
+                {comment.content}
+              </p>
+            )}
             <div className="flex items-center gap-2 mt-2">
               {!isReply && !readOnly && (
                 <button
@@ -158,6 +228,15 @@ function CommentItem({
                   style={{ color: comment.resolved ? "var(--primary)" : "var(--muted)" }}
                 >
                   <CheckCircle size={12} /> {comment.resolved ? "해결됨" : "해결"}
+                </button>
+              )}
+              {isAuthor && !readOnly && !editingComment && (
+                <button
+                  onClick={startEdit}
+                  className="flex items-center gap-1 text-xs hover:opacity-70"
+                  style={{ color: "var(--muted)" }}
+                >
+                  <Edit3 size={12} /> 수정
                 </button>
               )}
               {isAuthor && !readOnly && (

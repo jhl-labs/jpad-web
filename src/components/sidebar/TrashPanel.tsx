@@ -21,6 +21,7 @@ export function TrashPanel({
   onRestore: () => void;
 }) {
   const [pages, setPages] = useState<DeletedPage[]>([]);
+  const [trashSearch, setTrashSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
   const [confirmingEmptyAll, setConfirmingEmptyAll] = useState(false);
@@ -169,6 +170,19 @@ export function TrashPanel({
         </div>
       </div>
 
+      {/* Search */}
+      {!loading && pages.length > 0 && (
+        <div className="px-3 pt-3">
+          <input
+            value={trashSearch}
+            onChange={(e) => setTrashSearch(e.target.value)}
+            placeholder="삭제된 페이지 검색..."
+            className="w-full px-2 py-1.5 rounded text-xs bg-transparent outline-none"
+            style={{ border: "1px solid var(--border)" }}
+          />
+        </div>
+      )}
+
       {/* List */}
       <div className="flex-1 overflow-auto p-3 space-y-2">
         {loading && (
@@ -184,7 +198,17 @@ export function TrashPanel({
           </div>
         )}
 
-        {pages.map((page) => (
+        {!loading && pages.length > 0 && pages.filter(p =>
+          !trashSearch || p.title.toLowerCase().includes(trashSearch.toLowerCase())
+        ).length === 0 && (
+          <p className="text-xs text-center py-4" style={{ color: "var(--muted)" }}>
+            검색 결과가 없습니다
+          </p>
+        )}
+
+        {pages.filter(p =>
+          !trashSearch || p.title.toLowerCase().includes(trashSearch.toLowerCase())
+        ).map((page) => (
           <div
             key={page.id}
             className="p-3 rounded-lg"

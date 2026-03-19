@@ -8,7 +8,7 @@ import {
   Settings, GripVertical, Trash2, Star, Network, Copy, Link,
   FilePlus, Edit3, MoreHorizontal, StarOff, ExternalLink,
   Calendar, CheckSquare, BookOpen, Upload, ChevronsUpDown, Check,
-  MessageSquarePlus, MoveRight, FolderInput, BookTemplate,
+  MessageSquarePlus, MoveRight, FolderInput, BookTemplate, ArrowUpDown,
 } from "lucide-react";
 import { ImportModal } from "@/components/editor/ImportModal";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
@@ -29,6 +29,7 @@ interface Page {
   icon: string | null;
   position: number;
   parentId: string | null;
+  updatedAt?: string;
 }
 
 interface FavoritePage {
@@ -222,8 +223,10 @@ function PageContextMenu({
       }
       onRefresh();
       router.push(`/workspace/${workspaceId}/page/${newPage.id}`);
+      window.dispatchEvent(new CustomEvent("toast", { detail: { message: "페이지가 복제되었습니다" } }));
     } else {
       console.error("페이지 복제 실패:", res.status);
+      window.dispatchEvent(new CustomEvent("toast", { detail: { message: "페이지 복제에 실패했습니다" } }));
     }
     onClose();
   }
@@ -732,6 +735,7 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
       return next;
     });
   }, [workspace.id]);
+  const [sortMode, setSortMode] = useState<"manual" | "name" | "updated">("manual");
   const [trashCount, setTrashCount] = useState(0);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [blankContextMenu, setBlankContextMenu] = useState<{ x: number; y: number } | null>(null);
@@ -859,9 +863,12 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
     fetchTrashCount();
   }, [fetchTrashCount, pages]);
 
-  const rootPages = pages
-    .filter((p) => !p.parentId)
-    .sort((a, b) => a.position - b.position);
+  const rootPages = useMemo(() => {
+    const roots = pages.filter((p) => !p.parentId);
+    if (sortMode === "name") return [...roots].sort((a, b) => a.title.localeCompare(b.title, "ko"));
+    if (sortMode === "updated") return [...roots].sort((a, b) => new Date(b.updatedAt ?? 0).getTime() - new Date(a.updatedAt ?? 0).getTime());
+    return roots.sort((a, b) => a.position - b.position);
+  }, [pages, sortMode]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -1188,16 +1195,29 @@ export function Sidebar({ workspace, pages, favorites = [], onCreatePage, onDele
               {sectionCollapse.pages ? <ChevronRight size={10} /> : <ChevronDown size={10} />}
               페이지
             </button>
-            {canManagePages && (
+            <div className="flex items-center gap-1">
               <button
-                onClick={() => onCreatePage()}
+                onClick={() => {
+                  setSortMode(prev => prev === "manual" ? "name" : prev === "name" ? "updated" : "manual");
+                }}
                 className="p-0.5 rounded hover:opacity-70"
-                title="새 페이지"
-                aria-label="새 페이지"
+                title={`정렬: ${sortMode === "manual" ? "수동" : sortMode === "name" ? "이름순" : "수정일순"}`}
+                aria-label={`정렬: ${sortMode === "manual" ? "수동" : sortMode === "name" ? "이름순" : "수정일순"}`}
+                style={{ color: sortMode !== "manual" ? "var(--primary)" : "var(--muted)" }}
               >
-                <Plus size={14} />
+                <ArrowUpDown size={12} />
               </button>
-            )}
+              {canManagePages && (
+                <button
+                  onClick={() => onCreatePage()}
+                  className="p-0.5 rounded hover:opacity-70"
+                  title="새 페이지"
+                  aria-label="새 페이지"
+                >
+                  <Plus size={14} />
+                </button>
+              )}
+            </div>
           </div>
 
         {!sectionCollapse.pages && (
