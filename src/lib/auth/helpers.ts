@@ -44,7 +44,7 @@ export function isPlatformAdminEmail(email?: string | null): boolean {
 
 export async function requirePlatformAdmin() {
   const user = await requireAuth();
-  if (!isPlatformAdminEmail(user.email)) {
+  if (!user.isPlatformAdmin && !isPlatformAdminEmail(user.email)) {
     throw new Error("Forbidden");
   }
   return user;

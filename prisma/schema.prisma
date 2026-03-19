@@ -16,6 +16,7 @@ model User {
   oidcSubject    String?
   samlIssuer     String?
   samlSubject    String?
+  isPlatformAdmin Boolean   @default(false)
   lastLoginAt    DateTime?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt

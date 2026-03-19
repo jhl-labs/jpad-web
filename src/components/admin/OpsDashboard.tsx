@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Activity, ArrowLeft, Database, HardDriveDownload, RefreshCw, Server, ShieldCheck } from "lucide-react";
+import { Activity, ArrowLeft, Database, HardDriveDownload, RefreshCw, Server, ShieldCheck, Users } from "lucide-react";
 import { formatDateTimeFull } from "@/lib/utils/dateFormat";
 import { getStatusBadgeStyle } from "@/lib/utils/statusStyles";
 
@@ -544,6 +544,14 @@ export function OpsDashboard() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => router.push("/admin/users")}
+            className="flex items-center gap-2 px-4 py-2 rounded text-sm"
+            style={{ background: "var(--sidebar-bg)", border: "1px solid var(--border)" }}
+          >
+            <Users size={14} />
+            사용자 관리
+          </button>
           <button
             onClick={() => router.push("/admin/infrastructure")}
             className="flex items-center gap-2 px-4 py-2 rounded text-sm"

@@ -78,8 +78,12 @@ export async function POST(req: NextRequest) {
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
+    // 최초 가입자를 플랫폼 관리자로 자동 설정
+    const totalUsers = await prisma.user.count();
+    const isPlatformAdmin = totalUsers === 0;
+
     const user = await prisma.user.create({
-      data: { email, name, hashedPassword },
+      data: { email, name, hashedPassword, isPlatformAdmin },
       select: { id: true, email: true, name: true },
     });
 
